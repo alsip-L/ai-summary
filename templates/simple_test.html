@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript事件测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 JavaScript事件绑定测试</h1>
+        
+        <h2>测试结果</h2>
+        <div id="output">等待测试...</div>
+        
+        <hr style="margin: 20px 0;">
+        
+        <h2>测试按钮</h2>
+        <button id="testBtn" onclick="testButtonClick()">直接onclick测试</button>
+        <br>
+        <button id="addEventBtn">添加事件监听器测试</button>
+        <br>
+        <button id="fetchBtn">测试API调用</button>
+        <br>
+        <button id="ajaxBtn">测试AJAX请求</button>
+        
+        <h3>状态信息</h3>
+        <div id="status">
+            <p>processingManager: <span id="pmStatus">未定义</span></p>
+            <p>按钮点击计数: <span id="clickCount">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        
+        function testButtonClick() {
+            clickCount++;
+            document.getElementById('clickCount').textContent = clickCount;
+            output('✅ 直接onclick事件工作正常！点击次数: ' + clickCount);
+            console.log('=== DEBUG: testButtonClick 被调用 ===');
+        }
+        
+        function output(message) {
+            document.getElementById('output').textContent += '\n' + new Date().toLocaleTimeString() + ': ' + message;
+        }
+        
+        function updatePMStatus() {
+            document.getElementById('pmStatus').textContent = typeof window.processingManager !== 'undefined' ? '已定义' : '未定义';
+        }
+        
+        // DOM加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            output('🔧 页面已加载，开始事件绑定测试...');
+            
+            // 更新processingManager状态
+            updatePMStatus();
+            
+            // 测试事件监听器绑定
+            const addEventBtn = document.getElementById('addEventBtn');
+            if (addEventBtn) {
+                addEventBtn.addEventListener('click', function() {
+                    output('✅ 事件监听器工作正常！');
+                    clickCount++;
+                    document.getElementById('clickCount').textContent = clickCount;
+                    console.log('=== DEBUG: 事件监听器被调用 ===');
+                });
+                output('✅ 事件监听器绑定成功');
+            }
+            
+            // 测试API调用
+            const fetchBtn = document.getElementById('fetchBtn');
+            if (fetchBtn) {
+                fetchBtn.addEventListener('click', async function() {
+                    output('🔄 开始测试API调用...');
+                    try {
+                        const response = await fetch('/get_processing_status');
+                        const data = await response.json();
+                        output('✅ API调用成功: ' + JSON.stringify(data, null, 2));
+                        console.log('API数据:', data);
+                    } catch (error) {
+                        output('❌ API调用失败: ' + error.message);
+                        console.error('API错误:', error);
+                    }
+                });
+                output('✅ API测试按钮事件监听器绑定成功');
+            }
+            
+            // 测试AJAX请求
+            const ajaxBtn = document.getElementById('ajaxBtn');
+            if (ajaxBtn) {
+                ajaxBtn.addEventListener('click', function() {
+                    output('🔄 开始测试AJAX请求...');
+                    const xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                output('✅ AJAX请求成功: ' + xhr.responseText.substring(0, 200) + '...');
+                            } else {
+                                output('❌ AJAX请求失败: ' + xhr.status);
+                            }
+                        }
+                    };
+                    xhr.open('GET', '/get_processing_status', true);
+                    xhr.send();
+                });
+                output('✅ AJAX测试按钮事件监听器绑定成功');
+            }
+            
+            output('✅ 所有事件监听器绑定完成');
+            
+            // 定期更新状态
+            setInterval(updatePMStatus, 1000);
+        });
+        
+        // 模拟ProcessingManager（用于调试）
+        window.processingManager = {
+            startProcessing: function() {
+                output('🚀 processingManager.startProcessing() 被调用');
+            }
+        };
+        
+        // 添加全局测试函数
+        window.testStartProcessing = function() {
+            if (window.processingManager && typeof window.processingManager.startProcessing === 'function') {
+                output('🚀 调用processingManager.startProcessing()');
+                window.processingManager.startProcessing();
+            } else {
+                output('❌ processingManager未定义或startProcessing方法不存在');
+            }
+        };
+    </script>
+</body>
+</html>

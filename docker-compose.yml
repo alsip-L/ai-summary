@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  ai-summary-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-summary-container
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # 挂载配置文件，支持热更新配置
+      - ./config.json:/app/config.json:ro
+      # 挂载数据目录，用于存储处理结果
+      - ./data:/app/data
+      # 可选：挂载日志目录
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ai-summary-network
+
+networks:
+  ai-summary-network:
+    driver: bridge
+
+# 可选：如果你想使用外部数据库或其他服务，可以在这里添加
+# volumes:
+#   app_data:

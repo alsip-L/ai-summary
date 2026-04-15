@@ -1,0 +1,64 @@
+# 忽略不需要复制到容器中的文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 测试文件
+.coverage
+.pytest_cache/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# 文档
+*.md
+docs/
+
+# Git
+.git/
+.gitignore
+
+# Docker文件（避免循环复制）
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 日志文件
+*.log
+logs/
+
+# 数据文件
+data/
+temp/
+output/
+*.db
+*.sqlite3
+
+# 构建文件
+build/
+dist/
+*.egg-info/
+
+# 临时文件
+tmp/
+.tmp/

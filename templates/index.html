@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI批量总结助手</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container" style="display: flex; align-items: flex-start;">
+        <div class="sidebar">
+            <h1>⚙️ 配置</h1>
+            
+            <!-- 配置自动保存提示 -->
+            <div style="margin: 10px 0; padding: 8px; background-color: #e8f5e8; border: 1px solid #4CAF50; border-radius: 4px; font-size: 12px; color: #2E7D32;">
+                ✅ 配置选择将自动保存到config.json
+            </div>
+            
+            <!-- 分隔线 -->
+            <hr style="margin: 10px 0; border-top: 1px solid #ddd;">
+            
+            <!-- 隐藏的提供商数据，用于JavaScript动态更新 -->
+            <script id="providers-data" type="application/json">
+                {{ all_providers | tojson }}
+            </script>
+
+            <!-- 消息显示区域 -->
+            <div id="message" class="alert" style="display: none;"></div>
+            {% if last_message %}
+                <div class="alert alert-success">{{ last_message }}</div>
+            {% endif %}
+            {% if last_error %}
+                <div class="alert alert-danger">{{ last_error }}</div>
+            {% endif %}
+
+            <!-- 统一的配置选择表单 (仅用于选择，不保存配置到文件) -->
+            <form method="POST" action="/" class="config-form" id="configForm">
+                <input type="hidden" name="form_type" value="config_selection_form">
+                
+                <h2>AI服务商设置</h2>
+                <div class="form-group">
+                    <label for="selected_provider">选择AI服务商:</label>
+                    <div class="custom-dropdown" id="provider-dropdown">
+                        <div class="dropdown-selected" onclick="toggleDropdown('provider-dropdown')">
+                            <span>{{ selected_provider_name }}</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="dropdown-content" id="provider-options">
+                            {% for name in all_providers.keys() %}
+                                <div class="dropdown-option" onclick="selectProvider('{{ name }}'); event.stopPropagation();">
+                                    <span>{{ name }}</span>
+                                    <button type="button" class="delete-option-btn" onclick="deleteProvider('{{ name }}'); event.stopPropagation();">×</button>
+                                </div>
+                            {% endfor %}
+                            <div class="dropdown-option" onclick="handleProviderAddNew()">
+                                <span>+ 新增服务商</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="selected_provider" value="{{ selected_provider_name }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="selected_model">选择模型:</label>
+                    <div class="custom-dropdown" id="model-dropdown">
+                        <div class="dropdown-selected" onclick="toggleDropdown('model-dropdown')">
+                            <span>{{ selected_model_key }}</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="dropdown-content" id="model-options">
+                            {% for model_display, model_id in provider_config['models'].items() %}
+                                <div class="dropdown-option" onclick="selectModel('{{ model_display }}')">
+                                    <span>{{ model_display }}</span>
+                                    <button type="button" class="delete-option-btn" onclick="deleteModel('{{ selected_provider_name }}', '{{ model_display }}'); event.stopPropagation();">×</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <input type="hidden" name="selected_model" value="{{ selected_model_key }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="api_key">{{ selected_provider_name }} API Key:</label>
+                    <!-- API Key 输入框现在可以直接编辑 -->
+                    <input type="text" id="api_key" name="api_key" value="{{ current_api_key }}" placeholder="{% if current_api_key %}已配置{% else %}请输入API Key{% endif %}">
+                    <button type="button" class="btn btn-secondary" style="margin-top: 5px;" onclick="saveApiKey()">保存API Key</button>
+                    <!-- 隐藏字段用于传递当前服务商名称 (start_processing可能需要) -->
+                    <input type="hidden" name="provider_name_for_key_save" value="{{ selected_provider_name }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="directory_path">📁 处理目录:</label>
+                    <input type="text" id="directory_path" name="directory_path" value="{{ directory_path }}" placeholder="输入要处理的目录的完整路径">
+                </div>
+            </form>
+
+            <!-- 添加隐藏字段用于JavaScript访问 -->
+            <input type="hidden" id="selected_provider_hidden" value="{{ selected_provider_name }}">
+            <input type="hidden" id="selected_model_hidden" value="{{ selected_model_key }}">
+            <input type="hidden" id="selected_prompt_hidden" value="{{ selected_prompt_name }}">
+
+            <hr>
+
+            <!-- Prompt管理部分 (仅用于选择，不保存Prompt到文件) -->
+            <form method="POST" action="/" class="config-form" id="promptForm">
+                <input type="hidden" name="form_type" value="config_selection_form">
+                <h2>Prompt管理</h2>
+                <div class="form-group">
+                    <label for="selected_prompt">选择System Prompt:</label>
+                    <div class="custom-dropdown" id="prompt-dropdown">
+                        <div class="dropdown-selected" onclick="toggleDropdown('prompt-dropdown')">
+                            <span>{{ selected_prompt_name }}</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="dropdown-content" id="prompt-options">
+                            {% for name in all_prompts.keys() %}
+                                <div class="dropdown-option" onclick="selectPrompt('{{ name }}'); event.stopPropagation();">
+                                    <span>{{ name }}</span>
+                                    <button type="button" class="delete-option-btn" onclick="deletePrompt('{{ name }}'); event.stopPropagation();">×</button>
+                                </div>
+                            {% endfor %}
+                            <div class="dropdown-option" onclick="handlePromptAddNew()">
+                                <span>+ 新增Prompt</span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="selected_prompt" value="{{ selected_prompt_name }}">
+                </div>
+            </form>
+
+            <!-- 查看当前Prompt内容 Dropdown -->
+            <div class="custom-dropdown" id="prompt-content-dropdown">
+                <div class="dropdown-selected" onclick="toggleDropdown('prompt-content-dropdown')">
+                    <span>📄 查看当前Prompt内容</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="dropdown-content prompt-content-area" id="prompt-content-options" style="display: none;">
+                    <textarea readonly rows="8" style="width: 100%; padding: 10px; border: none; resize: vertical; font-family: monospace; background-color: #f9f9f9; box-sizing: border-box;">{{ all_prompts[selected_prompt_name] }}</textarea>
+                </div>
+            </div>
+
+            <hr style="margin: 15px 0; border-top: 1px solid #ddd;">
+
+            <!-- 回收站 Dropdown -->
+            <div class="custom-dropdown" id="trash-dropdown">
+                <div class="dropdown-selected" onclick="toggleDropdown('trash-dropdown')">
+                    <span>🗑️ 回收站</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="dropdown-content trash-content-area" id="trash-options" style="display: none; max-height: 300px; overflow-y: auto;">
+                    <div class="trash-section">
+                        <h4>已删除的提供商 ({{ trash_data.providers|length if trash_data.providers else 0 }}):</h4>
+                        {% if trash_data.providers %}
+                            {% for provider_name, provider_config in trash_data.providers.items() %}
+                            <div class="trash-item" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; padding: 8px; margin: 3px 0; border-radius: 3px; background-color: #f9f9f9;">
+                                <span style="flex: 1; margin-right: 10px;">{{ provider_name }}</span>
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="restore-btn" onclick="restoreProvider('{{ provider_name }}')">恢复</button>
+                                    <button type="button" class="permanent-delete-btn" onclick="permanentDeleteProvider('{{ provider_name }}')">删除</button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="color: #666; font-style: italic;">暂无已删除的提供商</p>
+                        {% endif %}
+                    </div>
+                    <hr style="margin: 10px 0;">
+                    <div class="trash-section">
+                        <h4>已删除的Prompt ({{ trash_data.custom_prompts|length if trash_data.custom_prompts else 0 }}):</h4>
+                        {% if trash_data.custom_prompts %}
+                            {% for prompt_name, prompt_content in trash_data.custom_prompts.items() %}
+                            <div class="trash-item" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; padding: 8px; margin: 3px 0; border-radius: 3px; background-color: #f9f9f9;">
+                                <span style="flex: 1; margin-right: 10px;">{{ prompt_name }}</span>
+                                <div style="display: flex; gap: 6px;">
+                                    <button type="button" class="restore-btn" onclick="restorePrompt('{{ prompt_name }}')">恢复</button>
+                                    <button type="button" class="permanent-delete-btn" onclick="permanentDeletePrompt('{{ prompt_name }}')">删除</button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="color: #666; font-style: italic;">暂无已删除的Prompt</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            </div> <!-- end sidebar -->
+
+        <div class="main-content">
+            <!-- 开始处理按钮 - 最终修复版本 -->
+            <div style="margin: 8px 0 12px 0; text-align: center; position: relative; z-index: 1000;">
+                <button type="button" id="start-process-btn"
+                        class="btn btn-primary"
+                        style="position: relative; z-index: 1001; background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
+                    🚀 开始处理
+                </button>
+            </div>
+
+            <!-- 处理进度区域 - 全新重写 -->
+            <div id="processing-progress" class="processing-status-panel" style="display: none;">
+                <!-- 进度条头部 -->
+                <div class="progress-header">
+                    <div class="progress-title">
+                        <span class="status-icon" id="statusIcon">⏳</span>
+                        <span id="statusTitle">准备处理</span>
+                    </div>
+                    <div class="progress-percentage" id="progressPercentage">0%</div>
+                </div>
+                
+                <!-- 进度条主体 -->
+                <div class="progress-main">
+                    <div class="progress-bar-wrapper">
+                        <div id="progressBar" class="progress-bar-advanced">
+                            <div class="progress-fill" id="progressFill"></div>
+                            <div class="progress-glow"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 进度信息 -->
+                    <div class="progress-details">
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">当前文件:</span>
+                                <span class="stat-value" id="currentFile">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">处理进度:</span>
+                                <span class="stat-value" id="progressFiles">0 / 0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">耗时:</span>
+                                <span class="stat-value" id="elapsedTime">00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 状态底部 -->
+                <div class="progress-footer">
+                    <div class="status-message" id="statusMessage">等待开始处理...</div>
+                    <div class="progress-actions">
+                        <button type="button" id="cancelProcessing" class="btn btn-sm btn-outline-danger" style="display: none;">
+                            ⏹️ 取消处理
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 处理结果区域 -->
+            <div id="results-area" style="display: none;" class="results-container">
+                <div class="results-header">
+                    <span>📊 处理结果</span>
+                </div>
+                <table id="results-table" class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>源文件</th>
+                            <th>结果文件</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Results will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div> <!-- end main-content -->
+    </div> <!-- end container -->
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
