@@ -113,23 +113,20 @@ docker build -t ai-summary-app .
 - **处理结果**: `data/` 目录存储生成的markdown文件
 - **日志文件**: `logs/` 目录存储应用日志
 
-## 环境变量配置
+## 配置管理
 
-可以通过环境变量自定义应用行为：
+所有配置均通过 `config.json` 文件或 Web 界面管理，无需使用环境变量。在 Web 界面的 **系统设置** 面板中可以修改日志级别、Flask密钥、监听地址和端口等。
 
+### 日志级别
+在 Web 界面的系统设置中选择日志级别，修改后即时生效，无需重启容器。
+
+### 端口和地址
+如需修改监听端口或地址，在 Web 界面的系统设置中修改后，需要重启容器：
 ```bash
-# 设置Flask环境
--e FLASK_ENV=production
-
-# 设置Flask应用
--e FLASK_APP=app.py
-
-# 设置Python输出缓冲
--e PYTHONUNBUFFERED=1
-
-# 设置调试级别
--e DEBUG_LEVEL=INFO
+docker restart ai-summary-container
 ```
+
+或直接修改 `docker-compose.yml` 中的端口映射。
 
 ## 网络和端口配置
 

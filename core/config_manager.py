@@ -104,7 +104,14 @@ class ConfigManager:
                 "providers": {},
                 "custom_prompts": {}
             },
-            "user_preferences": {}
+            "user_preferences": {},
+            "system_settings": {
+                "debug_level": "ERROR",
+                "flask_secret_key": "default-dev-secret-key-please-change-in-prod",
+                "host": "0.0.0.0",
+                "port": 5000,
+                "debug": False
+            }
         }
 
     def _navigate_path(self, keys, create_missing=False):

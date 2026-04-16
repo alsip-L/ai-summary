@@ -11,8 +11,6 @@ from core.exceptions import FileProcessingError, ProviderError
 
 logger = get_logger()
 
-DEBUG_LEVEL = os.environ.get('DEBUG_LEVEL', 'ERROR').upper()
-
 
 def debug_print(level, message):
     """统一的调试输出函数，委托给 core.logger"""

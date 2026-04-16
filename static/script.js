@@ -826,7 +826,7 @@ document.addEventListener('click', (e) => {
         document.querySelectorAll('.dropdown-content').forEach(el => {
             el.classList.remove('show');
         });
-        document.querySelectorAll('.prompt-content-area, .trash-content-area').forEach(el => {
+        document.querySelectorAll('.prompt-content-area, .trash-content-area, .system-settings-area').forEach(el => {
             el.style.display = 'none';
         });
     }
@@ -1015,6 +1015,8 @@ window.toggleDropdown = function(dropdownId) {
         content = document.getElementById('prompt-content-options');
     } else if (dropdownId === 'trash-dropdown') {
         content = document.getElementById('trash-options');
+    } else if (dropdownId === 'system-settings-dropdown') {
+        content = document.getElementById('system-settings-content');
     } else {
         content = dropdown.querySelector('.dropdown-content');
     }
@@ -1032,7 +1034,7 @@ window.toggleDropdown = function(dropdownId) {
         }
     });
     
-    if (dropdownId === 'prompt-content-dropdown' || dropdownId === 'trash-dropdown') {
+    if (dropdownId === 'prompt-content-dropdown' || dropdownId === 'trash-dropdown' || dropdownId === 'system-settings-dropdown') {
         content.style.display = content.style.display === 'none' ? 'block' : 'none';
         console.log('DEBUG: Toggled special dropdown, new display:', content.style.display);
     } else {
@@ -1099,7 +1101,7 @@ window.selectProvider = function(providerName) {
     document.querySelectorAll('.dropdown-content').forEach(el => {
         el.classList.remove('show');
     });
-    document.querySelectorAll('.prompt-content-area, .trash-content-area').forEach(el => {
+    document.querySelectorAll('.prompt-content-area, .trash-content-area, .system-settings-area').forEach(el => {
         el.style.display = 'none';
     });
     
@@ -1204,7 +1206,7 @@ window.selectPrompt = function(promptName) {
     document.querySelectorAll('.dropdown-content').forEach(el => {
         el.classList.remove('show');
     });
-    document.querySelectorAll('.prompt-content-area, .trash-content-area').forEach(el => {
+    document.querySelectorAll('.prompt-content-area, .trash-content-area, .system-settings-area').forEach(el => {
         el.style.display = 'none';
     });
     
@@ -1257,7 +1259,7 @@ window.selectModel = function(modelName) {
     document.querySelectorAll('.dropdown-content').forEach(el => {
         el.classList.remove('show');
     });
-    document.querySelectorAll('.prompt-content-area, .trash-content-area').forEach(el => {
+    document.querySelectorAll('.prompt-content-area, .trash-content-area, .system-settings-area').forEach(el => {
         el.style.display = 'none';
     });
     
@@ -2048,3 +2050,59 @@ function viewResultFile(filePath) {
             alert('查看失败: ' + error.message);
         });
 }
+
+// ==================== 系统设置功能 ====================
+
+window.saveSystemSettings = function() {
+    const debugLevel = document.getElementById('sys_debug_level').value;
+    const flaskSecret = document.getElementById('sys_flask_secret').value;
+    const host = document.getElementById('sys_host').value;
+    const port = document.getElementById('sys_port').value;
+    const debug = document.getElementById('sys_debug').checked;
+
+    const msgEl = document.getElementById('system-settings-message');
+    
+    fetch('/save_system_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            debug_level: debugLevel,
+            flask_secret_key: flaskSecret,
+            host: host,
+            port: parseInt(port),
+            debug: debug
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.needs_restart) {
+                msgEl.style.color = '#856404';
+                msgEl.style.backgroundColor = '#fff3cd';
+                msgEl.textContent = '⚠️ 设置已保存，部分配置需重启应用后生效';
+            } else {
+                msgEl.style.color = '#155724';
+                msgEl.style.backgroundColor = '#d4edda';
+                msgEl.textContent = '✅ 设置已保存并即时生效';
+            }
+        } else {
+            msgEl.style.color = '#721c24';
+            msgEl.style.backgroundColor = '#f8d7da';
+            msgEl.textContent = '❌ ' + (data.message || '保存失败');
+        }
+        msgEl.style.display = 'block';
+        msgEl.style.padding = '6px 10px';
+        msgEl.style.borderRadius = '4px';
+        setTimeout(() => { msgEl.style.display = 'none'; }, 5000);
+    })
+    .catch(error => {
+        console.error('保存系统设置失败:', error);
+        msgEl.style.color = '#721c24';
+        msgEl.style.backgroundColor = '#f8d7da';
+        msgEl.style.display = 'block';
+        msgEl.style.padding = '6px 10px';
+        msgEl.style.borderRadius = '4px';
+        msgEl.textContent = '❌ 保存失败: ' + error.message;
+        setTimeout(() => { msgEl.style.display = 'none'; }, 5000);
+    });
+};

@@ -149,7 +149,8 @@ class SelectionManager:
 
 # 初始化Flask应用
 app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default-dev-secret-key-please-change-in-prod-or-env')
+from core.config_manager import ConfigManager as _CM
+app.secret_key = _CM().get('system_settings.flask_secret_key', 'default-dev-secret-key-please-change-in-prod')
 
 def _check_cancelled(state):
     """检查是否被取消，如果已取消则更新状态并返回True"""
@@ -484,6 +485,10 @@ def index():
     # 获取回收站数据
     trash_data = get_trash_items()
     
+    # 获取系统设置
+    from core.config_manager import ConfigManager as _CM3
+    system_settings = _CM3().get('system_settings', {})
+    
     return render_template('index.html',
         all_providers=all_providers,
         selected_provider_name=selected_provider,
@@ -495,7 +500,8 @@ def index():
         directory_path=directory_path,
         trash_data=trash_data,
         last_message=last_message,
-        last_error=last_error
+        last_error=last_error,
+        system_settings=system_settings
     )
 
 @app.route('/start_processing', methods=['POST'])
@@ -704,6 +710,73 @@ def view_result():
     except Exception as e:
         return jsonify({'error': f'文件读取失败: {e}'}), 500
 
+@app.route('/save_system_settings', methods=['POST'])
+def save_system_settings():
+    """保存系统设置"""
+    try:
+        from core.config_manager import ConfigManager
+        from core.logger import update_log_level
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': '无效的请求数据'}), 400
+        
+        manager = ConfigManager()
+        current_settings = manager.get('system_settings', {})
+        
+        # 记录哪些配置需要重启
+        needs_restart = False
+        old_debug_level = current_settings.get('debug_level', 'ERROR')
+        old_host = current_settings.get('host', '0.0.0.0')
+        old_port = current_settings.get('port', 5000)
+        old_secret_key = current_settings.get('flask_secret_key', '')
+        old_debug = current_settings.get('debug', False)
+        
+        # 更新配置
+        if 'debug_level' in data:
+            current_settings['debug_level'] = data['debug_level'].upper()
+        if 'flask_secret_key' in data and data['flask_secret_key'].strip():
+            current_settings['flask_secret_key'] = data['flask_secret_key'].strip()
+        if 'host' in data:
+            current_settings['host'] = data['host'].strip()
+        if 'port' in data:
+            try:
+                current_settings['port'] = int(data['port'])
+            except (ValueError, TypeError):
+                return jsonify({'success': False, 'message': '端口必须为数字'}), 400
+        if 'debug' in data:
+            current_settings['debug'] = bool(data['debug'])
+        
+        # 保存到配置文件
+        if manager.set('system_settings', current_settings):
+            # 日志级别热更新
+            if current_settings.get('debug_level') != old_debug_level:
+                update_log_level(current_settings['debug_level'])
+            
+            # 检查是否需要重启
+            if (current_settings.get('host') != old_host or
+                current_settings.get('port') != old_port or
+                current_settings.get('flask_secret_key') != old_secret_key or
+                current_settings.get('debug') != old_debug):
+                needs_restart = True
+            
+            return jsonify({
+                'success': True,
+                'message': '系统设置已保存',
+                'needs_restart': needs_restart
+            })
+        else:
+            return jsonify({'success': False, 'message': '保存失败'}), 500
+            
+    except Exception as e:
+        debug_print('ERROR', f"保存系统设置失败: {e}")
+        return jsonify({'success': False, 'message': f'保存失败: {str(e)}'}), 500
+
 if __name__ == '__main__':
-    debug_level = os.environ.get('DEBUG_LEVEL', 'ERROR').upper()
-    app.run(debug=(debug_level == 'DEBUG'), host='0.0.0.0', port=5000)
+    from core.config_manager import ConfigManager as _CM2
+    settings = _CM2().get('system_settings', {})
+    debug_level = settings.get('debug_level', 'ERROR').upper()
+    host = settings.get('host', '0.0.0.0')
+    port = settings.get('port', 5000)
+    debug = settings.get('debug', False) or debug_level == 'DEBUG'
+    app.run(debug=debug, host=host, port=port)

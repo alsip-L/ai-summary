@@ -151,17 +151,28 @@
     "selected_model": "默认模型",
     "selected_prompt": "默认提示词",
     "directory_path": "默认目录"
+  },
+  "system_settings": {
+    "debug_level": "ERROR",
+    "flask_secret_key": "your-secret-key",
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": false
   }
 }
 ```
 
-### 环境变量
+### 系统设置
 
-| 变量名 | 默认值 | 说明 |
-|--------|--------|------|
-| `FLASK_SECRET_KEY` | `default-dev-secret-key...` | Flask 密钥 |
-| `DEBUG_LEVEL` | `ERROR` | 日志级别 (DEBUG/INFO/WARNING/ERROR) |
-| `FLASK_ENV` | `production` | Flask 运行环境 |
+所有配置均通过 Web 界面或 `config.json` 文件管理，无需设置环境变量。在侧边栏的 **系统设置** 面板中可以修改：
+
+| 配置项 | 说明 | 是否需要重启 |
+|--------|------|------------|
+| 日志级别 | DEBUG/INFO/WARNING/ERROR/CRITICAL | 即时生效 |
+| Flask密钥 | Flask Session 加密密钥 | 需重启 |
+| 监听地址 | 服务绑定的IP地址 | 需重启 |
+| 监听端口 | 服务端口号 | 需重启 |
+| Debug模式 | Flask调试模式 | 需重启 |
 
 ## 🌐 Web 界面使用指南
 
@@ -234,12 +245,7 @@ docker-compose -f docker-compose.alpine.yml up -d
 
 ### Docker 环境变量
 
-| 变量名 | 默认值 | 说明 |
-|--------|--------|------|
-| `FLASK_ENV` | production | Flask 运行环境 |
-| `PYTHONUNBUFFERED` | 1 | Python 输出缓冲设置 |
-| `DEBUG_LEVEL` | INFO | 调试级别 |
-| `FLASK_SECRET_KEY` | - | Flask 密钥（生产环境必设） |
+本项目的所有业务配置（日志级别、密钥、端口等）均通过 `config.json` 管理，可在 Web 界面的系统设置中直接修改，无需使用环境变量。Docker 中仅保留了 Python 运行时优化变量 `PYTHONUNBUFFERED`。
 
 ### Docker 数据卷
 
@@ -295,6 +301,7 @@ tar -xzf data-backup.tar.gz
 | `/get_available_drives` | GET | 获取可用驱动器 |
 | `/get_directory_contents` | GET | 获取目录内容 |
 | `/view_result` | GET | 查看处理结果 |
+| `/save_system_settings` | POST | 保存系统设置 |
 
 ## 🔍 故障排除
 

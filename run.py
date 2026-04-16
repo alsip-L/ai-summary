@@ -8,13 +8,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import app
+from core.config_manager import ConfigManager
 
 def main():
     """Main entry point."""
-    # Get configuration from environment
-    host = os.environ.get('HOST', '0.0.0.0')
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('DEBUG', 'False').lower() == 'true'
+    # Read configuration from config.json
+    settings = ConfigManager().get('system_settings', {})
+    host = settings.get('host', '0.0.0.0')
+    port = int(settings.get('port', 5000))
+    debug = settings.get('debug', False)
     
     print(f"Starting AI Summary application...")
     print(f"Host: {host}")

@@ -2,9 +2,7 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    FLASK_APP=app.py \
-    FLASK_ENV=production
+    DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /app
 

@@ -192,6 +192,63 @@
                 </div>
             </div>
 
+            <hr style="margin: 15px 0; border-top: 1px solid #ddd;">
+
+            <!-- 系统设置 Dropdown -->
+            <div class="custom-dropdown" id="system-settings-dropdown">
+                <div class="dropdown-selected" onclick="toggleDropdown('system-settings-dropdown')">
+                    <span>🔧 系统设置</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="dropdown-content system-settings-area" id="system-settings-content" style="display: none;">
+                    <div class="system-settings-form">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="sys_debug_level" style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                日志级别
+                                <span style="font-size: 11px; color: #28a745; background: #e8f5e9; padding: 1px 6px; border-radius: 3px;">即时生效</span>
+                            </label>
+                            <select id="sys_debug_level" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff;">
+                                <option value="DEBUG" {% if system_settings.debug_level == 'DEBUG' %}selected{% endif %}>DEBUG - 调试</option>
+                                <option value="INFO" {% if system_settings.debug_level == 'INFO' %}selected{% endif %}>INFO - 信息</option>
+                                <option value="WARNING" {% if system_settings.debug_level == 'WARNING' %}selected{% endif %}>WARNING - 警告</option>
+                                <option value="ERROR" {% if system_settings.debug_level == 'ERROR' %}selected{% endif %}>ERROR - 错误</option>
+                                <option value="CRITICAL" {% if system_settings.debug_level == 'CRITICAL' %}selected{% endif %}>CRITICAL - 严重</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="sys_flask_secret" style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                Flask密钥
+                                <span style="font-size: 11px; color: #ffc107; background: #fff8e1; padding: 1px 6px; border-radius: 3px;">需重启</span>
+                            </label>
+                            <input type="text" id="sys_flask_secret" value="{{ system_settings.flask_secret_key }}" placeholder="Flask Secret Key" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: monospace;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="sys_host" style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                监听地址
+                                <span style="font-size: 11px; color: #ffc107; background: #fff8e1; padding: 1px 6px; border-radius: 3px;">需重启</span>
+                            </label>
+                            <input type="text" id="sys_host" value="{{ system_settings.host }}" placeholder="0.0.0.0" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label for="sys_port" style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px;">
+                                监听端口
+                                <span style="font-size: 11px; color: #ffc107; background: #fff8e1; padding: 1px 6px; border-radius: 3px;">需重启</span>
+                            </label>
+                            <input type="number" id="sys_port" value="{{ system_settings.port }}" min="1" max="65535" placeholder="5000" style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 14px;">
+                            <label style="font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="sys_debug" {% if system_settings.debug %}checked{% endif %} style="width: 16px; height: 16px; cursor: pointer;">
+                                Debug模式
+                                <span style="font-size: 11px; color: #ffc107; background: #fff8e1; padding: 1px 6px; border-radius: 3px; margin-left: auto;">需重启</span>
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveSystemSettings()" style="width: 100%; padding: 8px; font-size: 13px;">💾 保存系统设置</button>
+                        <div id="system-settings-message" style="margin-top: 8px; font-size: 12px; display: none;"></div>
+                    </div>
+                </div>
+            </div>
+
             </div> <!-- end sidebar -->
 
         <div class="main-content">

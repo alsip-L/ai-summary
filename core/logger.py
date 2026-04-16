@@ -3,8 +3,21 @@
 
 import logging
 import sys
-import os
 from functools import lru_cache
+
+
+def _get_log_level() -> int:
+    """从配置文件读取日志级别"""
+    try:
+        from core.config_manager import ConfigManager
+        level_str = ConfigManager().get('system_settings.debug_level', 'ERROR').upper()
+    except Exception:
+        level_str = 'ERROR'
+
+    valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+    if level_str in valid_levels:
+        return getattr(logging, level_str)
+    return logging.ERROR
 
 
 @lru_cache()
@@ -32,19 +45,32 @@ def get_logger(name: str = "ai_summary") -> logging.Logger:
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         
-        # 从环境变量读取日志级别，默认为 ERROR
-        level = os.environ.get('DEBUG_LEVEL', 'ERROR').upper()
-        valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-        
-        if level in valid_levels:
-            logger.setLevel(getattr(logging, level))
-        else:
-            logger.setLevel(logging.ERROR)
+        # 从配置文件读取日志级别
+        logger.setLevel(_get_log_level())
         
         # 防止日志传播到父记录器
         logger.propagate = False
     
     return logger
+
+
+def update_log_level(level_str: str) -> bool:
+    """动态更新日志级别（热更新，无需重启）
+
+    Args:
+        level_str: 日志级别字符串 (DEBUG/INFO/WARNING/ERROR/CRITICAL)
+
+    Returns:
+        是否更新成功
+    """
+    valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+    level_upper = level_str.upper()
+    if level_upper not in valid_levels:
+        return False
+
+    logger = get_logger()
+    logger.setLevel(getattr(logging, level_upper))
+    return True
 
 
 # 向后兼容的函数
