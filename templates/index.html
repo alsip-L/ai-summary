@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container" style="display: flex; align-items: flex-start;">
+    <div class="container">
         <div class="sidebar">
             <h1>⚙️ 配置</h1>
             
@@ -74,6 +74,9 @@
                                     <button type="button" class="delete-option-btn" onclick="deleteModel('{{ selected_provider_name }}', '{{ model_display }}'); event.stopPropagation();">×</button>
                                 </div>
                             {% endfor %}
+                            <div class="dropdown-option" onclick="handleModelAddNew()">
+                                <span>+ 新增模型</span>
+                            </div>
                         </div>
                     </div>
                     <input type="hidden" name="selected_model" value="{{ selected_model_key }}">
@@ -90,7 +93,12 @@
                 
                 <div class="form-group">
                     <label for="directory_path">📁 处理目录:</label>
-                    <input type="text" id="directory_path" name="directory_path" value="{{ directory_path }}" placeholder="输入要处理的目录的完整路径">
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="directory_path" name="directory_path" value="{{ directory_path }}" placeholder="输入要处理的目录的完整路径" style="flex: 1;">
+                        <button type="button" class="btn btn-secondary" style="padding: 8px 16px; white-space: nowrap;" onclick="openDirectoryBrowser()">
+                            📁 浏览
+                        </button>
+                    </div>
                 </div>
             </form>
 
@@ -187,12 +195,13 @@
             </div> <!-- end sidebar -->
 
         <div class="main-content">
-            <!-- 开始处理按钮 - 最终修复版本 -->
-            <div style="margin: 8px 0 12px 0; text-align: center; position: relative; z-index: 1000;">
+            <!-- 开始处理按钮 - 优化版本 -->
+            <div style="margin: 16px 0 24px 0; text-align: center; position: relative; z-index: 1000;">
                 <button type="button" id="start-process-btn"
-                        class="btn btn-primary"
-                        style="position: relative; z-index: 1001; background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 500;">
-                    🚀 开始处理
+                        class="btn btn-start-process"
+                        style="position: relative; z-index: 1001;">
+                    <span style="font-size: 24px;">🚀</span>
+                    <span>开始处理</span>
                 </button>
             </div>
 
@@ -265,6 +274,44 @@
             </div>
         </div> <!-- end main-content -->
     </div> <!-- end container -->
+
+    <!-- 目录浏览器模态框 -->
+    <div id="directory-browser-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content directory-browser">
+            <div class="modal-header">
+                <h3>📁 选择目录</h3>
+                <button type="button" class="modal-close-btn" onclick="closeDirectoryBrowser()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="browser-toolbar">
+                    <div class="current-path">
+                        <span class="path-label">当前路径:</span>
+                        <span id="browser-current-path" class="path-value">-</span>
+                    </div>
+                    <div class="browser-actions">
+                        <button type="button" class="btn btn-sm btn-secondary" id="browser-back-btn" onclick="goBack()" style="display: none;">
+                            ⬅️ 返回上级
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="refreshDirectory()">
+                            🔄 刷新
+                        </button>
+                    </div>
+                </div>
+                <div class="directory-list" id="directory-list">
+                    <!-- 目录列表将在这里渲染 -->
+                </div>
+                <div class="direct-input-section">
+                    <label for="direct-path-input">或直接输入路径:</label>
+                    <input type="text" id="direct-path-input" placeholder="输入目录路径..." class="form-control">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="goToDirectPath()">前往</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDirectoryBrowser()">取消</button>
+                <button type="button" class="btn btn-primary" id="select-directory-btn" onclick="selectDirectory()" disabled>选择此目录</button>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

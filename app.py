@@ -31,7 +31,7 @@ from utils import (
     load_config, load_custom_prompts,
     scan_txt_files, process_file, save_response, load_providers,
     get_provider_api_key, save_config, save_custom_prompts, save_provider, save_provider_api_key,
-    delete_custom_prompt, delete_model_from_provider,
+    delete_custom_prompt, delete_model_from_provider, add_model_to_provider,
     move_provider_to_trash, move_prompt_to_trash, restore_provider_from_trash,
     restore_prompt_from_trash, permanent_delete_provider_from_trash,
     permanent_delete_prompt_from_trash, get_trash_items, save_user_preferences, load_user_preferences
@@ -128,14 +128,31 @@ class PromptManager:
 
 class SelectionManager:
     """选择管理类"""
-    
+
     @staticmethod
-    def get_selection_from_sources(session, user_preferences, default_provider, default_model, default_prompt):
-        """从多个来源获取选择（优先级：session > 用户偏好 > 默认值）"""
-        selected_provider = session.get('selected_provider') or user_preferences.get('selected_provider') or default_provider
+    def get_selection_from_sources(session, user_preferences, all_providers, all_prompts, default_provider, default_model, default_prompt):
+        """从多个来源获取选择（优先级：session > 用户偏好 > 默认值）
+
+        如果选择的项目已不存在（如被删除到回收站），会自动回退到默认值
+        """
+        provider_names = list(all_providers.keys()) if all_providers else []
+        prompt_names = list(all_prompts.keys()) if all_prompts else []
+
+        selected_provider = session.get('selected_provider') or user_preferences.get('selected_provider')
+        if selected_provider and selected_provider not in provider_names:
+            selected_provider = default_provider
+
         selected_model = session.get('selected_model') or user_preferences.get('selected_model')
-        selected_prompt = session.get('selected_prompt') or user_preferences.get('selected_prompt') or default_prompt
-        
+
+        selected_prompt = session.get('selected_prompt') or user_preferences.get('selected_prompt')
+        if selected_prompt and selected_prompt not in prompt_names:
+            selected_prompt = default_prompt
+
+        if not selected_provider and default_provider:
+            selected_provider = default_provider
+        if not selected_prompt and default_prompt:
+            selected_prompt = default_prompt
+
         return selected_provider, selected_model, selected_prompt
 
 # 初始化Flask应用
@@ -420,9 +437,9 @@ def index():
     provider_models = ProviderManager.get_provider_models(default_provider, all_providers)
     default_model = list(provider_models.keys())[0] if provider_models else ''
     
-    # 获取选择（从session、用户偏好或默认值）
+    # 获取选择（从session、用户偏好或默认值，如果选择的项目已不存在则回退到默认值）
     selected_provider, selected_model, selected_prompt = SelectionManager.get_selection_from_sources(
-        session, user_preferences, default_provider, default_model, default_prompt
+        session, user_preferences, all_providers, all_prompts, default_provider, default_model, default_prompt
     )
     
     directory_path = session.get('directory_path') or user_preferences.get('directory_path') or ''
@@ -473,14 +490,26 @@ def index():
             elif form_type == 'save_api_key_form':
                 provider_name = safe_url_decode(request.form.get('provider_name_for_key', ''))
                 api_key = request.form.get('api_key_for_save', '')
-                
+
                 if save_provider_api_key(provider_name, api_key):
                     set_session_message(session, 'message', f"API Key for '{provider_name}' 保存成功")
                 else:
                     set_session_message(session, 'error', f"保存API Key for '{provider_name}' 失败")
-                
+
                 return redirect(url_for('index'))
-            
+
+            elif form_type == 'add_model_form':
+                provider_name = safe_url_decode(request.form.get('provider_name_for_model', ''))
+                model_display_name = request.form.get('model_display_name', '')
+                model_id = request.form.get('model_id', '')
+
+                if add_model_to_provider(provider_name, model_display_name, model_id):
+                    set_session_message(session, 'message', f"模型 '{model_display_name}' 添加成功")
+                else:
+                    set_session_message(session, 'error', f"添加模型失败：{model_display_name}")
+
+                return redirect(url_for('index'))
+
             elif form_type == 'delete_provider_form':
                 provider_name = safe_url_decode(request.form.get('provider_name_to_delete', ''))
                 if move_provider_to_trash(provider_name):
@@ -547,7 +576,7 @@ def index():
     return render_template('index.html',
         all_providers=all_providers,
         selected_provider_name=selected_provider,
-        provider_config=all_providers.get(selected_provider, {}),
+        provider_config=all_providers.get(selected_provider, {'models': {}}),
         selected_model_key=selected_model,
         all_prompts=all_prompts,
         selected_prompt_name=selected_prompt,
@@ -643,6 +672,97 @@ def clear_session():
 def simple_test():
     """简单的JavaScript事件测试页面"""
     return render_template('simple_test.html')
+
+@app.route('/get_available_drives', methods=['GET'])
+def get_available_drives():
+    """获取可用的驱动器列表（Windows）或根目录（Linux）"""
+    try:
+        drives = []
+        if sys.platform == 'win32':
+            # Windows 系统：获取所有驱动器
+            import ctypes
+            bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+            for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+                if bitmask & 1:
+                    drives.append(f'{letter}:\\')
+                bitmask >>= 1
+        else:
+            # Linux/Mac 系统：使用根目录
+            drives.append('/')
+        
+        return jsonify({
+            'success': True,
+            'drives': drives
+        })
+    except Exception as e:
+        debug_print('ERROR', f'获取驱动器列表失败: {e}')
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/get_directory_contents', methods=['GET'])
+def get_directory_contents():
+    """获取指定目录下的子目录列表"""
+    try:
+        path = request.args.get('path', '')
+        
+        # 如果路径为空，返回根目录/驱动器列表
+        if not path:
+            return get_available_drives()
+        
+        # 安全检查：确保路径存在且是目录
+        if not os.path.exists(path):
+            return jsonify({
+                'success': False,
+                'error': '路径不存在'
+            }), 400
+        
+        if not os.path.isdir(path):
+            return jsonify({
+                'success': False,
+                'error': '不是一个目录'
+            }), 400
+        
+        # 获取父目录
+        parent = os.path.dirname(path)
+        # 处理根目录的情况
+        if sys.platform == 'win32' and parent == '':
+            parent = None
+        elif parent == path:
+            parent = None
+        
+        # 获取子目录列表
+        directories = []
+        try:
+            for item in os.listdir(path):
+                item_path = os.path.join(path, item)
+                if os.path.isdir(item_path):
+                    # 跳过隐藏目录（可选）
+                    if not item.startswith('.'):
+                        directories.append({
+                            'name': item,
+                            'path': item_path
+                        })
+        except PermissionError:
+            pass
+        
+        # 按名称排序
+        directories.sort(key=lambda x: x['name'].lower())
+        
+        return jsonify({
+            'success': True,
+            'path': path,
+            'parent': parent,
+            'directories': directories
+        })
+    except Exception as e:
+        debug_print('ERROR', f'获取目录内容失败: {e}')
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=DEBUG_LEVEL == 'DEBUG', host='0.0.0.0', port=5000)
