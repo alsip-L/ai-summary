@@ -99,7 +99,9 @@ class ModelManager:
         return self.config.set("providers", providers)
     
     def delete(self, name: str) -> bool:
-        """删除大模型（软删除，移到回收站）
+        """从活跃列表中移除提供商（仅从 providers 列表删除，不操作回收站）
+
+        注意：回收站写入由 TrashManager 统一负责，避免双重写入。
 
         Args:
             name: 大模型名称
@@ -107,21 +109,14 @@ class ModelManager:
         Returns:
             是否删除成功
         """
-        model = self.get(name)
-        if not model:
+        providers = self.config.get("providers", [])
+        new_providers = [p for p in providers if p.get("name") != name]
+
+        if len(new_providers) == len(providers):
+            # 未找到要删除的项
             return False
 
-        # 移到回收站 - 存储字典格式而非 ModelConfig
-        trash = self.config.get("trash", {})
-        if 'providers' not in trash:
-            trash['providers'] = {}
-        trash['providers'][name] = asdict(model)
-        self.config.set("trash", trash)
-
-        # 从活跃列表移除
-        providers = self.config.get("providers", [])
-        providers = [p for p in providers if p.get("name") != name]
-        return self.config.set("providers", providers)
+        return self.config.set("providers", new_providers)
     
     def update_api_key(self, name: str, api_key: str) -> bool:
         """更新指定大模型的API Key

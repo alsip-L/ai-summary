@@ -8,7 +8,7 @@ if sys.platform == 'win32':
     try:
         import locale
         locale.setlocale(locale.LC_ALL, 'zh_CN.UTF-8')
-    except:
+    except Exception:
         pass
 
 # 重定向输出到UTF-8编码
@@ -16,7 +16,7 @@ if sys.stdout.encoding != 'utf-8':
     try:
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
         sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
-    except:
+    except Exception:
         pass
 # app.py - 优化版本
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
@@ -36,31 +36,23 @@ from utils import (
     restore_prompt_from_trash, permanent_delete_provider_from_trash,
     permanent_delete_prompt_from_trash, get_trash_items, save_user_preferences, load_user_preferences
 )
-import shutil
+from services.state_service import ProcessingState
 
-# 生产环境调试级别控制 - 修改为DEBUG模式以便诊断
-DEBUG_LEVEL = os.environ.get('DEBUG_LEVEL', 'DEBUG').upper()
+# 使用 core/logger.py 统一日志管理
+from core.logger import get_logger
+logger = get_logger()
 
 def debug_print(level, message):
-    """统一的调试输出函数，根据DEBUG_LEVEL控制输出"""
-    if DEBUG_LEVEL in ['DEBUG', 'ALL'] or (DEBUG_LEVEL == 'ERROR' and level == 'ERROR'):
-        try:
-            # 安全地处理消息，确保能够输出任何字符
-            if isinstance(message, str):
-                # 对于字符串，使用replace错误处理
-                safe_message = message.encode('utf-8', errors='replace').decode('utf-8')
-            else:
-                # 对于其他类型（如字典、列表），先转换为字符串
-                safe_message = str(message).encode('utf-8', errors='replace').decode('utf-8')
-            
-            # 添加flush确保输出立即显示
-            print(f"{level}: {safe_message}", flush=True)
-        except Exception as e:
-            # 如果还是出错，使用最基本的方式
-            try:
-                print(f"{level}: [Message output failed]", flush=True)
-            except:
-                pass  # 静默忽略所有错误
+    """统一的调试输出函数，委托给 core.logger"""
+    level_map = {
+        'DEBUG': logger.debug,
+        'INFO': logger.info,
+        'WARNING': logger.warning,
+        'ERROR': logger.error,
+        'CRITICAL': logger.critical
+    }
+    log_func = level_map.get(level.upper(), logger.info)
+    log_func(message)
 
 def safe_url_decode(value):
     """安全的URL解码，支持多种编码"""
@@ -159,23 +151,17 @@ class SelectionManager:
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default-dev-secret-key-please-change-in-prod-or-env')
 
-# 全局处理状态
-processing_state = {
-    'status': 'idle',
-    'progress': 0,
-    'total_files': 0,
-    'processed_files_count': 0,
-    'current_file': '',
-    'results': [],
-    'error': None,
-    'start_time': None,
-    'end_time': None,
-    'cancelled': False  # 添加取消标志
-}
+def _check_cancelled(state):
+    """检查是否被取消，如果已取消则更新状态并返回True"""
+    if state.is_cancelled():
+        debug_print('INFO', '处理被用户取消')
+        state.cancel()
+        return True
+    return False
 
 def run_processing_task(directory, selected_provider_name, selected_model_key, api_key, selected_prompt_name):
-    """异步处理任务"""
-    global processing_state
+    """异步处理任务（线程安全）"""
+    state = ProcessingState()
     
     debug_print('INFO', '=== run_processing_task 开始执行 ===')
     debug_print('INFO', f'目录: {directory}')
@@ -184,32 +170,12 @@ def run_processing_task(directory, selected_provider_name, selected_model_key, a
     debug_print('INFO', f'Prompt: {selected_prompt_name}')
     debug_print('INFO', f'API Key: {"已配置" if api_key else "未配置"}')
     
-    # 初始化处理状态 - 重要：重置取消标志位
-    processing_state.update({
-        'status': 'scanning',
-        'progress': 0,
-        'total_files': 0,
-        'processed_files_count': 0,
-        'current_file': '',
-        'results': [],
-        'error': None,
-        'start_time': time.time(),
-        'end_time': None,
-        'cancelled': False  # 关键修复：重置取消标志位，允许新的处理任务启动
-    })
-    
+    # 初始化处理状态
+    state.start()
     debug_print('INFO', '处理状态已初始化为 scanning')
     
     try:
-        # 检查是否被取消
-        if processing_state.get('cancelled', False):
-            debug_print('INFO', '处理被用户取消')
-            processing_state.update({
-                'status': 'cancelled',
-                'error': '用户取消了处理',
-                'current_file': '',
-                'end_time': time.time()
-            })
+        if _check_cancelled(state):
             return
         
         # 验证配置
@@ -217,15 +183,7 @@ def run_processing_task(directory, selected_provider_name, selected_model_key, a
         current_all_providers = ProviderManager.get_all_providers()
         debug_print('INFO', f'可用提供商: {list(current_all_providers.keys())}')
         
-        # 检查是否被取消
-        if processing_state.get('cancelled', False):
-            debug_print('INFO', '处理被用户取消')
-            processing_state.update({
-                'status': 'cancelled',
-                'error': '用户取消了处理',
-                'current_file': '',
-                'end_time': time.time()
-            })
+        if _check_cancelled(state):
             return
         
         if selected_provider_name not in current_all_providers:
@@ -243,15 +201,7 @@ def run_processing_task(directory, selected_provider_name, selected_model_key, a
         model_id = provider_config["models"][selected_model_key]
         debug_print('INFO', f'模型ID: {model_id}')
         
-        # 检查是否被取消
-        if processing_state.get('cancelled', False):
-            debug_print('INFO', '处理被用户取消')
-            processing_state.update({
-                'status': 'cancelled',
-                'error': '用户取消了处理',
-                'current_file': '',
-                'end_time': time.time()
-            })
+        if _check_cancelled(state):
             return
         
         # 验证提示词
@@ -259,15 +209,7 @@ def run_processing_task(directory, selected_provider_name, selected_model_key, a
         current_all_prompts = PromptManager.get_all_prompts()
         debug_print('INFO', f'可用Prompts: {list(current_all_prompts.keys())}')
         
-        # 检查是否被取消
-        if processing_state.get('cancelled', False):
-            debug_print('INFO', '处理被用户取消')
-            processing_state.update({
-                'status': 'cancelled',
-                'error': '用户取消了处理',
-                'current_file': '',
-                'end_time': time.time()
-            })
+        if _check_cancelled(state):
             return
         
         if selected_prompt_name not in current_all_prompts:
@@ -280,104 +222,51 @@ def run_processing_task(directory, selected_provider_name, selected_model_key, a
         txt_files = scan_txt_files(directory)
         debug_print('INFO', f'扫描结果: 找到 {len(txt_files)} 个txt文件')
         
-        # 检查是否被取消
-        if processing_state.get('cancelled', False):
-            debug_print('INFO', '处理被用户取消')
-            processing_state.update({
-                'status': 'cancelled',
-                'error': '用户取消了处理',
-                'current_file': '',
-                'end_time': time.time()
-            })
+        if _check_cancelled(state):
             return
         
         if not txt_files:
             raise ValueError("未找到txt文件。")
         
         # 开始处理
-        processing_state.update({
-            'status': 'processing',
-            'total_files': len(txt_files),
-            'current_file': f'准备处理 {len(txt_files)} 个文件...'
-        })
-        
+        state.start_processing(len(txt_files))
         debug_print('INFO', f'状态更新为 processing，开始处理 {len(txt_files)} 个文件')
         
         # 处理文件
         for i, file_path in enumerate(txt_files):
-            # 检查是否被取消
-            if processing_state.get('cancelled', False):
-                debug_print('INFO', '处理被用户取消')
-                processing_state.update({
-                    'status': 'cancelled',
-                    'error': '用户取消了处理',
-                    'current_file': '',
-                    'end_time': time.time()
-                })
+            if _check_cancelled(state):
                 return
                 
             debug_print('INFO', f'处理文件 {i+1}/{len(txt_files)}: {os.path.basename(file_path)}')
+            state.update_progress(i, os.path.basename(file_path))
             
-            # 只更新当前文件名，不更新进度
-            processing_state['current_file'] = os.path.basename(file_path)
-            processing_state['processed_files_count'] = i  # 使用i而不是i+1，表示已完成的数量
-            
-            debug_print('INFO', f'开始处理文件 {i+1}/{len(txt_files)}, 当前已处理: {processing_state["processed_files_count"]}')
+            debug_print('INFO', f'开始处理文件 {i+1}/{len(txt_files)}, 当前已处理: {i}')
             
             # 实际处理文件
             try:
                 response = process_file(file_path, client, system_prompt, model_id)
                 md_path = save_response(file_path, response)
                 
-                # 文件处理完成后才更新完成计数
-                processing_state['processed_files_count'] = i + 1
-                processing_state['results'].append({
-                    'source': file_path,
-                    'output': md_path
-                })
+                progress = 100 if i == len(txt_files) - 1 else int(((i + 1) / len(txt_files) * 100))
+                state.update_progress(i + 1, None, progress)
+                state.add_result(file_path, md_path)
                 
-                # 如果是最后一个文件，完成后设置进度为100%
-                if i == len(txt_files) - 1:
-                    processing_state['progress'] = 100
-                else:
-                    # 对于非最后一个文件，进度 = (已处理数量 / 总数量) * 100
-                    processing_state['progress'] = int(((i + 1) / len(txt_files) * 100))
-                
-                debug_print('INFO', f'文件 {os.path.basename(file_path)} 处理完成，进度: {processing_state["progress"]}%')
+                debug_print('INFO', f'文件 {os.path.basename(file_path)} 处理完成，进度: {progress}%')
                 
             except Exception as file_error:
                 debug_print('ERROR', f'文件处理失败: {file_error}')
-                # 即使单个文件失败，也更新完成计数以维持进度准确性
-                processing_state['processed_files_count'] = i + 1
-                processing_state['results'].append({
-                    'source': file_path,
-                    'output': None,
-                    'error': str(file_error)
-                })
-                
-                debug_print('INFO', f'文件 {os.path.basename(file_path)} 处理失败，已更新进度: {processing_state["progress"]}%')
+                state.update_progress(i + 1)
+                state.add_result(file_path, None, str(file_error))
+                debug_print('INFO', f'文件 {os.path.basename(file_path)} 处理失败')
         
         # 处理完成
-        processing_state.update({
-            'status': 'completed',
-            'progress': 100,
-            'processed_files_count': len(txt_files),
-            'current_file': '',
-            'end_time': time.time()
-        })
-        
+        state.complete()
         debug_print('INFO', f"任务完成：处理了 {len(txt_files)} 个文件")
         
     except Exception as e:
         error_message = str(e)
         debug_print('ERROR', f"处理任务失败: {error_message}")
-        
-        processing_state.update({
-            'status': 'error',
-            'error': f"处理失败: {error_message.splitlines()[0]}",
-            'current_file': '',
-            'end_time': time.time()
-        })
+        state.set_error(f"处理失败: {error_message.splitlines()[0]}")
     
     debug_print('INFO', '=== run_processing_task 执行结束 ===')
 
@@ -453,6 +342,17 @@ def index():
                     session, user_preferences, request.form, 
                     all_providers, auto_save=(request.form.get('auto_save') == 'true')
                 )
+                # AJAX请求返回JSON，包含新服务商的API Key等信息
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    new_provider = session.get('selected_provider', '')
+                    new_api_key = get_provider_api_key(new_provider) if new_provider else ''
+                    new_model = session.get('selected_model', '')
+                    return jsonify({
+                        'success': True,
+                        'selected_provider': new_provider,
+                        'selected_model': new_model,
+                        'api_key': new_api_key
+                    })
                 return redirect(url_for('index'))
             
             elif form_type == 'save_provider_form':
@@ -507,6 +407,17 @@ def index():
                     set_session_message(session, 'message', f"模型 '{model_display_name}' 添加成功")
                 else:
                     set_session_message(session, 'error', f"添加模型失败：{model_display_name}")
+
+                return redirect(url_for('index'))
+
+            elif form_type == 'delete_model_form':
+                provider_name = safe_url_decode(request.form.get('provider_name_for_model_delete', ''))
+                model_name = safe_url_decode(request.form.get('model_name_to_delete', ''))
+
+                if delete_model_from_provider(provider_name, model_name):
+                    set_session_message(session, 'message', f"模型 '{model_name}' 删除成功")
+                else:
+                    set_session_message(session, 'error', f"删除模型失败：{model_name}")
 
                 return redirect(url_for('index'))
 
@@ -590,8 +501,6 @@ def index():
 @app.route('/start_processing', methods=['POST'])
 def start_processing():
     """启动处理任务"""
-    global processing_state
-    
     debug_print('INFO', '=== start_processing 开始执行 ===')
     
     selected_provider_name = request.form.get('selected_provider')
@@ -629,49 +538,37 @@ def start_processing():
 @app.route('/get_processing_status', methods=['GET'])
 def get_processing_status():
     """获取处理状态"""
-    debug_print('INFO', f'当前处理状态: {processing_state["status"]}, 进度: {processing_state["progress"]}%')
-    debug_print('DEBUG', f'完整状态信息: {processing_state}')
-    return jsonify(processing_state)
+    state = ProcessingState()
+    state_dict = state.get_dict()
+    debug_print('INFO', f'当前处理状态: {state_dict["status"]}, 进度: {state_dict["progress"]}%')
+    return jsonify(state_dict)
 
 @app.route('/cancel_processing', methods=['POST'])
 def cancel_processing():
     """取消处理任务"""
-    global processing_state
+    state = ProcessingState()
     
     debug_print('INFO', '=== cancel_processing 开始执行 ===')
     
-    # 检查当前状态 - 扩展取消范围
-    if processing_state['status'] not in ['processing', 'scanning', 'started', 'idle']:
-        debug_print('INFO', f'当前状态为 {processing_state["status"]}，不需要取消')
+    # 检查当前状态
+    state_dict = state.get_dict()
+    if state_dict['status'] not in ['processing', 'scanning', 'started', 'idle']:
+        debug_print('INFO', f'当前状态为 {state_dict["status"]}，不需要取消')
         return jsonify({'status': 'error', 'message': '当前没有正在进行的处理任务'}), 400
     
-    # 总是设置取消标志
-    processing_state['cancelled'] = True
-    debug_print('INFO', '已设置取消标志')
-    
-    # 如果当前有处理在进行，更新状态为取消
-    if processing_state['status'] in ['processing', 'scanning', 'started']:
-        processing_state.update({
-            'status': 'cancelled',
-            'error': '用户取消了处理',
-            'current_file': '',
-            'end_time': time.time()
-        })
+    # 设置取消标志并更新状态
+    state.set_cancelled()
+    if state.is_running():
+        state.cancel()
         debug_print('INFO', '处理状态已更新为 cancelled')
-    else:
-        debug_print('INFO', '当前状态不需要更新')
     
+    debug_print('INFO', '已设置取消标志')
     return jsonify({'status': 'cancelled', 'message': '处理已取消'})
 @app.route('/clear_session')
 def clear_session():
     """清理会话"""
     session.clear()
     return "Session cleared! <a href='/'>返回主页</a>"
-
-@app.route('/simple_test')
-def simple_test():
-    """简单的JavaScript事件测试页面"""
-    return render_template('simple_test.html')
 
 @app.route('/get_available_drives', methods=['GET'])
 def get_available_drives():
@@ -764,5 +661,49 @@ def get_directory_contents():
             'error': str(e)
         }), 500
 
+@app.route('/view_result', methods=['GET'])
+def view_result():
+    """查看处理结果文件"""
+    file_path = request.args.get('path', '')
+    
+    if not file_path:
+        return jsonify({'error': '未提供文件路径'}), 400
+    
+    # 安全检查：确保文件路径在允许的范围内
+    # 防止目录遍历攻击
+    real_path = os.path.realpath(file_path)
+    
+    if not os.path.exists(real_path) or not os.path.isfile(real_path):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    # 只允许查看 .md 和 .txt 文件
+    if not real_path.endswith(('.md', '.txt')):
+        return jsonify({'error': '不支持的文件类型'}), 400
+    
+    try:
+        with open(real_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return jsonify({
+            'success': True,
+            'file_path': file_path,
+            'file_name': os.path.basename(real_path),
+            'content': content
+        })
+    except UnicodeDecodeError:
+        try:
+            with open(real_path, 'r', encoding='gbk') as f:
+                content = f.read()
+            return jsonify({
+                'success': True,
+                'file_path': file_path,
+                'file_name': os.path.basename(real_path),
+                'content': content
+            })
+        except Exception as e:
+            return jsonify({'error': f'文件读取失败: {e}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'文件读取失败: {e}'}), 500
+
 if __name__ == '__main__':
-    app.run(debug=DEBUG_LEVEL == 'DEBUG', host='0.0.0.0', port=5000)
+    debug_level = os.environ.get('DEBUG_LEVEL', 'ERROR').upper()
+    app.run(debug=(debug_level == 'DEBUG'), host='0.0.0.0', port=5000)

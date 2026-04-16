@@ -7,6 +7,7 @@ import traceback
 from openai import OpenAI
 from core.config_manager import ConfigManager
 from core.logger import get_logger
+from core.exceptions import FileProcessingError, ProviderError
 
 logger = get_logger()
 
@@ -14,10 +15,16 @@ DEBUG_LEVEL = os.environ.get('DEBUG_LEVEL', 'ERROR').upper()
 
 
 def debug_print(level, message):
-    """统一的调试输出函数"""
-    if DEBUG_LEVEL in ['DEBUG', 'ALL'] or (DEBUG_LEVEL == 'ERROR' and level == 'ERROR'):
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-        print(f"[{timestamp}] {level}: {message}", flush=True)
+    """统一的调试输出函数，委托给 core.logger"""
+    level_map = {
+        'DEBUG': logger.debug,
+        'INFO': logger.info,
+        'WARNING': logger.warning,
+        'ERROR': logger.error,
+        'CRITICAL': logger.critical
+    }
+    log_func = level_map.get(level.upper(), logger.info)
+    log_func(message)
 
 
 class ConfigManagerWrapper:
@@ -39,9 +46,8 @@ class ConfigManagerWrapper:
     @staticmethod
     def save(config):
         """保存配置文件"""
-        manager = ConfigManager()
-        manager._cache = config
-        return manager.save()
+        from core.config_manager import save_config as _save_config
+        return _save_config(config)
 
 
 class PromptManager:
@@ -380,15 +386,28 @@ class FileManager:
 
     @staticmethod
     def process_file(file_path, client, system_prompt, model_id):
-        """处理单个文件"""
+        """处理单个文件
+
+        Raises:
+            FileProcessingError: 当文件读取失败时
+            ProviderError: 当AI调用失败时
+        """
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+        except UnicodeDecodeError:
+            try:
+                with open(file_path, 'r', encoding='gbk') as f:
+                    content = f.read()
+            except Exception as e:
+                raise FileProcessingError(f"读取文件失败: {os.path.basename(file_path)}, {e}")
+        except Exception as e:
+            raise FileProcessingError(f"读取文件失败: {os.path.basename(file_path)}, {e}")
 
-            ai_call_start_time = time.time()
+        ai_call_start_time = time.time()
+        debug_print('INFO', f"开始处理文件: {os.path.basename(file_path)}, 模型: {model_id}")
 
-            debug_print('INFO', f"开始处理文件: {os.path.basename(file_path)}, 模型: {model_id}")
-
+        try:
             completion = client.chat.completions.create(
                 model=model_id,
                 messages=[
@@ -399,41 +418,42 @@ class FileManager:
             )
 
             if completion is None or completion.choices is None or len(completion.choices) == 0:
-                raise Exception("API返回空响应")
+                raise ProviderError("API返回空响应")
 
             response_content = completion.choices[0].message.content
             ai_call_duration = time.time() - ai_call_start_time
 
-            debug_file = os.path.basename(file_path)
-            debug_print('INFO', f"处理文件 {debug_file} 耗时 {ai_call_duration:.2f}秒")
+            debug_print('INFO', f"处理文件 {os.path.basename(file_path)} 耗时 {ai_call_duration:.2f}秒")
             return response_content
+        except (FileProcessingError, ProviderError):
+            raise
         except Exception as e:
             error_msg = f"处理文件 '{os.path.basename(file_path)}' 时出错: {str(e).splitlines()[0]}"
             debug_print('ERROR', error_msg)
-            return error_msg
+            raise ProviderError(error_msg)
 
     @staticmethod
     def save_response(file_path, response):
-        """保存响应为md文件"""
-        try:
-            directory = os.path.dirname(file_path)
-            filename = os.path.basename(file_path)
-            md_filename = filename.replace('.txt', '.md')
-            md_path = os.path.join(directory, md_filename)
+        """保存响应为md文件
 
+        Raises:
+            FileProcessingError: 当保存失败时
+        """
+        directory = os.path.dirname(file_path)
+        filename = os.path.basename(file_path)
+        md_filename = filename.replace('.txt', '.md')
+        md_path = os.path.join(directory, md_filename)
+
+        try:
             with open(md_path, 'w', encoding='utf-8') as f:
                 f.write(response)
 
             debug_print('INFO', f"保存响应到 {md_path}")
             return md_path
         except Exception as e:
-            directory = os.path.dirname(file_path) if file_path else 'unknown'
-            filename = os.path.basename(file_path) if file_path else 'unknown'
-            md_filename = filename.replace('.txt', '.md') if file_path else 'unknown'
-            md_path = os.path.join(directory, md_filename) if file_path else 'unknown'
             error_msg = f"保存结果到 {md_path} 时出错: {str(e)}"
             debug_print('ERROR', error_msg)
-            return error_msg
+            raise FileProcessingError(error_msg)
 
 
 def load_config():
@@ -443,9 +463,8 @@ def load_config():
 
 def save_config(config):
     """保存配置文件（向后兼容）"""
-    manager = ConfigManager()
-    manager._cache = config
-    return manager.save()
+    from core.config_manager import save_config as _save_config
+    return _save_config(config)
 
 
 def load_custom_prompts():

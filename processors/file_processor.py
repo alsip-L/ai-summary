@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""文件处理模块"""
+"""文件处理模块
+
+.. deprecated::
+    此模块当前未被主流程使用，功能由 utils.py 中的 FileManager 提供。
+    保留供未来架构迁移使用。
+"""
 
 import os
 from pathlib import Path

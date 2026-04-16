@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""AI 处理模块"""
+"""AI 处理模块
+
+.. deprecated::
+    此模块当前未被主流程使用，功能由 utils.py 中的 FileManager.process_file 提供。
+    保留供未来架构迁移使用。
+"""
 
 import time
 from typing import Optional, Dict, Any
@@ -188,11 +193,16 @@ def process_file(file_path: str, client: OpenAI, system_prompt: str, model_id: s
     注意：此函数需要传入已创建的 OpenAI 客户端
     """
     from pathlib import Path
-    from processors.file_processor import FileProcessor
     
     file_path_obj = Path(file_path)
-    processor = FileProcessor(str(file_path_obj.parent))
-    content = processor.read_file(file_path_obj)
+    
+    # 直接读取文件内容，避免引用 deprecated 的 FileProcessor
+    try:
+        with open(file_path_obj, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        with open(file_path_obj, 'r', encoding='gbk') as f:
+            content = f.read()
     
     start_time = time.time()
     

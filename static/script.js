@@ -236,7 +236,7 @@ class ProcessingManager {
         }
 
         // 确保状态显示区域可见
-        const statusText = document.getElementById('statusText');
+        const statusText = document.getElementById('statusTitle');
         if (statusText) {
             statusText.textContent = '准备开始...';
             console.log('DEBUG: 状态文本已设置');
@@ -305,7 +305,7 @@ class ProcessingManager {
             } catch (error) {
                 console.error('获取状态失败:', error);
             }
-        }, CONFIG.API_ENDPOINTS.UI_UPDATE_INTERVAL);
+        }, CONFIG.UI_UPDATE_INTERVAL);
     }
 
     // 辅助函数：比较两个对象是否相同
@@ -401,9 +401,7 @@ class ProcessingManager {
         if (progressFiles) {
             const processed = status.processed_files_count || 0;
             const total = status.total_files || 0;
-            // 修复：进度显示从1/n开始而不是0/n开始
-            const displayProcessed = processed === 0 ? 1 : processed;
-            const progressText = `${displayProcessed} / ${total}`;
+            const progressText = `${processed} / ${total}`;
             progressFiles.textContent = progressText;
             console.log('DEBUG: 处理进度已更新为:', progressText);
         }
@@ -516,13 +514,6 @@ class ProcessingManager {
             return;
         }
 
-        // 检查是否需要更新 - 比较现有行数和新结果数量
-        const existingRows = resultsTable.querySelectorAll('tr');
-        if (existingRows.length === results.length) {
-            console.log('DEBUG: 结果数量未变化，跳过更新');
-            return;
-        }
-
         // 清空现有内容
         resultsTable.innerHTML = '';
 
@@ -533,7 +524,7 @@ class ProcessingManager {
             // 源文件列
             const sourceCell = document.createElement('td');
             const sourceFileName = result.source ? result.source.split('/').pop().split('\\').pop() : '';
-            sourceCell.textContent = Utils.escapeHtml(sourceFileName);
+            sourceCell.textContent = sourceFileName;
             sourceCell.style.wordBreak = 'break-all';
             sourceCell.style.maxWidth = '300px';
             sourceCell.style.overflow = 'hidden';
@@ -549,15 +540,14 @@ class ProcessingManager {
                 
                 // 创建链接到结果文件
                 const link = document.createElement('a');
-                link.href = `#`;
-                link.textContent = Utils.escapeHtml(outputFileName);
+                link.href = '#';
+                link.textContent = outputFileName;
                 link.style.textDecoration = 'none';
                 link.style.color = '#007bff';
                 link.style.wordBreak = 'break-all';
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
-                    // 可以在这里添加文件查看功能
-                    alert(`文件路径: ${filePath}`);
+                    viewResultFile(filePath);
                 });
                 
                 outputCell.appendChild(link);
@@ -1123,41 +1113,68 @@ window.selectProvider = function(providerName) {
     })
     .then(response => {
         if (response.ok) {
-            // 保存成功后，更新页面上的显示值
-            // 更新提供商显示
-            const providerDisplay = document.querySelector('#provider-dropdown .dropdown-selected span:first-child');
-            if (providerDisplay) {
-                providerDisplay.textContent = providerName;
-            }
-            
-            // 更新隐藏字段
-            if (currentModelInput) {
-                // 从providers-data获取新提供商的模型列表，并自动选择第一个
-                try {
-                    const providersDataScript = document.getElementById('providers-data');
-                    if (providersDataScript) {
-                        const providersData = JSON.parse(providersDataScript.textContent);
-                        const provider = providersData[providerName];
-                        if (provider && provider.models && Object.keys(provider.models).length > 0) {
-                            const firstModel = Object.keys(provider.models)[0];
-                            currentModelInput.value = firstModel;
-                            // 更新模型显示
-                            const modelDisplay = document.querySelector('#model-dropdown .dropdown-selected span:first-child');
-                            if (modelDisplay) {
-                                modelDisplay.textContent = firstModel;
+            // 检查是否是JSON响应（AJAX模式）
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json().then(data => {
+                    if (data.success) {
+                        // 更新提供商显示
+                        const providerDisplay = document.querySelector('#provider-dropdown .dropdown-selected span:first-child');
+                        if (providerDisplay) {
+                            providerDisplay.textContent = providerName;
+                        }
+                        
+                        // 更新模型
+                        if (currentModelInput) {
+                            try {
+                                const providersDataScript = document.getElementById('providers-data');
+                                if (providersDataScript) {
+                                    const providersData = JSON.parse(providersDataScript.textContent);
+                                    const provider = providersData[providerName];
+                                    if (provider && provider.models && Object.keys(provider.models).length > 0) {
+                                        const firstModel = Object.keys(provider.models)[0];
+                                        currentModelInput.value = firstModel;
+                                        const modelDisplay = document.querySelector('#model-dropdown .dropdown-selected span:first-child');
+                                        if (modelDisplay) {
+                                            modelDisplay.textContent = firstModel;
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('解析providers-data失败:', e);
                             }
                         }
+                        
+                        // 更新API Key输入框
+                        const apiKeyInput = document.getElementById('api_key');
+                        if (apiKeyInput) {
+                            apiKeyInput.value = data.api_key || '';
+                            apiKeyInput.placeholder = data.api_key ? '已配置' : '请输入API Key';
+                        }
+                        // 更新API Key标签
+                        const apiKeyLabel = document.querySelector('label[for="api_key"]');
+                        if (apiKeyLabel) {
+                            apiKeyLabel.textContent = providerName + ' API Key:';
+                        }
+                        // 更新隐藏的provider字段
+                        const providerInput = document.querySelector('input[name="selected_provider"]');
+                        if (providerInput) {
+                            providerInput.value = providerName;
+                        }
+                        const providerKeySaveInput = document.querySelector('input[name="provider_name_for_key_save"]');
+                        if (providerKeySaveInput) {
+                            providerKeySaveInput.value = providerName;
+                        }
+                        
+                        processingManager.showMessage('✅ 配置已保存', 'success');
+                    } else {
+                        throw new Error('保存失败');
                     }
-                } catch (e) {
-                    console.error('解析providers-data失败:', e);
-                }
+                });
             }
-            
-            if (currentPromptInput) {
-                currentPromptInput.value = currentPromptInput.value;
-            }
-            
+            // 非AJAX响应（不应该到这里，但做兼容处理）
             processingManager.showMessage('✅ 配置已保存', 'success');
+            return;
         } else {
             throw new Error('保存失败');
         }
@@ -1280,10 +1297,9 @@ window.deleteProvider = function(providerName) {
         return;
     }
     
-    // 使用URL编码处理中文名称
     const formData = new FormData();
     formData.append('form_type', 'delete_provider_form');
-    formData.append('provider_name_to_delete', encodeURIComponent(providerName));
+    formData.append('provider_name_to_delete', providerName);
     
     console.log('DEBUG: Deleting provider:', providerName);
     
@@ -1559,7 +1575,7 @@ window.handleProviderAddNew = function() {
 
 // 添加模型功能
 window.handleModelAddNew = function() {
-    const currentProvider = document.querySelector('input[name="selected_provider"]').value;
+    const currentProvider = document.querySelector('input[name="selected_provider"]')?.value || '';
     if (!currentProvider) {
         alert('请先选择一个服务商');
         return;
@@ -1985,4 +2001,50 @@ function saveDirectoryPath(path) {
     .catch(error => {
         console.error('保存目录路径失败:', error);
     });
+}
+
+// 查看结果文件
+function viewResultFile(filePath) {
+    const url = new URL('/view_result', window.location.origin);
+    url.searchParams.append('path', filePath);
+    
+    fetch(url.toString())
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 创建查看对话框
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;justify-content:center;align-items:center;';
+                
+                const dialog = document.createElement('div');
+                dialog.style.cssText = 'background:white;padding:20px;border-radius:8px;width:80%;max-width:800px;max-height:80vh;display:flex;flex-direction:column;';
+                dialog.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                        <h3 style="margin:0;">${Utils.escapeHtml(data.file_name)}</h3>
+                        <button id="close_result_view" style="padding:5px 10px;cursor:pointer;border:none;background:#ccc;border-radius:4px;">关闭</button>
+                    </div>
+                    <div style="flex:1;overflow:auto;">
+                        <pre style="white-space:pre-wrap;word-break:break-word;margin:0;padding:10px;background:#f5f5f5;border-radius:4px;font-size:13px;line-height:1.6;">${Utils.escapeHtml(data.content)}</pre>
+                    </div>
+                `;
+                
+                overlay.appendChild(dialog);
+                document.body.appendChild(overlay);
+                
+                document.getElementById('close_result_view').onclick = function() {
+                    overlay.remove();
+                };
+                overlay.onclick = function(e) {
+                    if (e.target === overlay) {
+                        overlay.remove();
+                    }
+                };
+            } else {
+                alert('查看失败: ' + (data.error || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('查看结果文件失败:', error);
+            alert('查看失败: ' + error.message);
+        });
 }

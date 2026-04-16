@@ -47,9 +47,9 @@
                         </div>
                         <div class="dropdown-content" id="provider-options">
                             {% for name in all_providers.keys() %}
-                                <div class="dropdown-option" onclick="selectProvider('{{ name }}'); event.stopPropagation();">
+                                <div class="dropdown-option" onclick="selectProvider({{ name | tojson }}); event.stopPropagation();">
                                     <span>{{ name }}</span>
-                                    <button type="button" class="delete-option-btn" onclick="deleteProvider('{{ name }}'); event.stopPropagation();">×</button>
+                                    <button type="button" class="delete-option-btn" onclick="deleteProvider({{ name | tojson }}); event.stopPropagation();">×</button>
                                 </div>
                             {% endfor %}
                             <div class="dropdown-option" onclick="handleProviderAddNew()">
@@ -69,9 +69,9 @@
                         </div>
                         <div class="dropdown-content" id="model-options">
                             {% for model_display, model_id in provider_config['models'].items() %}
-                                <div class="dropdown-option" onclick="selectModel('{{ model_display }}')">
+                                <div class="dropdown-option" onclick="selectModel({{ model_display | tojson }})">
                                     <span>{{ model_display }}</span>
-                                    <button type="button" class="delete-option-btn" onclick="deleteModel('{{ selected_provider_name }}', '{{ model_display }}'); event.stopPropagation();">×</button>
+                                    <button type="button" class="delete-option-btn" onclick="deleteModel({{ selected_provider_name | tojson }}, {{ model_display | tojson }}); event.stopPropagation();">×</button>
                                 </div>
                             {% endfor %}
                             <div class="dropdown-option" onclick="handleModelAddNew()">
@@ -122,9 +122,9 @@
                         </div>
                         <div class="dropdown-content" id="prompt-options">
                             {% for name in all_prompts.keys() %}
-                                <div class="dropdown-option" onclick="selectPrompt('{{ name }}'); event.stopPropagation();">
+                                <div class="dropdown-option" onclick="selectPrompt({{ name | tojson }}); event.stopPropagation();">
                                     <span>{{ name }}</span>
-                                    <button type="button" class="delete-option-btn" onclick="deletePrompt('{{ name }}'); event.stopPropagation();">×</button>
+                                    <button type="button" class="delete-option-btn" onclick="deletePrompt({{ name | tojson }}); event.stopPropagation();">×</button>
                                 </div>
                             {% endfor %}
                             <div class="dropdown-option" onclick="handlePromptAddNew()">
@@ -163,8 +163,8 @@
                             <div class="trash-item" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; padding: 8px; margin: 3px 0; border-radius: 3px; background-color: #f9f9f9;">
                                 <span style="flex: 1; margin-right: 10px;">{{ provider_name }}</span>
                                 <div style="display: flex; gap: 6px;">
-                                    <button type="button" class="restore-btn" onclick="restoreProvider('{{ provider_name }}')">恢复</button>
-                                    <button type="button" class="permanent-delete-btn" onclick="permanentDeleteProvider('{{ provider_name }}')">删除</button>
+                                    <button type="button" class="restore-btn" onclick="restoreProvider({{ provider_name | tojson }})">恢复</button>
+                                    <button type="button" class="permanent-delete-btn" onclick="permanentDeleteProvider({{ provider_name | tojson }})">删除</button>
                                 </div>
                             </div>
                             {% endfor %}
@@ -180,8 +180,8 @@
                             <div class="trash-item" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; padding: 8px; margin: 3px 0; border-radius: 3px; background-color: #f9f9f9;">
                                 <span style="flex: 1; margin-right: 10px;">{{ prompt_name }}</span>
                                 <div style="display: flex; gap: 6px;">
-                                    <button type="button" class="restore-btn" onclick="restorePrompt('{{ prompt_name }}')">恢复</button>
-                                    <button type="button" class="permanent-delete-btn" onclick="permanentDeletePrompt('{{ prompt_name }}')">删除</button>
+                                    <button type="button" class="restore-btn" onclick="restorePrompt({{ prompt_name | tojson }})">恢复</button>
+                                    <button type="button" class="permanent-delete-btn" onclick="permanentDeletePrompt({{ prompt_name | tojson }})">删除</button>
                                 </div>
                             </div>
                             {% endfor %}

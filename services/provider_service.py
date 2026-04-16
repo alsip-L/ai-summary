@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""AI提供商服务模块"""
+"""AI提供商服务模块
+
+.. deprecated::
+    此模块当前未被主流程使用，功能由 utils.py 中的 ProviderManager 提供。
+    保留供未来架构迁移使用。
+"""
 
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
@@ -87,7 +92,9 @@ class ProviderService:
             return False
 
     def delete(self, name: str) -> bool:
-        """删除提供商（软删除，移到回收站）
+        """从活跃列表中移除提供商（仅从 providers 列表删除，不操作回收站）
+
+        注意：回收站写入由 TrashManager 统一负责，避免双重写入。
 
         Args:
             name: 提供商名称
@@ -95,20 +102,14 @@ class ProviderService:
         Returns:
             是否删除成功
         """
-        provider = self.get(name)
-        if not provider:
-            return False
-
         try:
-            trash = self.config.get('trash', {})
-            if 'providers' not in trash:
-                trash['providers'] = {}
-            trash['providers'][name] = asdict(provider)
-            self.config.set('trash', trash)
-
             providers = self.config.get('providers', [])
-            providers = [p for p in providers if p.get('name') != name]
-            return self.config.set('providers', providers)
+            new_providers = [p for p in providers if p.get('name') != name]
+
+            if len(new_providers) == len(providers):
+                return False
+
+            return self.config.set('providers', new_providers)
         except Exception as e:
             logger.error(f"删除提供商失败: {e}")
             return False

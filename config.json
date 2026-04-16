@@ -20,7 +20,10 @@
     }
   ],
   "current_provider": {},
-  "custom_prompts": {},
+  "custom_prompts": {
+    "VerifyTest": "Verify content",
+    "SummaryPrompt": "请总结以下内容的要点"
+  },
   "current_prompt": "",
   "file_paths": {
     "input": "",
@@ -44,13 +47,7 @@
   "user_preferences": {
     "selected_provider": "chuyel",
     "selected_model": "chuyel/deepseek-v3.2",
-    "selected_prompt": "",
+    "selected_prompt": "VerifyTest",
     "directory_path": "C:\\Users\\15832\\Downloads\\ai_summary\\ai_summary\\data\\txt\\1"
-  },
-  "new_key": "new_value",
-  "a": {
-    "b": {
-      "c": "deep_value"
-    }
   }
 }

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
-"""提示词服务模块"""
+"""提示词服务模块
+
+.. deprecated::
+    此模块当前未被主流程使用，功能由 utils.py 中的 PromptManager 提供。
+    保留供未来架构迁移使用。
+"""
 
 from typing import Dict, Optional
 from core.config_manager import ConfigManager
@@ -65,7 +70,9 @@ class PromptService:
             return False
 
     def delete(self, name: str) -> bool:
-        """删除提示词（软删除，移到回收站）
+        """从活跃列表中移除提示词（仅从 custom_prompts 删除，不操作回收站）
+
+        注意：回收站写入由 TrashManager 统一负责，避免双重写入。
 
         Args:
             name: 提示词名称
@@ -73,20 +80,11 @@ class PromptService:
         Returns:
             是否删除成功
         """
-        content = self.get(name)
-        if content is None:
-            return False
-
         try:
-            trash = self.config.get('trash', {})
-            if 'custom_prompts' not in trash:
-                trash['custom_prompts'] = {}
-            trash['custom_prompts'][name] = content
-            self.config.set('trash', trash)
-
             prompts = self.config.get('custom_prompts', {})
-            if name in prompts:
-                del prompts[name]
+            if name not in prompts:
+                return False
+            del prompts[name]
             return self.config.set('custom_prompts', prompts)
         except Exception as e:
             logger.error(f"删除提示词失败: {e}")
