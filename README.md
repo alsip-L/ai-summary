@@ -1,131 +1,201 @@
 # AI Summary
 
-一个基于 Flask 和 OpenAI API 的智能文本处理 Web 应用，支持批量处理 txt 文件并生成摘要。
+基于 Flask + OpenAI API 的智能文本批量处理 Web 应用。扫描目录中的 txt 文件，调用 AI 生成摘要，输出为 md 文件。
 
-## 📋 功能特性
+## 功能特性
 
-- **AI 提供商管理** - 添加、编辑、删除 AI 服务提供商，支持多个模型
-- **自定义提示词** - 创建和管理 AI 处理模板
-- **批量文件处理** - 扫描目录批量处理 txt 文件
-- **回收站功能** - 软删除与恢复机制
-- **目录浏览** - 内置文件浏览器，支持选择处理目录
-- **处理状态追踪** - 实时显示处理进度，支持取消操作
-- **用户偏好记住** - 自动保存用户的选择配置
+- **AI 提供商管理** - 添加/编辑/删除 AI 服务提供商，支持多模型配置
+- **自定义提示词** - 创建和管理 AI 处理模板，作为 system prompt 发送
+- **批量文件处理** - 扫描目录批量处理 txt 文件，自动跳过已处理文件
+- **实时进度追踪** - 轮询式进度更新，支持取消操作
+- **回收站** - 软删除与恢复机制
+- **目录浏览** - 内置文件浏览器，支持直接输入路径
+- **用户偏好** - 自动保存选择配置
 
-## 🛠 技术栈
+## 技术栈
 
-- **后端**: Flask, OpenAI SDK
-- **前端**: HTML5, CSS3, JavaScript
-- **配置**: JSON 格式
-- **容器化**: Docker, Docker Compose
+- **后端**: Flask, OpenAI SDK, Pydantic v2
+- **前端**: 原生 HTML/CSS/JS，组件化设计
+- **架构**: 分层架构 + Repository 模式
+- **容器化**: Docker, Docker Compose, Gunicorn
 
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
 - Python 3.11+
-- pip 包管理器
-- Docker (可选，用于容器化部署)
+- pip
 
-### 安装步骤
+### 安装
 
-1. **克隆项目**
-   ```bash
-   git clone <repository-url>
-   cd ai_summary
-   ```
+```bash
+git clone <repository-url>
+cd ai_summary
+pip install -r requirements.txt
+```
 
-2. **安装依赖**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 配置
 
-3. **配置**
-   编辑 `config.json` 文件，添加您的 AI 提供商配置：
-   ```json
-   {
-     "providers": [
-       {
-         "name": "your-provider",
-         "base_url": "https://api.example.com/v1",
-         "api_key": "your-api-key",
-         "models": {
-           "model-name": "model-id"
-         }
-       }
-     ],
-     "custom_prompts": {
-       "default": "请总结以下内容的要点"
-     }
-   }
-   ```
+编辑 `config.json`，添加 AI 提供商：
 
-4. **运行应用**
-   ```bash
-   # Windows
-   python run.py
-   # 或
-   python app.py
+```json
+{
+  "providers": [
+    {
+      "name": "your-provider",
+      "base_url": "https://api.example.com/v1",
+      "api_key": "your-api-key",
+      "models": {
+        "model-name": "model-id"
+      }
+    }
+  ],
+  "custom_prompts": {
+    "default": "请总结以下内容的要点"
+  }
+}
+```
 
-   # Linux/macOS
-   python3 run.py
-   ```
+### 运行
 
-5. **访问应用**
-   打开浏览器访问: http://localhost:5000
+```bash
+# Windows
+python run.py
 
-## 📖 功能详细说明
+# Linux/macOS
+python3 run.py
+```
 
-### AI 提供商管理
+访问 http://localhost:5000
 
-在 "AI提供者" 区域可以：
+## 使用流程
 
-- **添加提供商**: 输入名称、Base URL、API Key 和模型配置
-- **编辑提供商**: 修改现有配置
-- **删除提供商**: 移至回收站（软删除）
-- **管理模型**: 添加或删除提供商下的模型
+1. **选择目录** - 在侧边栏输入或浏览选择包含 txt 文件的目录
+2. **配置 AI** - 选择提供商、模型和提示词
+3. **开始处理** - 点击"开始处理"按钮
+4. **查看结果** - 处理完成后在原目录生成对应的 md 文件
 
-### 提示词管理
+## API 路由
 
-在 "Prompt设置" 区域可以：
+### 提供商 `/api/providers`
 
-- **创建提示词**: 设置名称和内容
-- **编辑提示词**: 修改提示词模板
-- **删除提示词**: 移至回收站
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/providers/` | GET | 列出所有活跃提供商 |
+| `/api/providers/` | POST | 创建提供商 |
+| `/api/providers/<name>` | PUT | 更新提供商 |
+| `/api/providers/<name>` | DELETE | 删除提供商（移入回收站） |
+| `/api/providers/<name>/api-key` | PUT | 更新 API Key |
+| `/api/providers/<name>/models` | POST | 添加模型 |
+| `/api/providers/<name>/models/<model_name>` | DELETE | 删除模型 |
 
-提示词内容将作为 system prompt 发送给 AI。
+### 提示词 `/api/prompts`
 
-### 文件处理
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/prompts/` | GET | 列出所有提示词 |
+| `/api/prompts/` | POST | 创建提示词 |
+| `/api/prompts/<name>` | DELETE | 删除提示词（移入回收站） |
 
-1. 选择包含 txt 文件的目录
-2. 选择 AI 提供商和模型
-3. 选择提示词模板
-4. 点击 "开始处理"
-5. 等待处理完成，查看生成的 md 文件
+### 任务 `/api/tasks`
 
-处理过程中可以：
-- 查看实时进度
-- 取消正在进行的处理
-- 查看已处理/失败的文件列表
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/tasks/start` | POST | 启动处理任务 |
+| `/api/tasks/status` | GET | 获取处理状态 |
+| `/api/tasks/cancel` | POST | 取消处理任务 |
 
-### 回收站
+### 文件 `/api/files`
 
-回收站包含所有被软删除的提供商和提示词。可以：
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/files/drives` | GET | 获取可用驱动器（Windows） |
+| `/api/files/directory` | GET | 获取目录内容（?path=xxx） |
+| `/api/files/result` | GET | 查看处理结果（?path=xxx） |
 
-- **恢复**: 将项目恢复到正常列表
-- **永久删除**: 从系统中彻底删除
+### 设置 `/api/settings`
 
-### 目录浏览
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/settings/trash` | GET | 获取回收站内容 |
+| `/api/settings/trash/restore/provider/<name>` | POST | 恢复提供商 |
+| `/api/settings/trash/restore/prompt/<name>` | POST | 恢复提示词 |
+| `/api/settings/trash/provider/<name>` | DELETE | 永久删除提供商 |
+| `/api/settings/trash/prompt/<name>` | DELETE | 永久删除提示词 |
+| `/api/settings/system` | GET/PUT | 系统设置 |
+| `/api/settings/preferences` | GET/PUT | 用户偏好 |
 
-点击目录选择器可以：
+## 项目结构
 
-- 查看驱动器列表 (Windows)
-- 浏览目录结构
-- 选择包含待处理文件的目录
+```
+ai_summary/
+├── app.py                  # Flask 应用入口
+├── run.py                  # 运行脚本
+├── config.json             # 配置文件
+├── requirements.txt        # Python 依赖
+├── core/                   # 核心模块
+│   ├── config_manager.py   # 配置管理（单例+线程安全+原子写入）
+│   ├── exceptions.py       # 自定义异常层级
+│   └── logger.py           # 日志管理
+├── models/                 # Pydantic 数据模型
+│   └── processing.py       # 处理状态模型
+├── repositories/           # 数据访问层（Repository 模式）
+│   ├── provider_repo.py    # 提供商 CRUD
+│   ├── prompt_repo.py      # 提示词 CRUD
+│   └── trash_repo.py       # 回收站 CRUD
+├── services/               # 业务服务层
+│   ├── processing_service.py  # 文件处理编排
+│   ├── state_service.py    # 处理状态管理（线程安全单例）
+│   ├── provider_service.py # 提供商服务
+│   ├── prompt_service.py   # 提示词服务
+│   └── task_service.py     # 任务服务
+├── api/                    # API 蓝图层
+│   ├── providers.py        # 提供商路由
+│   ├── prompts.py          # 提示词路由
+│   ├── tasks.py            # 任务路由
+│   ├── files.py            # 文件路由
+│   ├── settings.py         # 设置路由
+│   └── pages.py            # 页面路由
+├── frontend/               # 前端资源
+│   ├── index.html          # 主页面
+│   ├── css/                # 样式
+│   │   ├── base.css        # 设计系统变量
+│   │   ├── layout.css      # 布局
+│   │   ├── components.css  # 组件
+│   │   └── processing.css  # 处理面板
+│   └── js/                 # 脚本
+│       ├── app.js          # 入口+初始化
+│       ├── api.js          # API 调用封装
+│       ├── state.js        # 前端状态
+│       ├── utils.js        # 工具函数
+│       └── components/     # UI 组件
+│           ├── provider-panel.js
+│           ├── prompt-panel.js
+│           ├── task-progress.js
+│           ├── directory-browser.js
+│           ├── trash-panel.js
+│           └── result-table.js
+├── data/                   # 数据目录
+├── output/                 # 输出目录
+├── logs/                   # 日志目录
+├── tests/                  # 测试
+├── dockerfile              # Docker 构建文件
+└── docker-compose.yml      # Docker Compose 配置
+```
 
-## ⚙️ 配置说明
+### 架构分层
 
-### config.json 结构
+| 层 | 目录 | 职责 |
+|----|------|------|
+| API 层 | `api/` | Flask Blueprint，HTTP 路由与请求/响应处理 |
+| 服务层 | `services/` | 业务逻辑编排 |
+| 数据访问层 | `repositories/` | 对 config.json 的 CRUD 操作 |
+| 模型层 | `models/` | Pydantic 数据模型，类型安全验证 |
+| 核心层 | `core/` | 配置管理、日志、异常 |
+
+## 配置说明
+
+### config.json
 
 ```json
 {
@@ -134,23 +204,16 @@
       "name": "提供商名称",
       "base_url": "API Base URL",
       "api_key": "API密钥",
-      "models": {
-        "显示名称": "模型ID"
-      }
+      "models": { "显示名称": "模型ID" }
     }
   ],
-  "custom_prompts": {
-    "提示词名称": "提示词内容"
-  },
-  "trash": {
-    "custom_prompts": {},
-    "providers": {}
-  },
+  "custom_prompts": { "提示词名称": "提示词内容" },
+  "trash": { "custom_prompts": {}, "providers": {} },
   "user_preferences": {
-    "selected_provider": "默认提供商",
-    "selected_model": "默认模型",
-    "selected_prompt": "默认提示词",
-    "directory_path": "默认目录"
+    "selected_provider": "",
+    "selected_model": "",
+    "selected_prompt": "",
+    "directory_path": ""
   },
   "system_settings": {
     "debug_level": "ERROR",
@@ -162,260 +225,46 @@
 }
 ```
 
-### 系统设置
-
-所有配置均通过 Web 界面或 `config.json` 文件管理，无需设置环境变量。在侧边栏的 **系统设置** 面板中可以修改：
-
-| 配置项 | 说明 | 是否需要重启 |
-|--------|------|------------|
-| 日志级别 | DEBUG/INFO/WARNING/ERROR/CRITICAL | 即时生效 |
-| Flask密钥 | Flask Session 加密密钥 | 需重启 |
-| 监听地址 | 服务绑定的IP地址 | 需重启 |
-| 监听端口 | 服务端口号 | 需重启 |
-| Debug模式 | Flask调试模式 | 需重启 |
-
-## 🌐 Web 界面使用指南
-
-### 主页面布局
-
-```
-┌─────────────────────────────────────────┐
-│           AI Summary                    │
-├─────────────────────────────────────────┤
-│ [目录选择] [AI提供者 ▾] [模型 ▾] [Prompt ▾] │
-│                                         │
-│ [开始处理]  [取消]                      │
-├─────────────────────────────────────────┤
-│ 状态: 就绪    进度: 0%                  │
-│ ░░░░░░░░░░░░░░░░░░░░                   │
-├─────────────────────────────────────────┤
-│ AI提供者管理 │ Prompt设置 │ 回收站      │
-├─────────────────────────────────────────┤
-│ (内容区域)                               │
-└─────────────────────────────────────────┘
-```
-
-### 操作流程
-
-1. **选择目录**: 点击目录选择器，选择包含 txt 文件的文件夹
-2. **配置AI**: 从下拉菜单选择提供商、模型和提示词
-3. **开始处理**: 点击按钮启动处理任务
-4. **查看结果**: 处理完成后在同一目录生成对应的 md 文件
-
-## 🐳 Docker 部署
-
-### 标准部署
-
-1. **构建镜像**
-   ```bash
-   docker build -t ai-summary-app:latest .
-   ```
-
-2. **运行容器**
-   ```bash
-   docker run -d \
-     --name ai-summary \
-     --restart unless-stopped \
-     -p 5000:5000 \
-     -v "$(pwd)/config.json:/app/config.json:ro" \
-     -v "$(pwd)/data:/app/data" \
-     -e FLASK_ENV=production \
-     ai-summary-app:latest
-   ```
-
-3. **使用 Docker Compose**
-   ```bash
-   docker-compose up -d
-   ```
-
-### Alpine Linux 特定部署 (aarch64)
-
-专为 aarch64 架构的 Alpine Linux 系统优化：
+## Docker 部署
 
 ```bash
-# 构建镜像
-./build-alpine.sh
+# 构建并运行
+docker-compose up -d
 
-# 运行应用
-./run-alpine.sh
-
-# 或使用 docker-compose
-docker-compose -f docker-compose.alpine.yml up -d
+# 或手动构建
+docker build -t ai-summary-app:latest .
+docker run -d --name ai-summary -p 5000:5000 \
+  -v "$(pwd)/config.json:/app/config.json:ro" \
+  -v "$(pwd)/data:/app/data" \
+  ai-summary-app:latest
 ```
 
-### Docker 环境变量
+生产环境使用 Gunicorn（2 workers，120s timeout），内置健康检查。
 
-本项目的所有业务配置（日志级别、密钥、端口等）均通过 `config.json` 管理，可在 Web 界面的系统设置中直接修改，无需使用环境变量。Docker 中仅保留了 Python 运行时优化变量 `PYTHONUNBUFFERED`。
-
-### Docker 数据卷
+### 数据卷
 
 | 容器路径 | 说明 |
 |----------|------|
 | `/app/config.json` | 配置文件（只读） |
 | `/app/data` | 数据目录 |
 | `/app/output` | 输出目录 |
-| `/app/temp` | 临时目录 |
+| `/app/logs` | 日志目录 |
 
-### Docker 健康检查
+## 故障排除
 
-容器内置健康检查：
-```dockerfile
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
-```
-
-查看健康状态：
-```bash
-docker inspect ai-summary --format='{{.State.Health.Status}}'
-```
-
-### Docker 备份与恢复
-
-**备份**：
-```bash
-# 备份配置文件
-cp config.json config.json.backup
-
-# 备份数据
-tar -czf data-backup.tar.gz data/
-```
-
-**恢复**：
-```bash
-# 恢复配置
-cp config.json.backup config.json
-
-# 恢复数据
-tar -xzf data-backup.tar.gz
-```
-
-## 🔌 API 路由
-
-| 路由 | 方法 | 说明 |
-|------|------|------|
-| `/` | GET/POST | 主页面 |
-| `/start_processing` | POST | 启动文件处理 |
-| `/get_processing_status` | GET | 获取处理状态 |
-| `/cancel_processing` | POST | 取消处理 |
-| `/clear_session` | GET | 清理会话 |
-| `/get_available_drives` | GET | 获取可用驱动器 |
-| `/get_directory_contents` | GET | 获取目录内容 |
-| `/view_result` | GET | 查看处理结果 |
-| `/save_system_settings` | POST | 保存系统设置 |
-
-## 🔍 故障排除
-
-### 常见问题
-
-**Q: 应用无法启动？**
+**应用无法启动？**
 - 检查 Python 版本是否为 3.11+
-- 确认所有依赖已正确安装
-- 检查 config.json 格式是否正确
+- 确认 `config.json` 格式正确
+- 检查端口 5000 是否被占用
 
-**Q: 文件处理失败？**
+**文件处理失败？**
 - 确认 API Key 配置正确
-- 检查目录路径是否存在
+- 检查 Base URL 和网络连接
 - 查看日志获取详细错误信息
 
-**Q: 无法连接到 AI 提供商？**
-- 检查网络连接
-- 确认 Base URL 正确
-- 验证 API Key 有效性
-
-**Q: Docker 容器启动失败？**
-- 检查端口 5000 是否被占用
-- 确认配置文件存在
+**Docker 容器启动失败？**
 - 查看容器日志: `docker logs <container-name>`
 
-### 日志级别设置
-
-通过环境变量设置：
-```bash
-export DEBUG_LEVEL=DEBUG  # 开发环境
-export DEBUG_LEVEL=ERROR   # 生产环境
-```
-
-## 📁 项目结构
-
-```
-ai_summary/
-├── app.py                 # Flask 应用入口（蓝图注册+启动）
-├── core/                  # 核心模块
-│   ├── __init__.py
-│   ├── config_manager.py  # 配置管理器
-│   ├── exceptions.py      # 自定义异常
-│   └── logger.py          # 日志管理
-├── managers/              # 数据管理模块
-│   ├── __init__.py
-│   ├── file_manager.py    # 文件路径管理
-│   ├── model_manager.py   # 大模型管理
-│   ├── prompt_manager.py  # 提示词管理
-│   └── trash_manager.py   # 回收站管理
-├── services/              # 服务层
-│   ├── __init__.py
-│   ├── file_service.py    # 文件服务
-│   ├── prompt_service.py  # 提示词服务
-│   ├── provider_service.py # 提供商服务
-│   └── state_service.py   # 处理状态服务
-├── processors/            # 处理器
-│   ├── __init__.py
-│   ├── ai_processor.py    # AI 调用与响应处理
-│   └── task_processor.py  # 异步任务执行
-├── routes/                # 路由层（Flask蓝图）
-│   ├── __init__.py
-│   ├── main_route.py      # 主页与配置选择
-│   ├── processing_route.py # 文件处理路由
-│   ├── directory_route.py # 目录浏览路由
-│   ├── result_route.py    # 结果查看路由
-│   └── settings_route.py  # 系统设置路由
-├── helpers/               # 辅助工具
-│   ├── __init__.py
-│   └── web_helpers.py     # URL解码/会话消息/选择管理
-├── docs/                  # 项目文档
-│   ├── feature_modules_analysis.md
-│   └── project_function_analysis.md
-├── static/                # 前端静态资源
-│   ├── script.js
-│   └── style.css
-├── templates/             # HTML 模板
-│   ├── index.html
-│   └── simple_test.html
-├── tests/                 # 测试
-│   ├── __init__.py
-│   ├── test_core.py
-│   ├── test_managers.py
-│   ├── test_all_features.py
-│   ├── test_comprehensive.py
-│   └── test_full_features.py
-├── .gitignore             # Git 忽略规则
-├── run.py                 # 运行脚本
-├── config.json            # 配置文件
-├── requirements.txt       # Python 依赖
-├── dockerfile             # Docker 构建文件
-├── docker-compose.yml     # Docker Compose 配置
-├── README.md              # 项目说明
-└── DOCKER_DEPLOYMENT.md   # Docker 部署文档
-```
-
-### 模块说明
-
-- **core/** - 核心功能模块，包括配置管理、日志、异常处理
-- **managers/** - 数据管理模块，提供商、提示词、文件路径、回收站的CRUD操作
-- **services/** - 服务层，封装业务逻辑，提供对管理器的统一调用接口
-- **processors/** - 处理器，执行AI调用和异步文件处理任务
-- **routes/** - 路由层，Flask蓝图，按功能域划分的Web路由
-- **helpers/** - 辅助工具，URL解码、会话消息、选择管理
-- **docs/** - 项目文档
-- **static/** - 前端静态资源
-- **templates/** - Flask模板文件
-- **tests/** - 单元测试和集成测试
-
-## 📄 许可证
+## 许可证
 
 MIT License
-
-## 🙏 致谢
-
-- Flask 框架
-- OpenAI API
-- 所有开源贡献者
