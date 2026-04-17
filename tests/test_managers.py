@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for managers module."""
+"""Tests for repository layer (replaces old managers tests)."""
 
 import unittest
 import os
@@ -11,238 +11,144 @@ from pathlib import Path
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from managers.model_manager import ModelManager, ModelConfig
-from managers.prompt_manager import PromptManager
-from managers.trash_manager import TrashManager
-from core.config import Config, ConfigManager
+from core.config import ConfigManager
+from repositories.provider_repo import ProviderRepository
+from repositories.prompt_repo import PromptRepository
+from repositories.trash_repo import TrashRepository
+from models.provider import ProviderConfig
+from models.prompt import PromptConfig
 
 
-class TestModelManager(unittest.TestCase):
-    """Test ModelManager class."""
+class TestProviderRepository(unittest.TestCase):
+    """Test ProviderRepository class."""
 
     def setUp(self):
-        """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.config_path = Path(self.temp_dir) / "test_config.json"
 
-        # Create empty config
         with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump({"providers": []}, f)
+            json.dump({"providers": [], "custom_prompts": {}, "trash": {}}, f)
 
-        # Reset singleton completely
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-
-        # Override config path
+        ConfigManager.reset()
         ConfigManager._config_path = self.config_path
 
-        self.manager = ModelManager()
-
     def tearDown(self):
-        """Clean up test environment."""
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-
+        ConfigManager.reset()
         if self.config_path.exists():
             self.config_path.unlink()
 
-    def test_save_model(self):
-        """Test saving model."""
-        success = self.manager.save(ModelConfig(
-            name="TestProvider",
-            base_url="https://test.com",
-            api_key="test_key",
-            models={"model1": "id1"}
-        ))
-        self.assertTrue(success)
+    def test_save_and_get(self):
+        repo = ProviderRepository(ConfigManager())
+        provider = ProviderConfig(name="TestProvider", base_url="https://test.com", api_key="test_key", models={"m1": "id1"})
+        self.assertTrue(repo.save(provider))
 
-        # Verify
-        provider = self.manager.get("TestProvider")
-        self.assertIsNotNone(provider)
-        self.assertEqual(provider.base_url, "https://test.com")
+        result = repo.get("TestProvider")
+        self.assertIsNotNone(result)
+        self.assertEqual(result.base_url, "https://test.com")
 
-    def test_get_all_providers(self):
-        """Test getting all providers."""
-        self.manager.save(ModelConfig(name="Provider1", base_url="https://p1.com", api_key="key1", models={}))
-        self.manager.save(ModelConfig(name="Provider2", base_url="https://p2.com", api_key="key2", models={}))
+    def test_get_all(self):
+        repo = ProviderRepository(ConfigManager())
+        repo.save(ProviderConfig(name="P1", base_url="https://p1.com", api_key="k1", models={}))
+        repo.save(ProviderConfig(name="P2", base_url="https://p2.com", api_key="k2", models={}))
 
-        providers = self.manager.get_all()
-        self.assertEqual(len(providers), 2)
-        self.assertIn("Provider1", providers)
-        self.assertIn("Provider2", providers)
+        all_providers = repo.get_all()
+        self.assertEqual(len(all_providers), 2)
+        self.assertIn("P1", all_providers)
+        self.assertIn("P2", all_providers)
 
-    def test_delete_model(self):
-        """Test deleting model."""
-        self.manager.save(ModelConfig(name="ToDelete", base_url="https://test.com", api_key="key", models={}))
-
-        success = self.manager.delete("ToDelete")
-        self.assertTrue(success)
-
-        # Verify
-        self.assertIsNone(self.manager.get("ToDelete"))
+    def test_delete(self):
+        repo = ProviderRepository(ConfigManager())
+        repo.save(ProviderConfig(name="ToDelete", base_url="https://test.com", api_key="k", models={}))
+        self.assertTrue(repo.delete("ToDelete"))
+        self.assertIsNone(repo.get("ToDelete"))
 
 
-class TestPromptManager(unittest.TestCase):
-    """Test PromptManager class."""
+class TestPromptRepository(unittest.TestCase):
+    """Test PromptRepository class."""
 
     def setUp(self):
-        """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.config_path = Path(self.temp_dir) / "test_config.json"
 
-        # Create empty config
         with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump({"custom_prompts": {}}, f)
+            json.dump({"providers": [], "custom_prompts": {}, "trash": {}}, f)
 
-        # Reset singleton completely
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-
-        # Override config path
+        ConfigManager.reset()
         ConfigManager._config_path = self.config_path
 
-        self.manager = PromptManager()
-
     def tearDown(self):
-        """Clean up test environment."""
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-
+        ConfigManager.reset()
         if self.config_path.exists():
             self.config_path.unlink()
 
-    def test_save_prompt(self):
-        """Test saving prompt."""
-        success = self.manager.save("TestPrompt", "This is a test prompt")
-        self.assertTrue(success)
+    def test_save_and_get(self):
+        repo = PromptRepository(ConfigManager())
+        self.assertTrue(repo.save(PromptConfig(name="TestPrompt", content="Test content")))
 
-        # Verify
-        prompt = self.manager.get("TestPrompt")
-        self.assertEqual(prompt, "This is a test prompt")
+        result = repo.get("TestPrompt")
+        self.assertIsNotNone(result)
+        self.assertEqual(result.content, "Test content")
 
-    def test_get_all_prompts(self):
-        """Test getting all prompts."""
-        self.manager.save("Prompt1", "Content 1")
-        self.manager.save("Prompt2", "Content 2")
+    def test_get_all(self):
+        repo = PromptRepository(ConfigManager())
+        repo.save(PromptConfig(name="P1", content="Content 1"))
+        repo.save(PromptConfig(name="P2", content="Content 2"))
 
-        prompts = self.manager.get_all()
-        self.assertEqual(len(prompts), 2)
+        all_prompts = repo.get_all()
+        self.assertEqual(len(all_prompts), 2)
 
-    def test_delete_prompt(self):
-        """Test deleting prompt."""
-        self.manager.save("ToDelete", "Content")
-
-        success = self.manager.delete("ToDelete")
-        self.assertTrue(success)
-
-        # Verify
-        self.assertIsNone(self.manager.get("ToDelete"))
-
-    def test_list_format_compatibility(self):
-        """Test handling list format prompts."""
-        # Reset singleton
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-        ConfigManager._config_path = self.config_path
-
-        # Simulate old format (list)
-        config = Config()
-        config.set('custom_prompts', {'OldPrompt': ['Line 1', 'Line 2']})
-        config.save()
-
-        # Reload
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-        ConfigManager._config_path = self.config_path
-
-        manager = PromptManager()
-        prompt = manager.get("OldPrompt")
-        self.assertEqual(prompt, "Line 1\nLine 2")
+    def test_delete(self):
+        repo = PromptRepository(ConfigManager())
+        repo.save(PromptConfig(name="ToDelete", content="Content"))
+        self.assertTrue(repo.delete("ToDelete"))
+        self.assertIsNone(repo.get("ToDelete"))
 
 
-class TestTrashManager(unittest.TestCase):
-    """Test TrashManager class."""
+class TestTrashRepository(unittest.TestCase):
+    """Test TrashRepository class."""
 
     def setUp(self):
-        """Set up test environment."""
         self.temp_dir = tempfile.mkdtemp()
         self.config_path = Path(self.temp_dir) / "test_config.json"
 
-        # Create config with providers and prompts
         with open(self.config_path, 'w', encoding='utf-8') as f:
             json.dump({
-                "providers": [{"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}}],
+                "providers": [{"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}, "is_active": True}],
                 "custom_prompts": {"TestPrompt": "Test content"},
-                "trash": {}
+                "trash": {"providers": {}, "custom_prompts": {}}
             }, f)
 
-        # Reset singleton completely
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-
-        # Override config path
+        ConfigManager.reset()
         ConfigManager._config_path = self.config_path
 
-        self.manager = TrashManager()
-
     def tearDown(self):
-        """Clean up test environment."""
-        Config._instance = None
-        ConfigManager._instance = None
-        ConfigManager._cache = None
-        ConfigManager._loaded = False
-
+        ConfigManager.reset()
         if self.config_path.exists():
             self.config_path.unlink()
 
     def test_move_provider_to_trash(self):
-        """Test moving provider to trash."""
-        success = self.manager.move_provider_to_trash("TestProvider")
-        self.assertTrue(success)
+        repo = TrashRepository(ConfigManager())
+        self.assertTrue(repo.move_provider_to_trash("TestProvider"))
 
-        # Verify in trash
-        providers = self.manager.get_providers()
-        self.assertIn("TestProvider", providers)
+        trash = repo.get_all()
+        self.assertIn("providers", trash)
+        self.assertIn("TestProvider", trash["providers"])
 
     def test_restore_provider(self):
-        """Test restoring provider from trash."""
-        # First move to trash
-        self.manager.move_provider_to_trash("TestProvider")
+        repo = TrashRepository(ConfigManager())
+        repo.move_provider_to_trash("TestProvider")
+        self.assertTrue(repo.restore_provider("TestProvider"))
 
-        # Then restore
-        success = self.manager.restore_provider("TestProvider")
-        self.assertTrue(success)
-
-        # Verify restored
-        model_manager = ModelManager()
-        self.assertIsNotNone(model_manager.get("TestProvider"))
+        provider_repo = ProviderRepository(ConfigManager())
+        self.assertIsNotNone(provider_repo.get("TestProvider"))
 
     def test_permanent_delete(self):
-        """Test permanent deletion."""
-        # First move to trash
-        self.manager.move_provider_to_trash("TestProvider")
+        repo = TrashRepository(ConfigManager())
+        repo.move_provider_to_trash("TestProvider")
+        self.assertTrue(repo.permanent_delete_provider("TestProvider"))
 
-        # Then permanently delete
-        success = self.manager.permanent_delete_provider("TestProvider")
-        self.assertTrue(success)
-
-        # Verify not in trash
-        providers = self.manager.get_providers()
-        self.assertNotIn("TestProvider", providers)
+        trash = repo.get_all()
+        self.assertNotIn("TestProvider", trash.get("providers", {}))
 
 
 if __name__ == '__main__':

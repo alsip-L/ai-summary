@@ -1,38 +1,50 @@
-/* frontend/js/components/trash-panel.js — 回收站 */
+/* trash-panel.js — Trash panel */
 
 const TrashPanel = {
     render() {
         const container = document.getElementById('trash-section');
+        const dropdown = document.getElementById('trash-dropdown');
+        const countEl = document.getElementById('trash-count');
         if (!container) return;
 
         const provKeys = Object.keys(AppState.trashProviders);
         const promptKeys = Object.keys(AppState.trashPrompts);
+        const total = provKeys.length + promptKeys.length;
+
+        // Hide entire trash section when empty
+        if (!dropdown) return;
+        if (total === 0) {
+            dropdown.classList.add('hidden');
+            return;
+        }
+        dropdown.classList.remove('hidden');
+        if (countEl) countEl.textContent = total;
 
         container.innerHTML = `
             <div class="trash-section">
-                <h4>已删除的提供商 (${provKeys.length}):</h4>
+                <h4>服务商 (${provKeys.length})</h4>
                 ${provKeys.length > 0 ? provKeys.map(name => `
-                    <div class="trash-item" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; padding: 8px; margin: 3px 0; border-radius: 3px; background-color: #f9f9f9;">
-                        <span style="flex: 1; margin-right: 10px;">${Utils.escapeHtml(name)}</span>
-                        <div style="display: flex; gap: 6px;">
+                    <div class="trash-item-row">
+                        <span class="trash-item">${Utils.escapeHtml(name)}</span>
+                        <div class="flex gap-1">
                             <button type="button" class="restore-btn" onclick="TrashPanel.restoreProvider('${Utils.escapeHtml(name)}')">恢复</button>
                             <button type="button" class="permanent-delete-btn" onclick="TrashPanel.permanentDeleteProvider('${Utils.escapeHtml(name)}')">删除</button>
                         </div>
                     </div>
-                `).join('') : '<p style="color: #666; font-style: italic;">暂无已删除的提供商</p>'}
+                `).join('') : '<p class="empty-state-text">空</p>'}
             </div>
-            <hr style="margin: 10px 0;">
+            <div class="sidebar-divider"></div>
             <div class="trash-section">
-                <h4>已删除的Prompt (${promptKeys.length}):</h4>
+                <h4>提示词 (${promptKeys.length})</h4>
                 ${promptKeys.length > 0 ? promptKeys.map(name => `
-                    <div class="trash-item" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #ddd; padding: 8px; margin: 3px 0; border-radius: 3px; background-color: #f9f9f9;">
-                        <span style="flex: 1; margin-right: 10px;">${Utils.escapeHtml(name)}</span>
-                        <div style="display: flex; gap: 6px;">
+                    <div class="trash-item-row">
+                        <span class="trash-item">${Utils.escapeHtml(name)}</span>
+                        <div class="flex gap-1">
                             <button type="button" class="restore-btn" onclick="TrashPanel.restorePrompt('${Utils.escapeHtml(name)}')">恢复</button>
                             <button type="button" class="permanent-delete-btn" onclick="TrashPanel.permanentDeletePrompt('${Utils.escapeHtml(name)}')">删除</button>
                         </div>
                     </div>
-                `).join('') : '<p style="color: #666; font-style: italic;">暂无已删除的Prompt</p>'}
+                `).join('') : '<p class="empty-state-text">空</p>'}
             </div>
         `;
     },
@@ -43,21 +55,21 @@ const TrashPanel = {
             await AppState.loadAll();
             ProviderPanel.render();
             this.render();
-            showMessage('✅ 提供商已恢复', 'success');
+            showMessage('服务商已恢复', 'success');
         } catch (e) {
-            showMessage('❌ 恢复失败: ' + e.message, 'error');
+            showMessage('恢复失败: ' + e.message, 'error');
         }
     },
 
     async permanentDeleteProvider(name) {
-        if (!confirm(`确定要永久删除AI提供商 '${name}' 吗？此操作不可恢复！`)) return;
+        if (!confirm(`永久删除 '${name}'？此操作不可撤销。`)) return;
         try {
             await API.permanentDeleteProvider(name);
             await AppState.loadAll();
             this.render();
-            showMessage('✅ 已永久删除', 'success');
+            showMessage('已永久删除', 'success');
         } catch (e) {
-            showMessage('❌ 删除失败: ' + e.message, 'error');
+            showMessage('删除失败: ' + e.message, 'error');
         }
     },
 
@@ -67,21 +79,21 @@ const TrashPanel = {
             await AppState.loadAll();
             PromptPanel.render();
             this.render();
-            showMessage('✅ Prompt已恢复', 'success');
+            showMessage('提示词已恢复', 'success');
         } catch (e) {
-            showMessage('❌ 恢复失败: ' + e.message, 'error');
+            showMessage('恢复失败: ' + e.message, 'error');
         }
     },
 
     async permanentDeletePrompt(name) {
-        if (!confirm(`确定要永久删除Prompt '${name}' 吗？此操作不可恢复！`)) return;
+        if (!confirm(`永久删除提示词 '${name}'？此操作不可撤销。`)) return;
         try {
             await API.permanentDeletePrompt(name);
             await AppState.loadAll();
             this.render();
-            showMessage('✅ 已永久删除', 'success');
+            showMessage('已永久删除', 'success');
         } catch (e) {
-            showMessage('❌ 删除失败: ' + e.message, 'error');
+            showMessage('删除失败: ' + e.message, 'error');
         }
     }
 };

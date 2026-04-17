@@ -28,11 +28,11 @@ def create_provider():
     data = request.get_json()
     try:
         provider = ProviderConfig(**data)
-        if _repo().save(provider):
-            return jsonify({"success": True})
-        return jsonify({"success": False, "error": "保存失败"}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
+    if _repo().save(provider):
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "保存失败"}), 400
 
 
 @provider_bp.put("/<name>")
@@ -42,11 +42,11 @@ def update_provider(name: str):
     data["name"] = name
     try:
         provider = ProviderConfig(**data)
-        if _repo().save(provider):
-            return jsonify({"success": True})
-        return jsonify({"success": False, "error": "更新失败"}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 400
+    if _repo().save(provider):
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "更新失败"}), 400
 
 
 @provider_bp.delete("/<name>")

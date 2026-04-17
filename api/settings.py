@@ -44,6 +44,12 @@ def permanent_delete_prompt(name: str):
     return jsonify({"success": False, "error": "删除失败"}), 400
 
 
+@settings_bp.get("/system")
+def get_system_settings():
+    """GET /api/settings/system"""
+    return jsonify(ConfigManager().get("system_settings", {}))
+
+
 @settings_bp.put("/system")
 def save_system_settings():
     """PUT /api/settings/system"""

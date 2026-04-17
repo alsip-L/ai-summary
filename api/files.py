@@ -62,13 +62,13 @@ def view_result():
     """GET /api/files/result?path=xxx"""
     file_path = request.args.get("path", "")
     if not file_path:
-        return jsonify({"error": "未提供文件路径"}), 400
+        return jsonify({"success": False, "error": "未提供文件路径"}), 400
 
     real_path = os.path.realpath(file_path)
     if not os.path.exists(real_path) or not os.path.isfile(real_path):
-        return jsonify({"error": "文件不存在"}), 404
+        return jsonify({"success": False, "error": "文件不存在"}), 404
     if not real_path.endswith((".md", ".txt")):
-        return jsonify({"error": "不支持的文件类型"}), 400
+        return jsonify({"success": False, "error": "不支持的文件类型"}), 400
 
     for encoding in ["utf-8", "gbk"]:
         try:
@@ -82,4 +82,4 @@ def view_result():
             })
         except UnicodeDecodeError:
             continue
-    return jsonify({"error": "文件读取失败"}), 500
+    return jsonify({"success": False, "error": "文件读取失败"}), 500

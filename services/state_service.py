@@ -1,28 +1,18 @@
 # -*- coding: utf-8 -*-
-"""处理状态服务模块"""
+"""处理状态服务模块
 
+使用 models.task 中的 Pydantic ProcessingStatus 和 TaskStatus 枚举，
+确保状态值类型安全，消除硬编码字符串。
+"""
+
+import copy
 import threading
 import time
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, field
+from models.task import ProcessingStatus, TaskStatus, TaskResult
 from core.log import get_logger
 
 logger = get_logger()
-
-
-@dataclass
-class ProcessingStatus:
-    """处理状态数据类"""
-    status: str = 'idle'
-    progress: int = 0
-    total_files: int = 0
-    processed_files_count: int = 0
-    current_file: str = ''
-    results: List[Dict[str, Any]] = field(default_factory=list)
-    error: Optional[str] = None
-    start_time: Optional[float] = None
-    end_time: Optional[float] = None
-    cancelled: bool = False
 
 
 class ProcessingState:
@@ -48,99 +38,37 @@ class ProcessingState:
 
         self._state_lock = threading.Lock()
         self._state = ProcessingStatus()
-        self._history: List[ProcessingStatus] = []
-        self._max_history = 10
         self._initialized = True
 
-    def get(self) -> ProcessingStatus:
-        """获取当前状态的副本
-
-        Returns:
-            ProcessingStatus对象的副本
-        """
-        with self._state_lock:
-            return ProcessingStatus(
-                status=self._state.status,
-                progress=self._state.progress,
-                total_files=self._state.total_files,
-                processed_files_count=self._state.processed_files_count,
-                current_file=self._state.current_file,
-                results=self._state.results.copy(),
-                error=self._state.error,
-                start_time=self._state.start_time,
-                end_time=self._state.end_time,
-                cancelled=self._state.cancelled
-            )
-
     def get_dict(self) -> Dict[str, Any]:
-        """获取当前状态的字典形式
-
-        Returns:
-            状态字典
-        """
+        """获取当前状态的字典形式（深拷贝，线程安全）"""
         with self._state_lock:
-            return {
-                'status': self._state.status,
-                'progress': self._state.progress,
-                'total_files': self._state.total_files,
-                'processed_files_count': self._state.processed_files_count,
-                'current_file': self._state.current_file,
-                'results': self._state.results.copy(),
-                'error': self._state.error,
-                'start_time': self._state.start_time,
-                'end_time': self._state.end_time,
-                'cancelled': self._state.cancelled
-            }
-
-    def update(self, **kwargs) -> None:
-        """更新状态字段
-
-        Args:
-            **kwargs: 要更新的字段
-        """
-        with self._state_lock:
-            self._save_history()
-            for key, value in kwargs.items():
-                if hasattr(self._state, key):
-                    setattr(self._state, key, value)
+            data = self._state.model_dump()
+            # 将 TaskStatus 枚举转为字符串，results 中 TaskResult 也转为 dict
+            data["status"] = self._state.status.value
+            data["results"] = [r.model_dump() for r in self._state.results]
+            return data
 
     def reset(self) -> None:
         """重置状态为初始值"""
         with self._state_lock:
-            self._save_history()
             self._state = ProcessingStatus()
 
     def start(self, total_files: int = 0) -> None:
-        """开始处理
-
-        Args:
-            total_files: 总文件数
-        """
+        """开始处理"""
         with self._state_lock:
-            self._save_history()
             self._state = ProcessingStatus(
-                status='scanning',
+                status=TaskStatus.SCANNING,
                 progress=0,
                 total_files=total_files,
-                processed_files_count=0,
-                current_file='',
-                results=[],
-                error=None,
                 start_time=time.time(),
-                end_time=None,
-                cancelled=False
             )
             logger.info("处理状态已重置为 scanning")
 
     def start_processing(self, total_files: int) -> None:
-        """开始实际处理
-
-        Args:
-            total_files: 总文件数
-        """
+        """开始实际处理"""
         with self._state_lock:
-            self._save_history()
-            self._state.status = 'processing'
+            self._state.status = TaskStatus.PROCESSING
             self._state.total_files = total_files
             self._state.current_file = f'准备处理 {total_files} 个文件...'
 
@@ -150,13 +78,7 @@ class ProcessingState:
         current_file: str = None,
         progress: int = None
     ) -> None:
-        """更新处理进度
-
-        Args:
-            processed_count: 已处理文件数
-            current_file: 当前处理的文件名
-            progress: 进度百分比（可选）
-        """
+        """更新处理进度"""
         with self._state_lock:
             self._state.processed_files_count = processed_count
             if current_file is not None:
@@ -167,39 +89,23 @@ class ProcessingState:
                 self._state.progress = int((processed_count / self._state.total_files) * 100)
 
     def add_result(self, source: str, output: str = None, error: str = None) -> None:
-        """添加处理结果
-
-        Args:
-            source: 源文件路径
-            output: 输出文件路径
-            error: 错误信息
-        """
+        """添加处理结果"""
         with self._state_lock:
-            self._state.results.append({
-                'source': source,
-                'output': output,
-                'error': error
-            })
+            self._state.results.append(TaskResult(source=source, output=output, error=error))
 
     def complete(self) -> None:
         """标记处理完成"""
         with self._state_lock:
-            self._save_history()
-            self._state.status = 'completed'
+            self._state.status = TaskStatus.COMPLETED
             self._state.progress = 100
             self._state.current_file = ''
             self._state.end_time = time.time()
             self._state.cancelled = False
 
     def set_error(self, error_message: str) -> None:
-        """设置错误状态
-
-        Args:
-            error_message: 错误信息
-        """
+        """设置错误状态"""
         with self._state_lock:
-            self._save_history()
-            self._state.status = 'error'
+            self._state.status = TaskStatus.ERROR
             self._state.error = error_message
             self._state.current_file = ''
             self._state.end_time = time.time()
@@ -207,8 +113,7 @@ class ProcessingState:
     def cancel(self) -> None:
         """取消处理"""
         with self._state_lock:
-            self._save_history()
-            self._state.status = 'cancelled'
+            self._state.status = TaskStatus.CANCELLED
             self._state.error = '用户取消了处理'
             self._state.current_file = ''
             self._state.end_time = time.time()
@@ -220,57 +125,19 @@ class ProcessingState:
             self._state.cancelled = True
 
     def is_cancelled(self) -> bool:
-        """检查是否已取消
-
-        Returns:
-            是否已取消
-        """
+        """检查是否已取消"""
         with self._state_lock:
             return self._state.cancelled
 
     def is_running(self) -> bool:
-        """检查是否正在处理
-
-        Returns:
-            是否正在处理
-        """
+        """检查是否正在处理"""
         with self._state_lock:
-            return self._state.status in ['processing', 'scanning', 'started']
+            return self._state.status in (TaskStatus.PROCESSING, TaskStatus.SCANNING)
 
     def get_elapsed_time(self) -> float:
-        """获取已消耗的时间
-
-        Returns:
-            时间（秒）
-        """
+        """获取已消耗的时间（秒）"""
         with self._state_lock:
             if self._state.start_time is None:
                 return 0
             end = self._state.end_time or time.time()
             return end - self._state.start_time
-
-    def _save_history(self) -> None:
-        """保存历史状态"""
-        self._history.append(ProcessingStatus(
-            status=self._state.status,
-            progress=self._state.progress,
-            total_files=self._state.total_files,
-            processed_files_count=self._state.processed_files_count,
-            current_file=self._state.current_file,
-            results=self._state.results.copy(),
-            error=self._state.error,
-            start_time=self._state.start_time,
-            end_time=self._state.end_time,
-            cancelled=self._state.cancelled
-        ))
-        if len(self._history) > self._max_history:
-            self._history.pop(0)
-
-    def get_history(self) -> List[ProcessingStatus]:
-        """获取状态历史
-
-        Returns:
-            状态历史列表
-        """
-        with self._state_lock:
-            return self._history.copy()

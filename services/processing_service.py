@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""AI 文件处理服务 — 合并原 ai_processor.py + task_processor.py"""
+"""AI 文件处理服务"""
 
 import os
 from openai import OpenAI
@@ -17,7 +17,7 @@ class ProcessingService:
     def __init__(self, state: ProcessingState):
         self._state = state
 
-    # ---- 单文件处理（原 AIProcessor.process_file + save_response）----
+    # ---- 单文件处理 ----
 
     @staticmethod
     def read_file(file_path: str) -> str:
@@ -43,7 +43,7 @@ class ProcessingService:
             if not completion or not completion.choices:
                 raise ProviderError("API 返回空响应")
             return completion.choices[0].message.content
-        except (FileProcessingError, ProviderError):
+        except ProviderError:
             raise
         except Exception as e:
             raise ProviderError(f"AI 调用失败: {str(e).splitlines()[0]}")
@@ -68,29 +68,47 @@ class ProcessingService:
             logger.error(f"文件处理失败: {e}")
             return TaskResult(source=file_path, error=str(e))
 
-    # ---- 批量处理（原 task_processor.run_processing_task）----
+    # ---- 批量处理 ----
 
     @staticmethod
-    def scan_txt_files(directory: str) -> list[str]:
+    def scan_txt_files(directory: str, skip_existing: bool = False) -> list[str]:
+        """扫描目录中的 .txt 文件
+
+        Args:
+            directory: 目标目录
+            skip_existing: 是否跳过已有对应 .md 文件的 .txt 文件
+        """
         if not os.path.isdir(directory):
             raise ValueError(f"目录不存在: {directory}")
         txt_files = []
         for root, _, files in os.walk(directory):
             for f in files:
                 if f.endswith(".txt"):
-                    txt_files.append(os.path.join(root, f))
+                    file_path = os.path.join(root, f)
+                    if skip_existing:
+                        md_path = os.path.splitext(file_path)[0] + ".md"
+                        if os.path.exists(md_path):
+                            continue
+                    txt_files.append(file_path)
         return txt_files
 
-    def run_batch(self, directory: str, client: OpenAI, prompt: str, model_id: str) -> None:
+    def run_batch(
+        self,
+        directory: str,
+        client: OpenAI,
+        prompt: str,
+        model_id: str,
+        skip_existing: bool = False,
+    ) -> None:
         self._state.start()
         try:
             if self._state.is_cancelled():
                 self._state.cancel()
                 return
 
-            txt_files = self.scan_txt_files(directory)
+            txt_files = self.scan_txt_files(directory, skip_existing)
             if not txt_files:
-                raise ValueError("未找到 txt 文件")
+                raise ValueError("未找到需要处理的 txt 文件")
 
             self._state.start_processing(len(txt_files))
 
@@ -99,10 +117,11 @@ class ProcessingService:
                     self._state.cancel()
                     return
 
-                self._state.update_progress(i, os.path.basename(file_path))
+                progress_before = int((i / len(txt_files)) * 100)
+                self._state.update_progress(i, os.path.basename(file_path), progress_before)
                 result = self.process_file(file_path, client, prompt, model_id)
-                progress = int(((i + 1) / len(txt_files)) * 100)
-                self._state.update_progress(i + 1, None, progress)
+                progress_after = int(((i + 1) / len(txt_files)) * 100)
+                self._state.update_progress(i + 1, None, progress_after)
                 self._state.add_result(result.source, result.output, result.error)
 
             self._state.complete()

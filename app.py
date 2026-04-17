@@ -18,14 +18,32 @@ if sys.stdout.encoding != 'utf-8':
     except Exception:
         pass
 
-from flask import Flask
+from flask import Flask, jsonify
 from core.config import ConfigManager
+from core.errors import AISummaryException, ValidationError, ProviderError, FileProcessingError
 
 # 初始化Flask应用
 app = Flask(__name__, static_folder="frontend", static_url_path="/static")
 app.secret_key = ConfigManager().get('system_settings.flask_secret_key', 'default-dev-secret-key-please-change-in-prod')
 
-# 注册新 API 蓝图
+# 全局错误处理器 — 统一返回 {"success": false, "error": "描述"}
+@app.errorhandler(ValidationError)
+def handle_validation_error(e):
+    return jsonify({"success": False, "error": e.message}), 400
+
+@app.errorhandler(ProviderError)
+def handle_provider_error(e):
+    return jsonify({"success": False, "error": e.message}), 400
+
+@app.errorhandler(FileProcessingError)
+def handle_file_error(e):
+    return jsonify({"success": False, "error": e.message}), 500
+
+@app.errorhandler(AISummaryException)
+def handle_base_error(e):
+    return jsonify({"success": False, "error": e.message}), 500
+
+# 注册 API 蓝图
 from api.providers import provider_bp
 from api.prompts import prompt_bp
 from api.tasks import task_bp

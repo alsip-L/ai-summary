@@ -1,4 +1,4 @@
-/* frontend/js/components/prompt-panel.js — 提示词面板 */
+/* prompt-panel.js — Prompt management panel */
 
 const PromptPanel = {
     render() {
@@ -8,54 +8,51 @@ const PromptPanel = {
         const currentContent = AppState.prompts[AppState.selectedPrompt] || '';
 
         container.innerHTML = `
-            <h2>Prompt管理</h2>
+            <div class="section-header">提示词</div>
             <div class="form-group">
-                <label>选择System Prompt:</label>
+                <label class="form-label">系统提示词</label>
                 <div class="custom-dropdown" id="prompt-dropdown">
                     <div class="dropdown-selected" onclick="toggleDropdown('prompt-dropdown')">
-                        <span>${Utils.escapeHtml(AppState.selectedPrompt || '请选择')}</span>
-                        <span class="dropdown-arrow">▼</span>
+                        <span>${Utils.escapeHtml(AppState.selectedPrompt || '请选择...')}</span>
+                        <span class="dropdown-arrow">&#9662;</span>
                     </div>
                     <div class="dropdown-content" id="prompt-options">
                         ${AppState.promptNames.map(name => `
                             <div class="dropdown-option" onclick="PromptPanel.selectPrompt('${Utils.escapeHtml(name)}'); event.stopPropagation();">
                                 <span>${Utils.escapeHtml(name)}</span>
-                                <button type="button" class="delete-option-btn" onclick="PromptPanel.deletePrompt('${Utils.escapeHtml(name)}'); event.stopPropagation();">×</button>
+                                <button type="button" class="delete-option-btn" onclick="PromptPanel.deletePrompt('${Utils.escapeHtml(name)}'); event.stopPropagation();">&times;</button>
                             </div>
                         `).join('')}
-                        <div class="dropdown-option" onclick="PromptPanel.addNew()">
-                            <span>+ 新增Prompt</span>
+                        <div class="dropdown-option" onclick="PromptPanel.addNew(); event.stopPropagation();">
+                            <span style="color: var(--accent-indigo);">+ 新增提示词</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="custom-dropdown" id="prompt-content-dropdown">
-                <div class="dropdown-selected" onclick="toggleDropdown('prompt-content-dropdown')">
-                    <span>📄 查看当前Prompt内容</span>
-                    <span class="dropdown-arrow">▼</span>
-                </div>
-                <div class="dropdown-content prompt-content-area" id="prompt-content-options" style="display: none;">
-                    <textarea readonly rows="8" style="width: 100%; padding: 10px; border: none; resize: vertical; font-family: monospace; background-color: #f9f9f9; box-sizing: border-box;">${Utils.escapeHtml(currentContent)}</textarea>
-                </div>
-            </div>
+            ${currentContent ? `
+            <div class="prompt-preview">
+                <label class="form-label">内容预览</label>
+                <textarea readonly rows="4" class="form-control prompt-preview-text">${Utils.escapeHtml(currentContent)}</textarea>
+            </div>` : ''}
         `;
     },
 
     async selectPrompt(name) {
         closeAllDropdowns();
         try {
-            await API.saveConfig({ selected_prompt: name });
+            await API.savePreferences({ selected_prompt: name });
             AppState.selectedPrompt = name;
             AppState.notify('prompt-changed');
             this.render();
-            showMessage('✅ 配置已保存', 'success');
+            showMessage('已保存', 'success');
         } catch (e) {
-            showMessage('❌ 保存失败: ' + e.message, 'error');
+            showMessage('保存失败: ' + e.message, 'error');
         }
     },
 
     async deletePrompt(name) {
-        if (!confirm(`确定要删除Prompt '${name}' 吗？`)) return;
+        closeAllDropdowns();
+        if (!confirm(`确定删除提示词 '${name}' 吗？`)) return;
         try {
             await API.deletePrompt(name);
             await AppState.loadAll();
@@ -63,22 +60,22 @@ const PromptPanel = {
             this.render();
             TrashPanel.render();
         } catch (e) {
-            showMessage('❌ 删除失败: ' + e.message, 'error');
+            showMessage('删除失败: ' + e.message, 'error');
         }
     },
 
     addNew() {
         closeAllDropdowns();
         showDialog({
-            title: '新增Prompt',
+            title: '新增提示词',
             fields: [
-                { id: 'new_prompt_name', label: 'Prompt名称:', placeholder: '如: 文章总结', type: 'text' },
-                { id: 'new_prompt_content', label: 'Prompt内容:', placeholder: '请输入Prompt内容...', type: 'textarea' }
+                { id: 'new_prompt_name', label: '名称', placeholder: '如: 文章摘要', type: 'text' },
+                { id: 'new_prompt_content', label: '内容', placeholder: '输入提示词内容...', type: 'textarea' }
             ],
             onSubmit: async () => {
                 const name = document.getElementById('new_prompt_name').value.trim();
                 const content = document.getElementById('new_prompt_content').value.trim();
-                if (!name || !content) { alert('请输入Prompt名称和内容'); return false; }
+                if (!name || !content) { showMessage('两项均为必填', 'warning'); return false; }
                 await API.createPrompt({ name, content });
                 await AppState.loadAll();
                 AppState.notify('prompt-added');

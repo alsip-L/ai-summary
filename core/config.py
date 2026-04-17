@@ -5,10 +5,14 @@
 - 单例模式（线程安全）
 - 点号路径访问嵌套配置（支持列表索引）
 - 深拷贝保护内部缓存
+- 原子写入（先写临时文件再替换，防崩溃损坏）
+- 读取加锁（保证一致性快照）
 """
 
 import copy
 import json
+import os
+import tempfile
 import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -56,16 +60,22 @@ class ConfigManager:
         finally:
             self._loaded = True
 
-    def _save(self) -> bool:
-        """保存配置到文件（线程安全）"""
-        with self._lock:
-            return self._save_unsafe()
-
     def _save_unsafe(self) -> bool:
-        """内部保存方法（不加锁，调用方需持有锁）"""
+        """内部保存方法（原子写入：先写临时文件再替换，调用方需持有锁）"""
         try:
-            with open(self._config_path, 'w', encoding='utf-8') as f:
-                json.dump(self._cache, f, ensure_ascii=False, indent=2)
+            # 在同目录下写临时文件，确保同文件系统以支持原子 replace
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                suffix='.tmp', dir=str(self._config_path.parent), prefix='config_'
+            )
+            try:
+                with os.fdopen(tmp_fd, 'w', encoding='utf-8') as f:
+                    json.dump(self._cache, f, ensure_ascii=False, indent=2)
+                os.replace(tmp_path, str(self._config_path))
+            except Exception:
+                # 清理临时文件
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                raise
             return True
         except Exception as e:
             logger.error(f"保存配置文件失败: {e}")
@@ -91,32 +101,33 @@ class ConfigManager:
         }
 
     def get(self, key: str = None, default: Any = None) -> Any:
-        """获取配置项（支持点号路径，含列表索引）"""
-        if not key:
-            return copy.deepcopy(self._cache)
+        """获取配置项（支持点号路径，含列表索引，线程安全读取）"""
+        with self._lock:
+            if not key:
+                return copy.deepcopy(self._cache)
 
-        keys = key.split('.')
-        value = self._cache
+            keys = key.split('.')
+            value = self._cache
 
-        for k in keys:
-            if isinstance(value, list):
-                try:
-                    idx = int(k)
-                    if 0 <= idx < len(value):
-                        value = value[idx]
-                    else:
+            for k in keys:
+                if isinstance(value, list):
+                    try:
+                        idx = int(k)
+                        if 0 <= idx < len(value):
+                            value = value[idx]
+                        else:
+                            return default
+                    except (ValueError, IndexError):
                         return default
-                except (ValueError, IndexError):
+                elif isinstance(value, dict) and k in value:
+                    value = value[k]
+                else:
                     return default
-            elif isinstance(value, dict) and k in value:
-                value = value[k]
-            else:
-                return default
 
-        return copy.deepcopy(value)
+            return copy.deepcopy(value)
 
     def set(self, key: str, value: Any) -> bool:
-        """设置配置项（支持点号路径，线程安全）"""
+        """设置配置项（支持点号路径，线程安全，原子写入）"""
         with self._lock:
             if not key:
                 self._cache = value
@@ -190,7 +201,8 @@ class ConfigManager:
 
     def save(self) -> bool:
         """保存配置到文件"""
-        return self._save()
+        with self._lock:
+            return self._save_unsafe()
 
     @classmethod
     def reset(cls):

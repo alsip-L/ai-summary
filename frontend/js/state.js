@@ -33,32 +33,29 @@ const AppState = {
     isProcessing: false,
     processingStatus: 'idle',
 
-    // UI 状态
-    theme: 'light',
-
     /** 从服务端加载全部初始数据 */
     async loadAll() {
-        const [config, providers, prompts, trash, settings] = await Promise.all([
-            API.getConfig().catch(() => ({})),
-            API.getProviders().catch(() => ({ providers: {} })),
-            API.getPrompts().catch(() => ({ prompts: {} })),
+        const [preferences, providers, prompts, trash, settings] = await Promise.all([
+            API.getPreferences().catch(() => ({})),
+            API.getProviders().catch(() => ({})),
+            API.getPrompts().catch(() => ({})),
             API.getTrash().catch(() => ({ providers: {}, custom_prompts: {} })),
             API.getSystemSettings().catch(() => ({}))
         ]);
 
-        // 配置
-        this.selectedProvider = config.selected_provider || '';
-        this.selectedModel = config.selected_model || '';
-        this.selectedPrompt = config.selected_prompt || '';
-        this.directoryPath = config.directory_path || '';
-        this.apiKey = config.api_key || '';
+        // 用户偏好
+        this.selectedProvider = preferences.selected_provider || '';
+        this.selectedModel = preferences.selected_model || '';
+        this.selectedPrompt = preferences.selected_prompt || '';
+        this.directoryPath = preferences.directory_path || '';
+        this.apiKey = preferences.api_key || '';
 
         // 提供商
-        this.providers = providers.providers || providers || {};
+        this.providers = providers || {};
         this.providerNames = Object.keys(this.providers);
 
         // 提示词
-        this.prompts = prompts.prompts || prompts || {};
+        this.prompts = prompts || {};
         this.promptNames = Object.keys(this.prompts);
 
         // 回收站
@@ -69,9 +66,6 @@ const AppState = {
         if (settings && settings.debug_level) {
             Object.assign(this.systemSettings, settings);
         }
-
-        // 主题
-        this.theme = localStorage.getItem('theme') || 'light';
 
         return this;
     },

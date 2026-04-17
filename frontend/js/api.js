@@ -20,8 +20,8 @@ const API = {
         try {
             const response = await fetch(url, merged);
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({ message: `HTTP ${response.status}` }));
-                throw new Error(errData.message || errData.error || `HTTP ${response.status}`);
+                const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+                throw new Error(errData.error || errData.message || `HTTP ${response.status}`);
             }
             // 204 No Content
             if (response.status === 204) return null;
@@ -32,20 +32,17 @@ const API = {
         }
     },
 
-    /* ========== 配置 ========== */
-    async getConfig() {
-        return this.request('/api/config');
+    /* ========== 用户偏好 ========== */
+    async getPreferences() {
+        return this.request('/api/settings/preferences');
     },
-    async saveConfig(data) {
-        return this.request('/api/config', { method: 'PUT', body: JSON.stringify(data) });
+    async savePreferences(data) {
+        return this.request('/api/settings/preferences', { method: 'PUT', body: JSON.stringify(data) });
     },
 
     /* ========== 提供商 ========== */
     async getProviders() {
         return this.request('/api/providers/');
-    },
-    async getProvider(name) {
-        return this.request(`/api/providers/${encodeURIComponent(name)}`);
     },
     async createProvider(data) {
         return this.request('/api/providers/', { method: 'POST', body: JSON.stringify(data) });
@@ -56,22 +53,6 @@ const API = {
     async deleteProvider(name) {
         return this.request(`/api/providers/${encodeURIComponent(name)}`, { method: 'DELETE' });
     },
-    async restoreProvider(name) {
-        return this.request(`/api/providers/${encodeURIComponent(name)}/restore`, { method: 'POST' });
-    },
-    async permanentDeleteProvider(name) {
-        return this.request(`/api/providers/${encodeURIComponent(name)}/permanent-delete`, { method: 'DELETE' });
-    },
-
-    /* ========== 模型 ========== */
-    async addModel(providerName, data) {
-        return this.request(`/api/providers/${encodeURIComponent(providerName)}/models/`, { method: 'POST', body: JSON.stringify(data) });
-    },
-    async deleteModel(providerName, modelDisplay) {
-        return this.request(`/api/providers/${encodeURIComponent(providerName)}/models/${encodeURIComponent(modelDisplay)}`, { method: 'DELETE' });
-    },
-
-    /* ========== API Key ========== */
     async saveApiKey(providerName, apiKey) {
         return this.request(`/api/providers/${encodeURIComponent(providerName)}/api-key`, {
             method: 'PUT',
@@ -79,62 +60,71 @@ const API = {
         });
     },
 
+    /* ========== 模型 ========== */
+    async addModel(providerName, data) {
+        return this.request(`/api/providers/${encodeURIComponent(providerName)}/models`, { method: 'POST', body: JSON.stringify(data) });
+    },
+    async deleteModel(providerName, modelDisplay) {
+        return this.request(`/api/providers/${encodeURIComponent(providerName)}/models/${encodeURIComponent(modelDisplay)}`, { method: 'DELETE' });
+    },
+
     /* ========== 提示词 ========== */
     async getPrompts() {
         return this.request('/api/prompts/');
     },
-    async getPrompt(name) {
-        return this.request(`/api/prompts/${encodeURIComponent(name)}`);
-    },
     async createPrompt(data) {
         return this.request('/api/prompts/', { method: 'POST', body: JSON.stringify(data) });
-    },
-    async updatePrompt(name, data) {
-        return this.request(`/api/prompts/${encodeURIComponent(name)}`, { method: 'PUT', body: JSON.stringify(data) });
     },
     async deletePrompt(name) {
         return this.request(`/api/prompts/${encodeURIComponent(name)}`, { method: 'DELETE' });
     },
-    async restorePrompt(name) {
-        return this.request(`/api/prompts/${encodeURIComponent(name)}/restore`, { method: 'POST' });
-    },
-    async permanentDeletePrompt(name) {
-        return this.request(`/api/prompts/${encodeURIComponent(name)}/permanent-delete`, { method: 'DELETE' });
-    },
 
-    /* ========== 处理 ========== */
+    /* ========== 任务 ========== */
     async startProcessing(data) {
-        return this.request('/api/processing/start', { method: 'POST', body: JSON.stringify(data) });
+        return this.request('/api/tasks/start', { method: 'POST', body: JSON.stringify(data) });
     },
     async cancelProcessing() {
-        return this.request('/api/processing/cancel', { method: 'POST' });
+        return this.request('/api/tasks/cancel', { method: 'POST' });
     },
     async getProcessingStatus() {
-        return this.request('/api/processing/status');
+        return this.request('/api/tasks/status');
     },
 
-    /* ========== 目录 ========== */
+    /* ========== 文件/目录 ========== */
+    async getDrives() {
+        return this.request('/api/files/drives');
+    },
     async getDirectoryContents(path = '') {
-        const url = path ? `/api/directory/contents?path=${encodeURIComponent(path)}` : '/api/directory/contents';
+        const url = path ? `/api/files/directory?path=${encodeURIComponent(path)}` : '/api/files/drives';
         return this.request(url);
+    },
+    async viewResult(filePath) {
+        return this.request(`/api/files/result?path=${encodeURIComponent(filePath)}`);
     },
 
     /* ========== 系统设置 ========== */
     async getSystemSettings() {
-        return this.request('/api/settings');
+        return this.request('/api/settings/system');
     },
     async saveSystemSettings(data) {
-        return this.request('/api/settings', { method: 'PUT', body: JSON.stringify(data) });
+        return this.request('/api/settings/system', { method: 'PUT', body: JSON.stringify(data) });
     },
 
     /* ========== 回收站 ========== */
     async getTrash() {
-        return this.request('/api/trash');
+        return this.request('/api/settings/trash');
     },
-
-    /* ========== 结果文件 ========== */
-    async viewResult(filePath) {
-        return this.request(`/api/results/view?path=${encodeURIComponent(filePath)}`);
+    async restoreProvider(name) {
+        return this.request(`/api/settings/trash/restore/provider/${encodeURIComponent(name)}`, { method: 'POST' });
+    },
+    async permanentDeleteProvider(name) {
+        return this.request(`/api/settings/trash/provider/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    },
+    async restorePrompt(name) {
+        return this.request(`/api/settings/trash/restore/prompt/${encodeURIComponent(name)}`, { method: 'POST' });
+    },
+    async permanentDeletePrompt(name) {
+        return this.request(`/api/settings/trash/prompt/${encodeURIComponent(name)}`, { method: 'DELETE' });
     }
 };
 

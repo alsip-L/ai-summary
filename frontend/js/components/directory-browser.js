@@ -1,4 +1,4 @@
-/* frontend/js/components/directory-browser.js — 目录浏览器 */
+/* directory-browser.js — Directory browser modal */
 
 const DirectoryBrowser = {
     _currentPath: '',
@@ -7,7 +7,7 @@ const DirectoryBrowser = {
     open() {
         const modal = document.getElementById('directory-browser-modal');
         if (!modal) return;
-        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
         this._currentPath = '';
         this._selectedPath = '';
 
@@ -24,7 +24,7 @@ const DirectoryBrowser = {
 
     close() {
         const modal = document.getElementById('directory-browser-modal');
-        if (modal) modal.style.display = 'none';
+        if (modal) modal.classList.add('hidden');
         document.removeEventListener('keydown', this._escHandler);
     },
 
@@ -38,10 +38,10 @@ const DirectoryBrowser = {
             if (data.success) {
                 this._renderContents(data);
             } else {
-                alert('加载失败: ' + (data.error || '未知错误'));
+                showMessage('加载失败: ' + (data.error || '未知错误'), 'error');
             }
         } catch (e) {
-            alert('加载失败: ' + e.message);
+            showMessage('加载失败: ' + e.message, 'error');
         }
     },
 
@@ -56,20 +56,20 @@ const DirectoryBrowser = {
         pathEl.textContent = data.path || '选择驱动器';
 
         if (data.parent) {
-            backBtn.style.display = 'inline-block';
+            backBtn.classList.remove('hidden');
             backBtn.dataset.parentPath = data.parent;
         } else {
-            backBtn.style.display = 'none';
+            backBtn.classList.add('hidden');
         }
 
         listEl.innerHTML = '';
         if (data.drives && data.drives.length > 0) {
-            data.drives.forEach(drive => listEl.appendChild(this._createItem(drive, drive, '💻')));
+            data.drives.forEach(drive => listEl.appendChild(this._createItem(drive, drive, '\uD83D\uDCBB')));
         }
         if (data.directories && data.directories.length > 0) {
-            data.directories.forEach(dir => listEl.appendChild(this._createItem(dir.name, dir.path, '📂')));
+            data.directories.forEach(dir => listEl.appendChild(this._createItem(dir.name, dir.path, '\uD83D\uDCC2')));
         } else if (!data.drives || data.drives.length === 0) {
-            listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">此目录下没有子目录</div>';
+            listEl.innerHTML = '<div class="empty-state"><div class="empty-state-text">此目录下没有子目录</div></div>';
         }
 
         if (data.path) {
@@ -112,17 +112,20 @@ const DirectoryBrowser = {
     },
 
     async selectDirectory() {
-        if (this._selectedPath) {
-            const dirInput = document.getElementById('directory_path');
-            if (dirInput) dirInput.value = this._selectedPath;
-            AppState.directoryPath = this._selectedPath;
-            this.close();
-            try {
-                await API.saveConfig({ directory_path: this._selectedPath });
-                showMessage('✅ 目录已选择', 'success');
-            } catch (e) {
-                console.error('保存目录路径失败:', e);
-            }
+        const selectedPath = this._selectedPath;
+        if (!selectedPath) {
+            showMessage('请先选择一个目录', 'warning');
+            return;
+        }
+        const dirInput = document.getElementById('directory_path');
+        if (dirInput) dirInput.value = selectedPath;
+        AppState.directoryPath = selectedPath;
+        this.close();
+        try {
+            await API.savePreferences({ directory_path: selectedPath });
+            showMessage('目录已选择', 'success');
+        } catch (e) {
+            console.error('保存目录路径失败:', e);
         }
     }
 };
