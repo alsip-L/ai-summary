@@ -11,9 +11,9 @@ from pathlib import Path
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.config_manager import Config, ConfigManager
-from core.logger import get_logger
-from core.exceptions import (
+from core.config import Config, ConfigManager
+from core.log import get_logger
+from core.errors import (
     AISummaryException,
     ConfigError,
     ProviderError,

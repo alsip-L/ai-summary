@@ -1,0 +1,148 @@
+/* frontend/css/base.css — CSS 变量 + 重置 */
+
+:root {
+    --primary-color: #6366f1;
+    --primary-light: #8b5cf6;
+    --primary-dark: #4f46e5;
+    --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --primary-gradient-hover: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --danger-color: #ef4444;
+    --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    --warning-color: #f59e0b;
+    --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --info-color: #0ea5e9;
+    --info-gradient: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    --light-color: #f8fafc;
+    --dark-color: #1e293b;
+    --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --card-bg: #ffffff;
+    --border-radius: 16px;
+    --border-radius-sm: 8px;
+    --box-shadow: 0 4px 20px rgba(99, 102, 241, 0.12);
+    --box-shadow-hover: 0 10px 40px rgba(99, 102, 241, 0.25);
+    --box-shadow-active: 0 2px 10px rgba(99, 102, 241, 0.2);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-size-base: 14px;
+    --line-height-base: 1.6;
+
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+
+    --container-max-width: 1600px;
+    --container-padding: var(--space-xl);
+    --sidebar-width: 380px;
+    --sidebar-padding: var(--space-lg);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--dark-color);
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    transition: var(--transition);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+/* 入场动画 */
+.animate-fade-in {
+    opacity: 0;
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-fade-in.delay-1 { animation-delay: 0.1s; }
+.animate-fade-in.delay-2 { animation-delay: 0.2s; }
+.animate-fade-in.delay-3 { animation-delay: 0.3s; }
+.animate-fade-in.delay-4 { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in-left {
+    opacity: 0;
+    animation: fadeInLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fade-in-right {
+    opacity: 0;
+    animation: fadeInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 消息提示动画 */
+@keyframes fixedSlideIn {
+    from { transform: translate(-50%, -20px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+@keyframes fixedFadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 6px; }
+::-webkit-scrollbar-thumb { background: var(--primary-gradient); border-radius: 6px; border: 2px solid #f1f5f9; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-gradient-hover); }
+::-webkit-scrollbar-corner { background: #f1f5f9; }
+
+/* 焦点可见 */
+*:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.2);
+}
+
+/* 辅助功能 */
+@media (prefers-contrast: high) {
+    :root {
+        --primary-color: #0066cc;
+        --success-color: #006600;
+        --danger-color: #cc0000;
+        --warning-color: #cc6600;
+        --info-color: #0066cc;
+    }
+    .form-control, .btn, .card { border-width: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 打印 */
+@media print {
+    .no-print { display: none !important; }
+    .card { box-shadow: none; border: 1px solid #000; }
+    .btn { display: none; }
+}

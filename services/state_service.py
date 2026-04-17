@@ -5,7 +5,7 @@ import threading
 import time
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
-from core.logger import get_logger
+from core.log import get_logger
 
 logger = get_logger()
 

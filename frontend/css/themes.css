@@ -1,0 +1,91 @@
+/* frontend/css/themes.css — 亮/暗主题 */
+
+/* ========== data-theme 暗色变量 ========== */
+[data-theme="dark"] {
+    --primary-color: #818cf8;
+    --primary-light: #a78bfa;
+    --primary-gradient: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+    --primary-gradient-hover: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%);
+    --secondary-color: #94a3b8;
+    --success-color: #34d399;
+    --success-gradient: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    --danger-color: #f87171;
+    --danger-gradient: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    --warning-color: #fbbf24;
+    --warning-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    --info-color: #38bdf8;
+    --info-gradient: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    --light-color: #1e293b;
+    --dark-color: #f8fafc;
+    --bg-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    --card-bg: #334155;
+    --bg-dark: #0f172a;
+    --text-dark: #ffffff;
+}
+
+/* ========== body.dark-theme 暗色覆盖 ========== */
+body.dark-theme {
+    background: var(--bg-gradient);
+    color: var(--dark-color);
+}
+
+body.dark-theme .card {
+    background-color: var(--card-bg);
+    border-color: rgba(129, 140, 248, 0.2);
+}
+
+body.dark-theme .card-header {
+    background: var(--primary-gradient);
+}
+
+body.dark-theme .form-control {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    border-color: #475569;
+    color: var(--dark-color);
+}
+
+body.dark-theme .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 5px rgba(129, 140, 248, 0.2);
+}
+
+body.dark-theme .table {
+    color: var(--dark-color);
+}
+
+body.dark-theme .table th {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    border-color: #475569;
+}
+
+body.dark-theme .sidebar {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+}
+
+body.dark-theme .dropdown-selected,
+body.dark-theme input[type="text"],
+body.dark-theme input[type="password"],
+body.dark-theme textarea,
+body.dark-theme select {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    border-color: #64748b;
+}
+
+body.dark-theme .dropdown-content {
+    background: #334155;
+    border-color: #64748b;
+}
+
+body.dark-theme .dropdown-option {
+    border-bottom-color: #475569;
+}
+
+body.dark-theme .dropdown-option:hover {
+    background: linear-gradient(135deg, rgba(129, 140, 248, 0.15) 0%, rgba(167, 139, 250, 0.1) 100%);
+}
+
+body.dark-theme .prompt-content-area,
+body.dark-theme .trash-content-area {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+    border-color: #64748b !important;
+}

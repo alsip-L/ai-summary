@@ -17,12 +17,22 @@
         "longcat/LongCat-Flash-Chat": "longcat/LongCat-Flash-Chat",
         "LongCat-Flash-Chat": "LongCat-Flash-Chat"
       }
+    },
+    {
+      "name": "test_provider",
+      "base_url": "http://test",
+      "api_key": "key123",
+      "models": {
+        "m1": "m1"
+      },
+      "is_active": true
     }
   ],
   "current_provider": {},
   "custom_prompts": {
     "VerifyTest": "Verify content",
-    "SummaryPrompt": "请总结以下内容的要点"
+    "SummaryPrompt": "请总结以下内容的要点",
+    "test_prompt": "Hello world"
   },
   "current_prompt": "",
   "file_paths": {
@@ -45,10 +55,10 @@
     }
   },
   "user_preferences": {
-    "selected_provider": "chuyel",
-    "selected_model": "chuyel/deepseek-v3.2",
-    "selected_prompt": "VerifyTest",
-    "directory_path": "C:\\Users\\15832\\Downloads\\ai_summary\\ai_summary\\data\\txt\\1"
+    "selected_provider": "test",
+    "selected_model": "m1",
+    "selected_prompt": "",
+    "directory_path": ""
   },
   "system_settings": {
     "debug_level": "ERROR",

@@ -1,0 +1,176 @@
+/* frontend/css/layout.css — 布局 */
+
+.container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 24px 32px;
+    display: flex;
+    gap: 24px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.container::after {
+    display: none;
+}
+
+/* 侧边栏 */
+.sidebar {
+    width: 380px;
+    min-width: 380px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    padding: 24px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-radius: 20px;
+    position: sticky;
+    top: 24px;
+    align-self: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 48px);
+    opacity: 1;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: var(--primary-gradient);
+    z-index: 2;
+}
+
+.sidebar h1 {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-top: 0;
+    font-size: 1.7em;
+    padding-bottom: var(--space-md);
+    margin-bottom: var(--space-lg);
+    font-weight: 700;
+    position: relative;
+    letter-spacing: -0.3px;
+}
+
+.sidebar h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 70px;
+    height: 4px;
+    background: var(--primary-gradient);
+    border-radius: 3px;
+}
+
+.sidebar h2 {
+    font-size: 1.1em;
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+    color: var(--dark-color);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar h2::before {
+    content: '';
+    width: 5px;
+    height: 22px;
+    background: var(--primary-gradient);
+    border-radius: 3px;
+}
+
+.sidebar h3 {
+    font-size: 1em;
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-sm);
+    color: #718096;
+}
+
+/* 主内容区域 */
+.main-content {
+    flex: 1;
+    padding: 0;
+    min-width: 0;
+    opacity: 1;
+    box-sizing: border-box;
+}
+
+.main-content h1 {
+    color: var(--primary-color);
+    font-size: 1.7em;
+    margin-bottom: var(--space-md);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: var(--space-sm);
+}
+
+.main-content h3 {
+    color: #64748b;
+    font-size: 1.0em;
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+
+hr {
+    border: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(99, 102, 241, 0.15) 20%,
+        rgba(99, 102, 241, 0.25) 50%,
+        rgba(99, 102, 241, 0.15) 80%,
+        transparent 100%);
+    margin: var(--space-xl) 0;
+    border-radius: 2px;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+    .container { padding: 20px 24px; }
+    .sidebar { width: 340px; min-width: 340px; }
+}
+
+@media (max-width: 1024px) {
+    .container { flex-direction: column; padding: 16px 20px; }
+    .sidebar {
+        width: 100%;
+        min-width: auto;
+        margin-bottom: 20px;
+        position: relative;
+        top: auto;
+        max-height: none;
+        overflow-y: visible;
+    }
+    .main-content { margin-left: 0; width: 100%; }
+}
+
+@media (max-width: 768px) {
+    .container { padding: 16px; }
+    .sidebar {
+        width: 100%;
+        margin-bottom: 20px;
+        position: relative;
+        top: auto;
+        max-height: none;
+        overflow-y: visible;
+    }
+    .main-content { margin-left: 0; width: 100%; }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --container-padding: var(--space-md);
+        --sidebar-padding: var(--space-md);
+    }
+    .container { padding: var(--space-md); }
+}

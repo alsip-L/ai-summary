@@ -339,16 +339,16 @@ export DEBUG_LEVEL=ERROR   # 生产环境
 
 ```
 ai_summary/
+├── app.py                 # Flask 应用入口（蓝图注册+启动）
 ├── core/                  # 核心模块
 │   ├── __init__.py
-│   ├── config.py          # 配置管理
 │   ├── config_manager.py  # 配置管理器
 │   ├── exceptions.py      # 自定义异常
 │   └── logger.py          # 日志管理
-├── managers/              # 管理器
+├── managers/              # 数据管理模块
 │   ├── __init__.py
-│   ├── file_manager.py   # 文件管理
-│   ├── model_manager.py   # 模型管理
+│   ├── file_manager.py    # 文件路径管理
+│   ├── model_manager.py   # 大模型管理
 │   ├── prompt_manager.py  # 提示词管理
 │   └── trash_manager.py   # 回收站管理
 ├── services/              # 服务层
@@ -356,12 +356,25 @@ ai_summary/
 │   ├── file_service.py    # 文件服务
 │   ├── prompt_service.py  # 提示词服务
 │   ├── provider_service.py # 提供商服务
-│   └── state_service.py   # 状态服务
+│   └── state_service.py   # 处理状态服务
 ├── processors/            # 处理器
 │   ├── __init__.py
-│   ├── ai_processor.py    # AI 处理器
-│   └── file_processor.py # 文件处理器
-├── static/                # 静态资源
+│   ├── ai_processor.py    # AI 调用与响应处理
+│   └── task_processor.py  # 异步任务执行
+├── routes/                # 路由层（Flask蓝图）
+│   ├── __init__.py
+│   ├── main_route.py      # 主页与配置选择
+│   ├── processing_route.py # 文件处理路由
+│   ├── directory_route.py # 目录浏览路由
+│   ├── result_route.py    # 结果查看路由
+│   └── settings_route.py  # 系统设置路由
+├── helpers/               # 辅助工具
+│   ├── __init__.py
+│   └── web_helpers.py     # URL解码/会话消息/选择管理
+├── docs/                  # 项目文档
+│   ├── feature_modules_analysis.md
+│   └── project_function_analysis.md
+├── static/                # 前端静态资源
 │   ├── script.js
 │   └── style.css
 ├── templates/             # HTML 模板
@@ -370,25 +383,32 @@ ai_summary/
 ├── tests/                 # 测试
 │   ├── __init__.py
 │   ├── test_core.py
-│   └── test_managers.py
-├── app.py                 # Flask 主应用
-├── utils.py               # 工具函数
+│   ├── test_managers.py
+│   ├── test_all_features.py
+│   ├── test_comprehensive.py
+│   └── test_full_features.py
+├── .gitignore             # Git 忽略规则
 ├── run.py                 # 运行脚本
 ├── config.json            # 配置文件
 ├── requirements.txt       # Python 依赖
 ├── dockerfile             # Docker 构建文件
-└── docker-compose.yml     # Docker Compose 配置
+├── docker-compose.yml     # Docker Compose 配置
+├── README.md              # 项目说明
+└── DOCKER_DEPLOYMENT.md   # Docker 部署文档
 ```
 
 ### 模块说明
 
 - **core/** - 核心功能模块，包括配置管理、日志、异常处理
-- **managers/** - 业务管理模块，提供商、提示词、文件、回收站管理
-- **services/** - 服务层，封装业务逻辑
-- **processors/** - 处理器，执行具体的文件处理任务
+- **managers/** - 数据管理模块，提供商、提示词、文件路径、回收站的CRUD操作
+- **services/** - 服务层，封装业务逻辑，提供对管理器的统一调用接口
+- **processors/** - 处理器，执行AI调用和异步文件处理任务
+- **routes/** - 路由层，Flask蓝图，按功能域划分的Web路由
+- **helpers/** - 辅助工具，URL解码、会话消息、选择管理
+- **docs/** - 项目文档
 - **static/** - 前端静态资源
-- **templates/** - Flask 模板文件
-- **tests/** - 单元测试
+- **templates/** - Flask模板文件
+- **tests/** - 单元测试和集成测试
 
 ## 📄 许可证
 

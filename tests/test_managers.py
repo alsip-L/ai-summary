@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from managers.model_manager import ModelManager, ModelConfig
 from managers.prompt_manager import PromptManager
 from managers.trash_manager import TrashManager
-from core.config_manager import Config, ConfigManager
+from core.config import Config, ConfigManager
 
 
 class TestModelManager(unittest.TestCase):

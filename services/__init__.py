@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-"""服务层模块
-
-提供业务逻辑封装，包括：
-- ProcessingState: 处理状态管理
-"""
+"""服务层模块"""
 
 from .state_service import ProcessingState
+from .processing_service import ProcessingService
 
-__all__ = [
-    'ProcessingState'
-]
+__all__ = ['ProcessingState', 'ProcessingService']
