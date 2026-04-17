@@ -134,11 +134,14 @@ ai_summary/
 ├── config.json             # 配置文件
 ├── requirements.txt        # Python 依赖
 ├── core/                   # 核心模块
-│   ├── config_manager.py   # 配置管理（单例+线程安全+原子写入）
-│   ├── exceptions.py       # 自定义异常层级
-│   └── logger.py           # 日志管理
+│   ├── config.py           # 配置管理（单例+线程安全+原子写入）
+│   ├── errors.py           # 自定义异常层级
+│   └── log.py              # 日志管理
 ├── models/                 # Pydantic 数据模型
-│   └── processing.py       # 处理状态模型
+│   ├── provider.py         # 提供商模型
+│   ├── prompt.py           # 提示词模型
+│   ├── settings.py         # 设置模型
+│   └── task.py             # 任务/处理状态模型
 ├── repositories/           # 数据访问层（Repository 模式）
 │   ├── provider_repo.py    # 提供商 CRUD
 │   ├── prompt_repo.py      # 提示词 CRUD
@@ -146,8 +149,6 @@ ai_summary/
 ├── services/               # 业务服务层
 │   ├── processing_service.py  # 文件处理编排
 │   ├── state_service.py    # 处理状态管理（线程安全单例）
-│   ├── provider_service.py # 提供商服务
-│   ├── prompt_service.py   # 提示词服务
 │   └── task_service.py     # 任务服务
 ├── api/                    # API 蓝图层
 │   ├── providers.py        # 提供商路由

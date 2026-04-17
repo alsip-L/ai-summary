@@ -56,7 +56,7 @@ echo.
 echo Checking config file...
 if not exist "config.json" (
     echo Config file not found, creating default config...
-    echo {"providers":[],"current_provider":{},"custom_prompts":{},"current_prompt":"","file_paths":{"input":"","output":""},"trash":{"providers":[],"custom_prompts":{}}} > config.json
+    echo {"providers":[],"custom_prompts":{},"current_prompt":"","trash":{"providers":{},"custom_prompts":{}},"user_preferences":{},"system_settings":{"debug_level":"ERROR","flask_secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}} > config.json
     echo Default config created
 ) else (
     echo Config file exists

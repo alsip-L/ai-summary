@@ -85,10 +85,8 @@ class ConfigManager:
         """默认配置"""
         return {
             "providers": [],
-            "current_provider": {},
             "custom_prompts": {},
             "current_prompt": "",
-            "file_paths": {"input": "", "output": ""},
             "trash": {"providers": {}, "custom_prompts": {}},
             "user_preferences": {},
             "system_settings": {
