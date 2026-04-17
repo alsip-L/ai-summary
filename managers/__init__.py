@@ -3,7 +3,7 @@
 
 from .model_manager import ModelManager, ModelConfig
 from .prompt_manager import PromptManager
-from .file_manager import FileManager, PathConfig
+from .file_manager import FilePathManager, PathConfig
 from .trash_manager import TrashManager
 
-__all__ = ['ModelManager', 'ModelConfig', 'PromptManager', 'FileManager', 'PathConfig', 'TrashManager']
+__all__ = ['ModelManager', 'ModelConfig', 'PromptManager', 'FilePathManager', 'PathConfig', 'TrashManager']

@@ -6,23 +6,10 @@ import time
 import traceback
 from openai import OpenAI
 from core.config_manager import ConfigManager
-from core.logger import get_logger
+from core.logger import get_logger, debug_print
 from core.exceptions import FileProcessingError, ProviderError
 
 logger = get_logger()
-
-
-def debug_print(level, message):
-    """统一的调试输出函数，委托给 core.logger"""
-    level_map = {
-        'DEBUG': logger.debug,
-        'INFO': logger.info,
-        'WARNING': logger.warning,
-        'ERROR': logger.error,
-        'CRITICAL': logger.critical
-    }
-    log_func = level_map.get(level.upper(), logger.info)
-    log_func(message)
 
 
 class ConfigManagerWrapper:
@@ -73,6 +60,18 @@ class PromptManager:
                 processed_prompts[name] = content
 
         return processed_prompts
+
+    @staticmethod
+    def get_all_prompts():
+        """获取所有提示词（兼容app.py调用）"""
+        return PromptManager.load()
+
+    @staticmethod
+    def get_default_prompt(all_prompts):
+        """获取默认提示词（兼容app.py调用）"""
+        if all_prompts:
+            return list(all_prompts.keys())[0]
+        return ''
 
     @staticmethod
     def save(prompts):
@@ -159,6 +158,24 @@ class ProviderManager:
                 providers_dict[provider['name']] = provider
 
         return providers_dict
+
+    @staticmethod
+    def get_all_providers():
+        """获取所有提供商（兼容app.py调用）"""
+        return ProviderManager.load()
+
+    @staticmethod
+    def get_default_provider(all_providers):
+        """获取默认提供商（兼容app.py调用）"""
+        if all_providers:
+            return list(all_providers.keys())[0]
+        return ''
+
+    @staticmethod
+    def get_provider_models(provider_name, all_providers):
+        """获取提供商的模型列表（兼容app.py调用）"""
+        provider = all_providers.get(provider_name, {})
+        return provider.get('models', {})
 
     @staticmethod
     def save(name, base_url, api_key="", models=None):

@@ -20,13 +20,13 @@ class PathConfig:
             self.output_path = self.input_path
 
 
-class FileManager:
+class FilePathManager:
     """文件路径管理器
     
     职责：管理txt输入路径和md输出路径，扫描输入文件，生成输出路径
     
     使用示例：
-        manager = FileManager()
+        manager = FilePathManager()
         
         # 设置路径
         manager.set_paths("/data/txt_files", "/output/md_files")

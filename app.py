@@ -34,25 +34,14 @@ from utils import (
     delete_custom_prompt, delete_model_from_provider, add_model_to_provider,
     move_provider_to_trash, move_prompt_to_trash, restore_provider_from_trash,
     restore_prompt_from_trash, permanent_delete_provider_from_trash,
-    permanent_delete_prompt_from_trash, get_trash_items, save_user_preferences, load_user_preferences
+    permanent_delete_prompt_from_trash, get_trash_items, save_user_preferences, load_user_preferences,
+    ProviderManager, PromptManager
 )
 from services.state_service import ProcessingState
 
 # 使用 core/logger.py 统一日志管理
-from core.logger import get_logger
+from core.logger import get_logger, debug_print
 logger = get_logger()
-
-def debug_print(level, message):
-    """统一的调试输出函数，委托给 core.logger"""
-    level_map = {
-        'DEBUG': logger.debug,
-        'INFO': logger.info,
-        'WARNING': logger.warning,
-        'ERROR': logger.error,
-        'CRITICAL': logger.critical
-    }
-    log_func = level_map.get(level.upper(), logger.info)
-    log_func(message)
 
 def safe_url_decode(value):
     """安全的URL解码，支持多种编码"""
@@ -82,42 +71,6 @@ def set_session_message(session, message_type, message):
     session[f'last_{message_type}'] = message
 
 # 业务逻辑函数
-class ProviderManager:
-    """AI提供商管理类"""
-    
-    @staticmethod
-    def get_all_providers():
-        """获取所有提供商"""
-        return load_providers()
-    
-    @staticmethod
-    def get_default_provider(all_providers):
-        """获取默认提供商"""
-        if all_providers:
-            return list(all_providers.keys())[0]
-        return ''
-    
-    @staticmethod
-    def get_provider_models(provider_name, all_providers):
-        """获取提供商的模型列表"""
-        provider = all_providers.get(provider_name, {})
-        return provider.get('models', {})
-
-class PromptManager:
-    """Prompt管理类"""
-    
-    @staticmethod
-    def get_all_prompts():
-        """获取所有提示词"""
-        return load_custom_prompts()
-    
-    @staticmethod
-    def get_default_prompt(all_prompts):
-        """获取默认提示词"""
-        if all_prompts:
-            return list(all_prompts.keys())[0]
-        return ''
-
 class SelectionManager:
     """选择管理类"""
 
