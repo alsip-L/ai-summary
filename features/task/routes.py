@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-"""任务 API"""
+"""任务 API 路由"""
 
 from flask import Blueprint, request, jsonify
-from services.task_service import TaskService
+from .service import TaskService
 
 task_bp = Blueprint("api_tasks", __name__, url_prefix="/api/tasks")
+
+_svc = TaskService()
 
 
 @task_bp.post("/start")
 def start_task():
     """POST /api/tasks/start"""
     data = request.get_json()
-    result = TaskService().start(
+    result = _svc.start(
         provider_name=data.get("provider", ""),
         model_key=data.get("model", ""),
         api_key=data.get("api_key", ""),
@@ -27,13 +29,13 @@ def start_task():
 @task_bp.get("/status")
 def get_status():
     """GET /api/tasks/status"""
-    return jsonify(TaskService().get_status())
+    return jsonify(_svc.get_status())
 
 
 @task_bp.post("/cancel")
 def cancel_task():
     """POST /api/tasks/cancel"""
-    result = TaskService().cancel()
+    result = _svc.cancel()
     if result["success"]:
         return jsonify(result)
     return jsonify(result), 400

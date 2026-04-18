@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Tests for repository layer (replaces old managers tests)."""
+"""Tests for feature modules (provider, prompt, trash repositories)."""
 
 import unittest
 import os
@@ -12,11 +12,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import ConfigManager
-from repositories.provider_repo import ProviderRepository
-from repositories.prompt_repo import PromptRepository
-from repositories.trash_repo import TrashRepository
-from models.provider import ProviderConfig
-from models.prompt import PromptConfig
+from features.provider.repository import ProviderRepository
+from features.prompt.repository import PromptRepository
+from features.trash.repository import TrashRepository
+from features.provider.models import ProviderConfig
+from features.prompt.models import PromptConfig
 
 
 class TestProviderRepository(unittest.TestCase):
@@ -55,12 +55,6 @@ class TestProviderRepository(unittest.TestCase):
         self.assertEqual(len(all_providers), 2)
         self.assertIn("P1", all_providers)
         self.assertIn("P2", all_providers)
-
-    def test_delete(self):
-        repo = ProviderRepository(ConfigManager())
-        repo.save(ProviderConfig(name="ToDelete", base_url="https://test.com", api_key="k", models={}))
-        self.assertTrue(repo.delete("ToDelete"))
-        self.assertIsNone(repo.get("ToDelete"))
 
 
 class TestPromptRepository(unittest.TestCase):

@@ -78,7 +78,7 @@ class TestAPIEndpoints(unittest.TestCase):
 
     def test_trash(self):
         """测试回收站 API"""
-        r = requests.get(f"{BASE_URL}/api/settings/trash")
+        r = requests.get(f"{BASE_URL}/api/settings/trash/")
         self.assertEqual(r.status_code, 200)
 
 

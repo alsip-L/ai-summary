@@ -6,7 +6,7 @@ import os
 
 page_bp = Blueprint("pages", __name__)
 
-_FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
+_FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend")
 
 
 @page_bp.route("/")

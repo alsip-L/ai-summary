@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """提供商数据访问层"""
 
-from models.provider import ProviderConfig
+from .models import ProviderConfig
 from core.config import ConfigManager
 
 
 class ProviderRepository:
-    def __init__(self, config: ConfigManager):
-        self._config = config
+    def __init__(self, config: ConfigManager = None):
+        self._config = config or ConfigManager()
 
     def get_all(self) -> dict[str, ProviderConfig]:
         """获取所有活跃提供商"""
@@ -60,11 +60,3 @@ class ProviderRepository:
             return False
         del provider.models[model_name]
         return self.save(provider)
-
-    def delete(self, name: str) -> bool:
-        """从活跃列表中移除提供商（不移入回收站）"""
-        providers = self._config.get("providers", [])
-        new_providers = [p for p in providers if p.get("name") != name]
-        if len(new_providers) == len(providers):
-            return False
-        return self._config.set("providers", new_providers)

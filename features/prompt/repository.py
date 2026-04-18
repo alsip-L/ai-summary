@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """提示词数据访问层"""
 
-from models.prompt import PromptConfig
+from .models import PromptConfig
 from core.config import ConfigManager
 from core.errors import ValidationError
 from core.log import get_logger
@@ -10,8 +10,8 @@ logger = get_logger()
 
 
 class PromptRepository:
-    def __init__(self, config: ConfigManager):
-        self._config = config
+    def __init__(self, config: ConfigManager = None):
+        self._config = config or ConfigManager()
 
     def get_all(self) -> dict[str, PromptConfig]:
         prompts = self._config.get("custom_prompts", {})

@@ -5,8 +5,6 @@
 在同一次 config.set 调用中同时更新源数据和回收站数据，避免中间状态。
 """
 
-from models.provider import ProviderConfig
-from models.prompt import PromptConfig
 from core.config import ConfigManager
 from core.log import get_logger
 
@@ -14,8 +12,8 @@ logger = get_logger()
 
 
 class TrashRepository:
-    def __init__(self, config: ConfigManager):
-        self._config = config
+    def __init__(self, config: ConfigManager = None):
+        self._config = config or ConfigManager()
 
     def get_all(self) -> dict:
         return self._config.get("trash", {})

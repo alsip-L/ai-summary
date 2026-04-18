@@ -43,18 +43,20 @@ def handle_file_error(e):
 def handle_base_error(e):
     return jsonify({"success": False, "error": e.message}), 500
 
-# 注册 API 蓝图
-from api.providers import provider_bp
-from api.prompts import prompt_bp
-from api.tasks import task_bp
-from api.files import file_bp
-from api.settings import settings_bp
-from api.pages import page_bp
+# 注册功能模块蓝图
+from features.provider import provider_bp
+from features.prompt import prompt_bp
+from features.task import task_bp
+from features.file_browser import file_bp
+from features.trash import trash_bp
+from features.settings import settings_bp
+from features.pages import page_bp
 
 app.register_blueprint(provider_bp)
 app.register_blueprint(prompt_bp)
 app.register_blueprint(task_bp)
 app.register_blueprint(file_bp)
+app.register_blueprint(trash_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(page_bp)
 
