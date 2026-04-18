@@ -4,14 +4,11 @@
 
 class AISummaryException(Exception):
     """AI Summary 基础异常类"""
-    def __init__(self, message: str = "", code: str = None):
+    def __init__(self, message: str = ""):
         super().__init__(message)
         self.message = message
-        self.code = code
 
     def __str__(self):
-        if self.code:
-            return f"[{self.code}] {self.message}"
         return self.message
 
 

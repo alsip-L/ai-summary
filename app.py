@@ -2,14 +2,6 @@
 import sys
 import codecs
 
-# 设置控制台编码为UTF-8
-if sys.platform == 'win32':
-    try:
-        import locale
-        locale.setlocale(locale.LC_ALL, 'zh_CN.UTF-8')
-    except Exception:
-        pass
-
 # 重定向输出到UTF-8编码
 if sys.stdout.encoding != 'utf-8':
     try:
@@ -59,11 +51,3 @@ app.register_blueprint(file_bp)
 app.register_blueprint(trash_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(page_bp)
-
-if __name__ == '__main__':
-    settings = ConfigManager().get('system_settings', {})
-    debug_level = settings.get('debug_level', 'ERROR').upper()
-    host = settings.get('host', '0.0.0.0')
-    port = settings.get('port', 5000)
-    debug = settings.get('debug', False) or debug_level == 'DEBUG'
-    app.run(debug=debug, host=host, port=port)

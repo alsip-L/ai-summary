@@ -47,9 +47,6 @@ const API = {
     async createProvider(data) {
         return this.request('/api/providers/', { method: 'POST', body: JSON.stringify(data) });
     },
-    async updateProvider(name, data) {
-        return this.request(`/api/providers/${encodeURIComponent(name)}`, { method: 'PUT', body: JSON.stringify(data) });
-    },
     async deleteProvider(name) {
         return this.request(`/api/providers/${encodeURIComponent(name)}`, { method: 'DELETE' });
     },
@@ -91,23 +88,12 @@ const API = {
     },
 
     /* ========== 文件/目录 ========== */
-    async getDrives() {
-        return this.request('/api/files/drives');
-    },
     async getDirectoryContents(path = '') {
         const url = path ? `/api/files/directory?path=${encodeURIComponent(path)}` : '/api/files/drives';
         return this.request(url);
     },
     async viewResult(filePath) {
         return this.request(`/api/files/result?path=${encodeURIComponent(filePath)}`);
-    },
-
-    /* ========== 系统设置 ========== */
-    async getSystemSettings() {
-        return this.request('/api/settings/system');
-    },
-    async saveSystemSettings(data) {
-        return this.request('/api/settings/system', { method: 'PUT', body: JSON.stringify(data) });
     },
 
     /* ========== 回收站 ========== */

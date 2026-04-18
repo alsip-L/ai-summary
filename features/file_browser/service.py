@@ -3,9 +3,8 @@
 
 import sys
 import os
-from core.log import get_logger
-
-logger = get_logger()
+from core.utils import read_file_with_encoding
+from core.errors import FileProcessingError
 
 
 class FileBrowserService:
@@ -64,16 +63,13 @@ class FileBrowserService:
         if not real_path.endswith((".md", ".txt")):
             return {"success": False, "error": "不支持的文件类型"}
 
-        for encoding in ["utf-8", "gbk"]:
-            try:
-                with open(real_path, "r", encoding=encoding) as f:
-                    content = f.read()
-                return {
-                    "success": True,
-                    "file_path": file_path,
-                    "file_name": os.path.basename(real_path),
-                    "content": content,
-                }
-            except UnicodeDecodeError:
-                continue
-        return {"success": False, "error": "文件读取失败"}
+        try:
+            content = read_file_with_encoding(real_path)
+            return {
+                "success": True,
+                "file_path": file_path,
+                "file_name": os.path.basename(real_path),
+                "content": content,
+            }
+        except FileProcessingError:
+            return {"success": False, "error": "文件读取失败"}

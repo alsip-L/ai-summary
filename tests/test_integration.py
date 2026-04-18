@@ -31,11 +31,6 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.json().get("success"))
 
-        # 更新
-        data["base_url"] = "https://updated.com"
-        r = requests.put(f"{BASE_URL}/api/providers/TestProvider", json=data)
-        self.assertEqual(r.status_code, 200)
-
         # 删除（移入回收站）
         r = requests.delete(f"{BASE_URL}/api/providers/TestProvider")
         self.assertEqual(r.status_code, 200)
@@ -71,14 +66,9 @@ class TestAPIEndpoints(unittest.TestCase):
         r = requests.get(f"{BASE_URL}/api/settings/preferences")
         self.assertEqual(r.status_code, 200)
 
-    def test_settings_system(self):
-        """测试系统设置 API"""
-        r = requests.get(f"{BASE_URL}/api/settings/system")
-        self.assertEqual(r.status_code, 200)
-
     def test_trash(self):
         """测试回收站 API"""
-        r = requests.get(f"{BASE_URL}/api/settings/trash/")
+        r = requests.get(f"{BASE_URL}/api/settings/trash")
         self.assertEqual(r.status_code, 200)
 
 

@@ -65,7 +65,7 @@
       },
       "TestProvider": {
         "name": "TestProvider",
-        "base_url": "https://updated.com",
+        "base_url": "https://test.com",
         "api_key": "test_key",
         "models": {},
         "is_active": true

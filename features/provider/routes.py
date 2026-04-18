@@ -25,16 +25,6 @@ def create_provider():
     return jsonify(result), 400
 
 
-@provider_bp.put("/<name>")
-def update_provider(name: str):
-    """PUT /api/providers/<name>"""
-    data = request.get_json()
-    result = _svc.update(name, data)
-    if result["success"]:
-        return jsonify(result)
-    return jsonify(result), 400
-
-
 @provider_bp.delete("/<name>")
 def delete_provider(name: str):
     """DELETE /api/providers/<name> — 移入回收站"""

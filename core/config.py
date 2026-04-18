@@ -15,7 +15,7 @@ import os
 import tempfile
 import threading
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from core.log import get_logger
 
 logger = get_logger()
@@ -196,11 +196,6 @@ class ConfigManager:
                 return self._save_unsafe()
 
             return False
-
-    def save(self) -> bool:
-        """保存配置到文件"""
-        with self._lock:
-            return self._save_unsafe()
 
     @classmethod
     def reset(cls):

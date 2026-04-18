@@ -73,7 +73,7 @@ const ProviderPanel = {
             const models = AppState.getCurrentModels();
             AppState.selectedModel = Object.keys(models)[0] || '';
             AppState.apiKey = AppState.getCurrentApiKey();
-            AppState.notify('provider-changed');
+
             this.render();
             showMessage('已保存', 'success');
         } catch (e) {
@@ -86,7 +86,7 @@ const ProviderPanel = {
         try {
             await API.savePreferences({ selected_model: name });
             AppState.selectedModel = name;
-            AppState.notify('model-changed');
+
             this.render();
             showMessage('已保存', 'success');
         } catch (e) {
@@ -100,7 +100,7 @@ const ProviderPanel = {
         try {
             await API.deleteProvider(name);
             await AppState.loadAll();
-            AppState.notify('provider-deleted');
+
             this.render();
             TrashPanel.render();
         } catch (e) {
@@ -114,7 +114,7 @@ const ProviderPanel = {
         try {
             await API.deleteModel(providerName, modelDisplay);
             await AppState.loadAll();
-            AppState.notify('model-deleted');
+
             this.render();
         } catch (e) {
             showMessage('删除失败: ' + e.message, 'error');
@@ -167,7 +167,7 @@ const ProviderPanel = {
                 const models = modelName ? { [modelName]: modelName } : { 'default': name.toLowerCase().replace(/\s+/g, '-') + '-model' };
                 await API.createProvider({ name, base_url: url, api_key: apiKey, models });
                 await AppState.loadAll();
-                AppState.notify('provider-added');
+
                 ProviderPanel.render();
                 return true;
             }
@@ -189,7 +189,7 @@ const ProviderPanel = {
                 if (!display || !id) { showMessage('两项均为必填', 'warning'); return false; }
                 await API.addModel(AppState.selectedProvider, { display_name: display, model_id: id });
                 await AppState.loadAll();
-                AppState.notify('model-added');
+
                 ProviderPanel.render();
                 return true;
             }

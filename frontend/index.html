@@ -37,8 +37,10 @@
                 <!-- Trash dropdown (hidden when empty, JS controlled) -->
                 <div class="custom-dropdown hidden" id="trash-dropdown">
                     <div class="dropdown-selected" onclick="toggleDropdown('trash-dropdown')">
-                        <span>回收站</span>
-                        <span id="trash-count" class="results-count"></span>
+                        <span class="dropdown-label-group">
+                            <span>回收站</span>
+                            <span id="trash-count" class="results-count"></span>
+                        </span>
                         <span class="dropdown-arrow">&#9662;</span>
                     </div>
                     <div class="dropdown-content trash-content-area" id="trash-options">
@@ -71,7 +73,7 @@
                 </div>
                 <div class="progress-main">
                     <div class="progress-bar-wrapper">
-                        <div id="progressBar" class="progress-bar-advanced">
+                        <div class="progress-bar-advanced">
                             <div class="progress-fill" id="progressFill"></div>
                             <div class="progress-glow"></div>
                         </div>

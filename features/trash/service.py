@@ -2,9 +2,6 @@
 """回收站业务逻辑层"""
 
 from .repository import TrashRepository
-from core.log import get_logger
-
-logger = get_logger()
 
 
 class TrashService:

@@ -2,9 +2,7 @@
 """系统设置与用户偏好业务逻辑层"""
 
 from core.config import ConfigManager
-from core.log import get_logger, update_log_level
-
-logger = get_logger()
+from core.log import update_log_level
 
 
 class SettingsService:

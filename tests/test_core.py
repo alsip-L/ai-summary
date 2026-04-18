@@ -109,10 +109,9 @@ class TestExceptions(unittest.TestCase):
 
     def test_base_exception(self):
         """Test base exception."""
-        exc = AISummaryException("Test message", "TEST_CODE")
-        self.assertEqual(str(exc), "[TEST_CODE] Test message")
+        exc = AISummaryException("Test message")
+        self.assertEqual(str(exc), "Test message")
         self.assertEqual(exc.message, "Test message")
-        self.assertEqual(exc.code, "TEST_CODE")
 
     def test_provider_error(self):
         """Test provider error."""

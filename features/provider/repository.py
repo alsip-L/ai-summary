@@ -20,12 +20,7 @@ class ProviderRepository:
 
     def get_all_as_dict(self) -> dict[str, dict]:
         """获取所有活跃提供商（dict 格式，用于 API 响应）"""
-        providers = self._config.get("providers", [])
-        return {
-            p["name"]: p
-            for p in providers
-            if p.get("is_active", True)
-        }
+        return {name: p.model_dump() for name, p in self.get_all().items()}
 
     def get(self, name: str) -> ProviderConfig | None:
         return self.get_all().get(name)

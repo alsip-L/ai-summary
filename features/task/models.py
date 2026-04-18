@@ -31,5 +31,4 @@ class ProcessingStatus(BaseModel):
     results: list[TaskResult] = Field(default_factory=list)
     error: str | None = None
     start_time: float | None = None
-    end_time: float | None = None
     cancelled: bool = False

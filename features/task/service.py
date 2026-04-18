@@ -2,7 +2,6 @@
 """任务处理服务 — 合并状态管理、文件处理和任务编排"""
 
 import os
-import copy
 import threading
 import time
 from openai import OpenAI
@@ -12,7 +11,8 @@ from .models import ProcessingStatus, TaskStatus, TaskResult
 from features.provider.repository import ProviderRepository
 from features.prompt.repository import PromptRepository
 from core.config import ConfigManager
-from core.errors import FileProcessingError, ProviderError, ValidationError
+from core.errors import FileProcessingError, ProviderError
+from core.utils import read_file_with_encoding
 from core.log import get_logger
 
 logger = get_logger()
@@ -50,10 +50,6 @@ class ProcessingState:
             data["status"] = self._state.status.value
             data["results"] = [r.model_dump() for r in self._state.results]
             return data
-
-    def reset(self) -> None:
-        with self._state_lock:
-            self._state = ProcessingStatus()
 
     def start(self, total_files: int = 0) -> None:
         with self._state_lock:
@@ -95,7 +91,6 @@ class ProcessingState:
             self._state.status = TaskStatus.COMPLETED
             self._state.progress = 100
             self._state.current_file = ''
-            self._state.end_time = time.time()
             self._state.cancelled = False
 
     def set_error(self, error_message: str) -> None:
@@ -103,14 +98,12 @@ class ProcessingState:
             self._state.status = TaskStatus.ERROR
             self._state.error = error_message
             self._state.current_file = ''
-            self._state.end_time = time.time()
 
     def cancel(self) -> None:
         with self._state_lock:
             self._state.status = TaskStatus.CANCELLED
             self._state.error = '用户取消了处理'
             self._state.current_file = ''
-            self._state.end_time = time.time()
             self._state.cancelled = True
 
     def set_cancelled(self) -> None:
@@ -125,13 +118,6 @@ class ProcessingState:
         with self._state_lock:
             return self._state.status in (TaskStatus.PROCESSING, TaskStatus.SCANNING)
 
-    def get_elapsed_time(self) -> float:
-        with self._state_lock:
-            if self._state.start_time is None:
-                return 0
-            end = self._state.end_time or time.time()
-            return end - self._state.start_time
-
 
 class ProcessingService:
     """AI 文件处理服务"""
@@ -143,13 +129,7 @@ class ProcessingService:
 
     @staticmethod
     def read_file(file_path: str) -> str:
-        for encoding in ["utf-8", "gbk"]:
-            try:
-                with open(file_path, "r", encoding=encoding) as f:
-                    return f.read()
-            except UnicodeDecodeError:
-                continue
-        raise FileProcessingError(f"无法解码文件: {os.path.basename(file_path)}")
+        return read_file_with_encoding(file_path)
 
     @staticmethod
     def call_ai(client: OpenAI, content: str, system_prompt: str, model_id: str) -> str:

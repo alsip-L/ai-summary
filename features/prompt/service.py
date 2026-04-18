@@ -4,9 +4,6 @@
 from .models import PromptConfig
 from .repository import PromptRepository
 from features.trash.repository import TrashRepository
-from core.log import get_logger
-
-logger = get_logger()
 
 
 class PromptService:

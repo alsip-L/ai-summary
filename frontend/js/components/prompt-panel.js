@@ -42,7 +42,7 @@ const PromptPanel = {
         try {
             await API.savePreferences({ selected_prompt: name });
             AppState.selectedPrompt = name;
-            AppState.notify('prompt-changed');
+
             this.render();
             showMessage('已保存', 'success');
         } catch (e) {
@@ -56,7 +56,7 @@ const PromptPanel = {
         try {
             await API.deletePrompt(name);
             await AppState.loadAll();
-            AppState.notify('prompt-deleted');
+
             this.render();
             TrashPanel.render();
         } catch (e) {
@@ -78,7 +78,7 @@ const PromptPanel = {
                 if (!name || !content) { showMessage('两项均为必填', 'warning'); return false; }
                 await API.createPrompt({ name, content });
                 await AppState.loadAll();
-                AppState.notify('prompt-added');
+
                 PromptPanel.render();
                 return true;
             }

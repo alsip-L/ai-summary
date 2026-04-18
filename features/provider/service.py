@@ -4,9 +4,6 @@
 from .models import ProviderConfig
 from .repository import ProviderRepository
 from features.trash.repository import TrashRepository
-from core.log import get_logger
-
-logger = get_logger()
 
 
 class ProviderService:
@@ -29,17 +26,6 @@ class ProviderService:
         if self._repo.save(provider):
             return {"success": True}
         return {"success": False, "error": "保存失败"}
-
-    def update(self, name: str, data: dict) -> dict:
-        """更新提供商"""
-        data["name"] = name
-        try:
-            provider = ProviderConfig(**data)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-        if self._repo.save(provider):
-            return {"success": True}
-        return {"success": False, "error": "更新失败"}
 
     def delete(self, name: str) -> dict:
         """删除提供商（移入回收站）"""
