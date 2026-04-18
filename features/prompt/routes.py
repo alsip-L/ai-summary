@@ -18,7 +18,7 @@ def list_prompts():
 @prompt_bp.post("/")
 def create_prompt():
     """POST /api/prompts/"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     result = _svc.create(data)
     if result["success"]:
         return jsonify(result)

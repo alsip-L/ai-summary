@@ -7,7 +7,7 @@ import sys
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import app
+from app import create_app
 from core.config import ConfigManager
 
 def main():
@@ -17,13 +17,14 @@ def main():
     host = settings.get('host', '0.0.0.0')
     port = int(settings.get('port', 5000))
     debug = settings.get('debug', False)
-    
+
     print(f"Starting AI Summary application...")
     print(f"Host: {host}")
     print(f"Port: {port}")
     print(f"Debug: {debug}")
     print(f"Access: http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
-    
+
+    app = create_app()
     app.run(host=host, port=port, debug=debug, use_reloader=False)
 
 if __name__ == '__main__':

@@ -170,6 +170,17 @@ class ConfigManager:
 
             return self._save_unsafe()
 
+    def set_batch(self, updates: Dict[str, Any]) -> bool:
+        """批量设置多个顶层配置项（一次锁 + 一次磁盘写入，真正的原子操作）
+
+        Args:
+            updates: {顶层key: value} 字典，如 {"providers": [...], "trash": {...}}
+        """
+        with self._lock:
+            for key, value in updates.items():
+                self._cache[key] = value
+            return self._save_unsafe()
+
     def delete(self, key: str) -> bool:
         """删除配置项（支持点号路径）"""
         with self._lock:

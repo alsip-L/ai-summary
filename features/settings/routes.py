@@ -18,7 +18,7 @@ def get_preferences():
 @settings_bp.put("/preferences")
 def save_preferences():
     """PUT /api/settings/preferences"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     result = _svc.save_preferences(data)
     if result["success"]:
         return jsonify(result)

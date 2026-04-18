@@ -28,11 +28,10 @@ class ProcessingState:
     _lock = threading.Lock()
 
     def __new__(cls):
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super().__new__(cls)
-                    cls._instance._initialized = False
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                cls._instance._initialized = False
         return cls._instance
 
     def __init__(self):
@@ -117,6 +116,12 @@ class ProcessingState:
     def is_running(self) -> bool:
         with self._state_lock:
             return self._state.status in (TaskStatus.PROCESSING, TaskStatus.SCANNING)
+
+    @classmethod
+    def reset(cls):
+        """重置单例状态（主要用于测试）"""
+        with cls._lock:
+            cls._instance = None
 
 
 class ProcessingService:

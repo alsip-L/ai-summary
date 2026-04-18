@@ -103,6 +103,21 @@ class TestConfigManager(unittest.TestCase):
         original = config.get('providers')
         self.assertEqual(len(original), 1)
 
+    def test_set_batch(self):
+        """Test batch setting multiple keys atomically."""
+        config = ConfigManager()
+        self.assertTrue(config.set_batch({
+            "providers": [],
+            "custom_prompts": {"p1": "content1"}
+        }))
+        self.assertEqual(config.get('providers'), [])
+        self.assertEqual(config.get('custom_prompts'), {"p1": "content1"})
+        # Verify persisted to disk
+        with open(self.config_path, 'r', encoding='utf-8') as f:
+            disk = json.load(f)
+        self.assertEqual(disk['providers'], [])
+        self.assertEqual(disk['custom_prompts'], {"p1": "content1"})
+
 
 class TestExceptions(unittest.TestCase):
     """Test exception classes."""

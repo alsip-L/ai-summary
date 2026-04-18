@@ -18,7 +18,7 @@ def list_providers():
 @provider_bp.post("/")
 def create_provider():
     """POST /api/providers/ — 创建提供商"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     result = _svc.create(data)
     if result["success"]:
         return jsonify(result)
@@ -37,7 +37,7 @@ def delete_provider(name: str):
 @provider_bp.put("/<name>/api-key")
 def update_api_key(name: str):
     """PUT /api/providers/<name>/api-key"""
-    api_key = request.get_json().get("api_key", "")
+    api_key = (request.get_json(silent=True) or {}).get("api_key", "")
     result = _svc.update_api_key(name, api_key)
     if result["success"]:
         return jsonify(result)
@@ -47,7 +47,7 @@ def update_api_key(name: str):
 @provider_bp.post("/<name>/models")
 def add_model(name: str):
     """POST /api/providers/<name>/models"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     result = _svc.add_model(name, data.get("display_name", ""), data.get("model_id", ""))
     if result["success"]:
         return jsonify(result)

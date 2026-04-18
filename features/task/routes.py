@@ -12,7 +12,7 @@ _svc = TaskService()
 @task_bp.post("/start")
 def start_task():
     """POST /api/tasks/start"""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     result = _svc.start(
         provider_name=data.get("provider", ""),
         model_key=data.get("model", ""),
