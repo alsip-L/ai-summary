@@ -15,6 +15,10 @@ export const usePromptStore = defineStore('prompt', () => {
     prompts.value = promptData || {}
     promptNames.value = Object.keys(prompts.value)
     selectedPrompt.value = preferences.selected_prompt || ''
+    if (selectedPrompt.value && !prompts.value[selectedPrompt.value]) {
+      selectedPrompt.value = ''
+      await api.savePreferences({ selected_prompt: '' }).catch(() => {})
+    }
   }
 
   async function createPrompt(name, content) {

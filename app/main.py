@@ -13,11 +13,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 from core.config import ConfigManager
 from core.errors import AISummaryException, ValidationError, ProviderError, FileProcessingError
 from app.database import engine, Base
-from app.routers import providers, prompts, tasks, files, trash, settings
+from app.routers import providers, prompts, tasks, files, trash, settings, logs
 
 
 @asynccontextmanager
@@ -29,7 +28,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     config = ConfigManager()
     secret_key = config.get(
-        'system_settings.flask_secret_key', 'default-dev-secret-key-please-change-in-prod'
+        'system_settings.secret_key', 'default-dev-secret-key-please-change-in-prod'
     )
 
     app = FastAPI(
@@ -61,43 +60,62 @@ def create_app() -> FastAPI:
     app.include_router(files.router)
     app.include_router(trash.router)
     app.include_router(settings.router)
+    app.include_router(logs.router)
 
     from sqladmin import Admin
-    from sqladmin.authentication import AuthenticationBackend
     from app.admin import (
         ProviderAdmin, PromptAdmin,
         TrashProviderAdmin, TrashPromptAdmin,
         UserPreferenceAdmin,
     )
 
-    class AdminAuth(AuthenticationBackend):
-        async def login(self, request):
-            form = await request.form()
-            if form.get("username") == "admin" and form.get("password") == "admin":
-                request.session.update({"authenticated": True})
-                return True
-            return False
-
-        async def logout(self, request):
-            request.session.clear()
-            return True
-
-        async def authenticate(self, request):
-            return request.session.get("authenticated")
-
-    admin = Admin(app, engine, authentication_backend=AdminAuth(secret_key=secret_key))
+    admin = Admin(app, engine)
     admin.add_view(ProviderAdmin)
     admin.add_view(PromptAdmin)
     admin.add_view(TrashProviderAdmin)
     admin.add_view(TrashPromptAdmin)
     admin.add_view(UserPreferenceAdmin)
 
-    frontend_dir = Path(__file__).parent.parent / "frontend"
-    app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
+    frontend_dist = Path(__file__).parent.parent / "frontend-vue" / "dist"
+    if frontend_dist.is_dir():
+        assets_dir = frontend_dist / "assets"
 
-    @app.get("/")
-    async def index():
-        return FileResponse(str(frontend_dir / "index.html"))
+        @app.get("/")
+        async def index():
+            from starlette.responses import Response
+            content = (frontend_dist / "index.html").read_bytes()
+            return Response(
+                content=content,
+                media_type="text/html; charset=utf-8",
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+            )
+
+        @app.get("/assets/{file_path:path}")
+        async def serve_asset(file_path: str):
+            from starlette.responses import Response
+            full_path = assets_dir / file_path
+            if not full_path.is_file():
+                return JSONResponse(status_code=404, content={"detail": "Not found"})
+            content = full_path.read_bytes()
+            # 根据扩展名推断 MIME 类型
+            ext = full_path.suffix.lower()
+            mime_map = {".js": "application/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2"}
+            media_type = mime_map.get(ext, "application/octet-stream")
+            return Response(
+                content=content,
+                media_type=media_type,
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+            )
+
+        @app.middleware("http")
+        async def spa_fallback(request: Request, call_next):
+            response = await call_next(request)
+            if response.status_code == 404 and request.method == "GET" and not request.url.path.startswith("/api"):
+                file_path = frontend_dist / request.url.path.lstrip("/")
+                if file_path.is_file():
+                    return FileResponse(str(file_path))
+                return FileResponse(str(frontend_dist / "index.html"))
+            return response
 
     return app
 

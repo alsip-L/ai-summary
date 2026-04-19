@@ -6,11 +6,11 @@ from openai import OpenAI
 from sqlalchemy.orm import Session
 
 from app.models import Provider, Prompt
-from app.services.provider_repo import ProviderRepository
+from app.services.provider_repo import ProviderRepository, _safe_json_loads
 from app.services.prompt_repo import PromptRepository
 from core.errors import FileProcessingError, ProviderError
 from core.utils import read_file_with_encoding
-from core.log import get_logger
+from core.log import get_logger, get_ws_handler
 
 logger = get_logger()
 
@@ -27,19 +27,20 @@ class ProcessingState:
         return cls._instance
 
     def __init__(self):
-        if self._initialized:
-            return
-        self._state_lock = threading.Lock()
-        self._status = "idle"
-        self._progress = 0
-        self._total_files = 0
-        self._processed_files_count = 0
-        self._current_file = ""
-        self._results = []
-        self._error = None
-        self._start_time = None
-        self._cancelled = False
-        self._initialized = True
+        with self.__class__._lock:
+            if self._initialized:
+                return
+            self._state_lock = threading.Lock()
+            self._status = "idle"
+            self._progress = 0
+            self._total_files = 0
+            self._processed_files_count = 0
+            self._current_file = ""
+            self._results = []
+            self._error = None
+            self._start_time = None
+            self._cancelled = False
+            self._initialized = True
 
     def get_dict(self) -> dict:
         with self._state_lock:
@@ -49,7 +50,7 @@ class ProcessingState:
                 "total_files": self._total_files,
                 "processed_files_count": self._processed_files_count,
                 "current_file": self._current_file,
-                "results": self._results,
+                "results": list(self._results),
                 "error": self._error,
                 "start_time": self._start_time,
                 "cancelled": self._cancelled,
@@ -89,10 +90,12 @@ class ProcessingState:
 
     def complete(self):
         with self._state_lock:
-            self._status = "completed"
+            if self._cancelled:
+                self._status = "cancelled"
+            else:
+                self._status = "completed"
             self._progress = 100
             self._current_file = ""
-            self._cancelled = False
 
     def set_error(self, error_message: str):
         with self._state_lock:
@@ -110,6 +113,17 @@ class ProcessingState:
     def set_cancelled(self):
         with self._state_lock:
             self._cancelled = True
+
+    def request_cancel(self) -> bool:
+        """原子地请求取消，返回是否成功"""
+        with self._state_lock:
+            if self._status in ("processing", "scanning"):
+                self._cancelled = True
+                self._status = "cancelled"
+                self._error = '用户取消了处理'
+                self._current_file = ""
+                return True
+            return False
 
     def is_cancelled(self) -> bool:
         with self._state_lock:
@@ -139,18 +153,20 @@ class TaskService:
         directory: str,
         skip_existing: bool = False,
     ) -> dict:
+        if self._state.is_running():
+            return {"success": False, "error": "已有任务正在运行"}
+
         if not api_key:
             return {"success": False, "error": "API Key 未配置"}
 
         if not directory or not os.path.exists(directory) or not os.path.isdir(directory):
             return {"success": False, "error": "请提供有效的目录路径"}
 
-        import json as json_mod
         provider = self._db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True).first()
         if not provider:
             return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
 
-        models = json_mod.loads(provider.models_json)
+        models = _safe_json_loads(provider.models_json)
         if model_key not in models:
             return {"success": False, "error": f"模型 '{model_key}' 未找到"}
         model_id = models[model_key]
@@ -160,6 +176,7 @@ class TaskService:
             return {"success": False, "error": f"Prompt '{prompt_name}' 未找到"}
 
         client = OpenAI(api_key=api_key, base_url=provider.base_url)
+        logger.info(f"启动处理任务: provider={provider_name}, model={model_id}, directory={directory}")
         thread = threading.Thread(
             target=self._run_batch,
             args=(directory, client, prompt.content, model_id, skip_existing),
@@ -175,10 +192,12 @@ class TaskService:
                 self._state.cancel()
                 return
 
+            logger.info(f"开始扫描目录: {directory}")
             txt_files = self._scan_txt_files(directory, skip_existing)
             if not txt_files:
                 raise ValueError("未找到需要处理的 txt 文件")
 
+            logger.info(f"扫描完成: 找到 {len(txt_files)} 个 txt 文件")
             self._state.start_processing(len(txt_files))
 
             for i, file_path in enumerate(txt_files):
@@ -188,12 +207,14 @@ class TaskService:
 
                 progress_before = int((i / len(txt_files)) * 100)
                 self._state.update_progress(i, os.path.basename(file_path), progress_before)
+                logger.info(f"处理文件 [{i+1}/{len(txt_files)}]: {os.path.basename(file_path)}")
                 result = self._process_file(file_path, client, prompt_content, model_id)
                 progress_after = int(((i + 1) / len(txt_files)) * 100)
                 self._state.update_progress(i + 1, None, progress_after)
                 self._state.add_result(result["source"], result.get("output"), result.get("error"))
 
             self._state.complete()
+            logger.info(f"处理完成: 共处理 {len(txt_files)} 个文件")
         except Exception as e:
             logger.error(f"处理任务失败: {e}")
             self._state.set_error(f"处理失败: {str(e).splitlines()[0]}")
@@ -218,8 +239,12 @@ class TaskService:
     def _process_file(file_path, client, prompt_content, model_id):
         try:
             content = read_file_with_encoding(file_path)
+            logger.info(f"读取文件完成: {os.path.basename(file_path)}, 字符数: {len(content)}")
+            logger.info(f"调用 AI 模型: {model_id}...")
             response = TaskService._call_ai(client, content, prompt_content, model_id)
+            logger.info(f"AI 响应完成, 字符数: {len(response)}")
             output_path = TaskService._save_response(file_path, response)
+            logger.info(f"文件处理成功: {os.path.basename(file_path)} -> {os.path.basename(output_path)}")
             return {"source": file_path, "output": output_path}
         except Exception as e:
             logger.error(f"文件处理失败: {e}")
@@ -228,17 +253,28 @@ class TaskService:
     @staticmethod
     def _call_ai(client, content, system_prompt, model_id):
         try:
-            completion = client.chat.completions.create(
+            ws_handler = get_ws_handler()
+            stream = client.chat.completions.create(
                 model=model_id,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": content},
                 ],
-                stream=False,
+                stream=True,
             )
-            if not completion or not completion.choices:
+            full_response = []
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    token = chunk.choices[0].delta.content
+                    full_response.append(token)
+                    if ws_handler:
+                        ws_handler.put_stream(token)
+            response = "".join(full_response)
+            if ws_handler:
+                ws_handler.put_stream_end()
+            if not response:
                 raise ProviderError("API 返回空响应")
-            return completion.choices[0].message.content
+            return response
         except ProviderError:
             raise
         except Exception as e:
@@ -258,9 +294,6 @@ class TaskService:
         return self._state.get_dict()
 
     def cancel(self) -> dict:
-        if not self._state.is_running() and not self._state.is_cancelled():
-            return {"success": False, "error": "当前没有正在进行的处理任务"}
-        self._state.set_cancelled()
-        if self._state.is_running():
-            self._state.cancel()
-        return {"success": True, "message": "处理已取消"}
+        if self._state.request_cancel():
+            return {"success": True, "message": "处理已取消"}
+        return {"success": False, "error": "当前没有正在进行的处理任务"}

@@ -8,6 +8,7 @@ export const useProviderStore = defineStore('provider', () => {
   const selectedProvider = ref('')
   const selectedModel = ref('')
   const apiKey = ref('')
+  const directoryPath = ref('')
 
   async function loadAll() {
     const [preferences, providerData] = await Promise.all([
@@ -19,6 +20,25 @@ export const useProviderStore = defineStore('provider', () => {
     selectedProvider.value = preferences.selected_provider || ''
     selectedModel.value = preferences.selected_model || ''
     apiKey.value = preferences.api_key || ''
+    directoryPath.value = preferences.directory_path || ''
+    let needSave = false
+    if (selectedProvider.value && !providers.value[selectedProvider.value]) {
+      selectedProvider.value = ''
+      selectedModel.value = ''
+      apiKey.value = ''
+      needSave = true
+    }
+    if (selectedProvider.value && selectedModel.value && !getCurrentModels()[selectedModel.value]) {
+      selectedModel.value = ''
+      needSave = true
+    }
+    if (needSave) {
+      await api.savePreferences({
+        selected_provider: selectedProvider.value,
+        selected_model: selectedModel.value,
+        api_key: apiKey.value,
+      }).catch(() => {})
+    }
   }
 
   function getCurrentModels() {
@@ -56,16 +76,20 @@ export const useProviderStore = defineStore('provider', () => {
     await loadAll()
   }
 
-  async function savePreferences() {
-    await api.savePreferences({
+  async function savePreferences(directoryPath) {
+    const data = {
       selected_provider: selectedProvider.value,
       selected_model: selectedModel.value,
       api_key: apiKey.value,
-    })
+    }
+    if (directoryPath !== undefined) {
+      data.directory_path = directoryPath
+    }
+    await api.savePreferences(data)
   }
 
   return {
-    providers, providerNames, selectedProvider, selectedModel, apiKey,
+    providers, providerNames, selectedProvider, selectedModel, apiKey, directoryPath,
     loadAll, getCurrentModels, getCurrentApiKey,
     createProvider, deleteProvider, saveApiKey, addModel, deleteModel, savePreferences,
   }

@@ -91,18 +91,23 @@ class ConfigManager:
             "user_preferences": {},
             "system_settings": {
                 "debug_level": "ERROR",
-                "flask_secret_key": "default-dev-secret-key-please-change-in-prod",
+                "secret_key": "default-dev-secret-key-please-change-in-prod",
                 "host": "0.0.0.0",
                 "port": 5000,
-                "debug": False
+                "debug": False,
+                "admin_username": "admin",
+                "admin_password": "admin",
+                "allowed_paths": []
             }
         }
 
     def get(self, key: str = None, default: Any = None) -> Any:
         """获取配置项（支持点号路径，含列表索引，线程安全读取）"""
         with self._lock:
-            if not key:
+            if key is None:
                 return copy.deepcopy(self._cache)
+            if key == "":
+                return default
 
             keys = key.split('.')
             value = self._cache
@@ -127,9 +132,12 @@ class ConfigManager:
     def set(self, key: str, value: Any) -> bool:
         """设置配置项（支持点号路径，线程安全，原子写入）"""
         with self._lock:
-            if not key:
+            if key is None:
                 self._cache = value
                 return self._save_unsafe()
+            if key == "":
+                logger.error("空字符串key不被允许")
+                return False
 
             keys = key.split('.')
             config = self._cache

@@ -21,7 +21,7 @@ class PromptService:
 
     def delete(self, name: str) -> dict:
         from app.services.trash_repo import TrashRepository
-        trash_repo = TrashRepository(self._repo._db)
+        trash_repo = TrashRepository(self._repo.db)
         if trash_repo.move_prompt_to_trash(name):
             return {"success": True}
         return {"success": False, "error": "删除失败"}

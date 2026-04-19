@@ -1,14 +1,17 @@
 <template>
-  <div v-if="trashStore.totalCount > 0" class="custom-dropdown" id="trash-dropdown">
+  <div class="custom-dropdown" id="trash-dropdown">
     <div class="dropdown-selected" @click="showDropdown = !showDropdown">
       <span class="dropdown-label-group">
         <span>回收站</span>
-        <span class="results-count">{{ trashStore.totalCount }}</span>
+        <span v-if="trashStore.totalCount > 0" class="results-count">{{ trashStore.totalCount }}</span>
       </span>
       <span class="dropdown-arrow">&#9662;</span>
     </div>
     <div class="dropdown-content trash-content-area" :class="{ show: showDropdown }">
       <div id="trash-section">
+        <div v-if="trashStore.totalCount === 0" class="dropdown-option" style="color: var(--text-muted, #999); justify-content: center;">
+          回收站为空
+        </div>
         <div v-if="Object.keys(trashStore.trashProviders).length > 0">
           <div class="form-label" style="margin-top: 4px;">服务商</div>
           <div v-for="(provider, name) in trashStore.trashProviders" :key="name" class="dropdown-option" style="justify-content: space-between;">

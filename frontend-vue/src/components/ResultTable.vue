@@ -1,5 +1,5 @@
 <template>
-  <div v-if="taskStore.results.length > 0" class="results-container">
+  <div class="results-container">
     <div class="results-header">
       <span>处理结果</span>
       <span class="results-count">{{ taskStore.results.length }}</span>

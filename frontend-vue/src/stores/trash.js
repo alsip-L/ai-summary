@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { api } from '../composables/useApi'
 
 export const useTrashStore = defineStore('trash', () => {
@@ -12,9 +12,7 @@ export const useTrashStore = defineStore('trash', () => {
     trashPrompts.value = data.custom_prompts || {}
   }
 
-  function get totalCount() {
-    return Object.keys(trashProviders.value).length + Object.keys(trashPrompts.value).length
-  }
+  const totalCount = computed(() => Object.keys(trashProviders.value).length + Object.keys(trashPrompts.value).length)
 
   async function restoreProvider(name) {
     await api.restoreProvider(name)

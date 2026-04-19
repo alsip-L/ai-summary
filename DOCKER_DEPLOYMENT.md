@@ -20,10 +20,8 @@ docker build -t ai-summary-app .
 docker run -d \
   --name ai-summary \
   -p 5000:5000 \
-  -v $(pwd)/config.json:/app/config.json:ro \
+  -v $(pwd)/config.json:/app/config.json \
   -v $(pwd)/data:/app/data \
-  -v $(pwd)/output:/app/output \
-  -v $(pwd)/logs:/app/logs \
   --restart unless-stopped \
   ai-summary-app
 ```
@@ -34,10 +32,8 @@ docker run -d \
 
 | 容器路径 | 说明 |
 |----------|------|
-| `/app/config.json` | 配置文件（只读） |
+| `/app/config.json` | 配置文件 |
 | `/app/data` | 数据目录 |
-| `/app/output` | 输出目录 |
-| `/app/logs` | 日志目录 |
 
 ## 配置管理
 
@@ -84,6 +80,6 @@ docker logs ai-summary
 ## 技术栈
 
 - **基础镜像**: python:3.11-slim
-- **WSGI 服务器**: Gunicorn（2 workers, 120s timeout）
-- **Web 框架**: Flask
+- **ASGI 服务器**: Uvicorn
+- **Web 框架**: FastAPI
 - **AI 集成**: OpenAI 兼容接口

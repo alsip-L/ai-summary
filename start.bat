@@ -26,10 +26,10 @@ if exist "venv\Scripts\activate.bat" (
     echo No virtual environment found, using system Python
 )
 
-REM Check dependencies
+REM Check Python dependencies
 echo.
-echo Checking dependencies...
-pip show flask >nul 2>&1
+echo Checking Python dependencies...
+pip show fastapi >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo Dependencies not installed, installing...
     pip install -r requirements.txt
@@ -43,12 +43,52 @@ if %ERRORLEVEL% NEQ 0 (
     echo Dependencies installed
 )
 
+REM Check Node.js installation
+echo.
+echo Checking Node.js...
+node --version >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Warning: Node.js not detected. Frontend will not be built.
+    echo Download: https://nodejs.org/
+) else (
+    echo Node.js installed
+    node --version
+
+    REM Install frontend dependencies
+    echo.
+    echo Checking frontend dependencies...
+    if not exist "frontend-vue\node_modules" (
+        echo Installing frontend dependencies...
+        cd frontend-vue
+        npm install
+        if %ERRORLEVEL% NEQ 0 (
+            echo Frontend dependency installation failed
+            cd ..
+            pause
+            exit /b 1
+        )
+        cd ..
+    )
+
+    REM Build frontend
+    echo.
+    echo Building frontend...
+    cd frontend-vue
+    npm run build
+    if %ERRORLEVEL% NEQ 0 (
+        echo Frontend build failed
+        cd ..
+        pause
+        exit /b 1
+    )
+    cd ..
+    echo Frontend built successfully
+)
+
 REM Create necessary directories
 echo.
 echo Creating directories...
 if not exist "data" mkdir data
-if not exist "logs" mkdir logs
-if not exist "output" mkdir output
 echo Directories created
 
 REM Check config file
@@ -56,7 +96,7 @@ echo.
 echo Checking config file...
 if not exist "config.json" (
     echo Config file not found, creating default config...
-    echo {"providers":[],"custom_prompts":{},"current_prompt":"","trash":{"providers":{},"custom_prompts":{}},"user_preferences":{},"system_settings":{"debug_level":"ERROR","flask_secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}} > config.json
+    echo {"system_settings":{"debug_level":"ERROR","flask_secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}} > config.json
     echo Default config created
 ) else (
     echo Config file exists

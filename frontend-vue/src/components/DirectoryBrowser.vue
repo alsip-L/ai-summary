@@ -36,11 +36,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import { api } from '../composables/useApi'
 import { useTaskStore } from '../stores/task'
+import { useProviderStore } from '../stores/provider'
 
 const taskStore = useTaskStore()
+const providerStore = useProviderStore()
+const showMessage = inject('showMessage')
 const show = ref(false)
 const currentPath = ref('')
 const parentPath = ref(null)
@@ -97,8 +100,16 @@ async function goToDirectPath() {
   directPathInput.value = ''
 }
 
-function selectDirectory() {
-  taskStore.directoryPath = currentPath.value
+async function selectDirectory() {
+  const path = currentPath.value
+  taskStore.directoryPath = path
+  providerStore.directoryPath = path
+  try {
+    await providerStore.savePreferences(path)
+    showMessage('目录路径已保存', 'success')
+  } catch (e) {
+    showMessage('保存失败: ' + e.message, 'error')
+  }
   close()
 }
 

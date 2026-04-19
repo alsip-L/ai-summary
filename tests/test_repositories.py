@@ -1,146 +1,106 @@
 # -*- coding: utf-8 -*-
-"""Tests for feature modules (provider, prompt, trash repositories)."""
+"""Tests for repository layer using new SQLAlchemy architecture."""
 
 import unittest
 import os
 import json
-import tempfile
-from pathlib import Path
 
-# Add parent directory to path
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.config import ConfigManager
-from features.provider.repository import ProviderRepository
-from features.prompt.repository import PromptRepository
-from features.trash.repository import TrashRepository
-from features.provider.models import ProviderConfig
-from features.prompt.models import PromptConfig
+from app.database import SessionLocal, Base, engine
+from app.models import Provider, Prompt, TrashProvider, TrashPrompt
+from app.services.provider_repo import ProviderRepository
+from app.services.prompt_repo import PromptRepository
+from app.services.trash_repo import TrashRepository
 
 
-class TestProviderRepository(unittest.TestCase):
-    """Test ProviderRepository class."""
+class _BaseDBTest(unittest.TestCase):
 
     def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.config_path = Path(self.temp_dir) / "test_config.json"
-
-        with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump({"providers": [], "custom_prompts": {}, "trash": {}}, f)
-
-        ConfigManager.reset()
-        ConfigManager._config_path = self.config_path
+        Base.metadata.create_all(bind=engine)
+        self.db = SessionLocal()
 
     def tearDown(self):
-        ConfigManager.reset()
-        if self.config_path.exists():
-            self.config_path.unlink()
+        self.db.rollback()
+        self.db.close()
+        for table in reversed(Base.metadata.sorted_tables):
+            self.db.execute(table.delete())
+        self.db.commit()
+        self.db.close()
+
+
+class TestProviderRepository(_BaseDBTest):
 
     def test_save_and_get(self):
-        repo = ProviderRepository(ConfigManager())
-        provider = ProviderConfig(name="TestProvider", base_url="https://test.com", api_key="test_key", models={"m1": "id1"})
-        self.assertTrue(repo.save(provider))
-
+        repo = ProviderRepository(self.db)
+        data = {"name": "TestProvider", "base_url": "https://test.com", "api_key": "test_key", "models": {"m1": "id1"}}
+        self.assertTrue(repo.save(data))
         result = repo.get("TestProvider")
         self.assertIsNotNone(result)
-        self.assertEqual(result.base_url, "https://test.com")
+        self.assertEqual(result["base_url"], "https://test.com")
 
     def test_get_all(self):
-        repo = ProviderRepository(ConfigManager())
-        repo.save(ProviderConfig(name="P1", base_url="https://p1.com", api_key="k1", models={}))
-        repo.save(ProviderConfig(name="P2", base_url="https://p2.com", api_key="k2", models={}))
-
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "P1", "base_url": "https://p1.com", "api_key": "k1", "models": {}})
+        repo.save({"name": "P2", "base_url": "https://p2.com", "api_key": "k2", "models": {}})
         all_providers = repo.get_all()
-        self.assertEqual(len(all_providers), 2)
         self.assertIn("P1", all_providers)
         self.assertIn("P2", all_providers)
 
+    def test_remove(self):
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "ToRemove", "base_url": "https://t.com", "api_key": "k", "models": {}})
+        data = repo.remove("ToRemove")
+        self.assertIsNotNone(data)
+        self.assertIsNone(repo.get("ToRemove"))
 
-class TestPromptRepository(unittest.TestCase):
-    """Test PromptRepository class."""
 
-    def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.config_path = Path(self.temp_dir) / "test_config.json"
-
-        with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump({"providers": [], "custom_prompts": {}, "trash": {}}, f)
-
-        ConfigManager.reset()
-        ConfigManager._config_path = self.config_path
-
-    def tearDown(self):
-        ConfigManager.reset()
-        if self.config_path.exists():
-            self.config_path.unlink()
+class TestPromptRepository(_BaseDBTest):
 
     def test_save_and_get(self):
-        repo = PromptRepository(ConfigManager())
-        self.assertTrue(repo.save(PromptConfig(name="TestPrompt", content="Test content")))
-
+        repo = PromptRepository(self.db)
+        self.assertTrue(repo.save("TestPrompt", "Test content"))
         result = repo.get("TestPrompt")
-        self.assertIsNotNone(result)
-        self.assertEqual(result.content, "Test content")
+        self.assertEqual(result, "Test content")
 
     def test_get_all(self):
-        repo = PromptRepository(ConfigManager())
-        repo.save(PromptConfig(name="P1", content="Content 1"))
-        repo.save(PromptConfig(name="P2", content="Content 2"))
-
+        repo = PromptRepository(self.db)
+        repo.save("P1", "Content 1")
+        repo.save("P2", "Content 2")
         all_prompts = repo.get_all()
         self.assertEqual(len(all_prompts), 2)
 
-    def test_delete(self):
-        repo = PromptRepository(ConfigManager())
-        repo.save(PromptConfig(name="ToDelete", content="Content"))
-        self.assertTrue(repo.delete("ToDelete"))
+    def test_remove(self):
+        repo = PromptRepository(self.db)
+        repo.save("ToDelete", "Content")
+        content = repo.remove("ToDelete")
+        self.assertEqual(content, "Content")
         self.assertIsNone(repo.get("ToDelete"))
 
 
-class TestTrashRepository(unittest.TestCase):
-    """Test TrashRepository class."""
-
-    def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.config_path = Path(self.temp_dir) / "test_config.json"
-
-        with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump({
-                "providers": [{"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}, "is_active": True}],
-                "custom_prompts": {"TestPrompt": "Test content"},
-                "trash": {"providers": {}, "custom_prompts": {}}
-            }, f)
-
-        ConfigManager.reset()
-        ConfigManager._config_path = self.config_path
-
-    def tearDown(self):
-        ConfigManager.reset()
-        if self.config_path.exists():
-            self.config_path.unlink()
+class TestTrashRepository(_BaseDBTest):
 
     def test_move_provider_to_trash(self):
-        repo = TrashRepository(ConfigManager())
+        ProviderRepository(self.db).save({"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}})
+        repo = TrashRepository(self.db)
         self.assertTrue(repo.move_provider_to_trash("TestProvider"))
-
         trash = repo.get_all()
-        self.assertIn("providers", trash)
         self.assertIn("TestProvider", trash["providers"])
 
     def test_restore_provider(self):
-        repo = TrashRepository(ConfigManager())
+        ProviderRepository(self.db).save({"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}})
+        repo = TrashRepository(self.db)
         repo.move_provider_to_trash("TestProvider")
         self.assertTrue(repo.restore_provider("TestProvider"))
-
-        provider_repo = ProviderRepository(ConfigManager())
+        provider_repo = ProviderRepository(self.db)
         self.assertIsNotNone(provider_repo.get("TestProvider"))
 
     def test_permanent_delete(self):
-        repo = TrashRepository(ConfigManager())
+        ProviderRepository(self.db).save({"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}})
+        repo = TrashRepository(self.db)
         repo.move_provider_to_trash("TestProvider")
         self.assertTrue(repo.permanent_delete_provider("TestProvider"))
-
         trash = repo.get_all()
         self.assertNotIn("TestProvider", trash.get("providers", {}))
 

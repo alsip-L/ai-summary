@@ -2,8 +2,11 @@
 import json
 from sqlalchemy.orm import Session
 from app.models import TrashProvider, TrashPrompt, Provider, Prompt
-from app.services.provider_repo import ProviderRepository
+from app.services.provider_repo import ProviderRepository, _safe_json_loads
 from app.services.prompt_repo import PromptRepository
+from core.log import get_logger
+
+logger = get_logger()
 
 
 class TrashRepository:
@@ -22,7 +25,7 @@ class TrashRepository:
                 "name": tp.name,
                 "base_url": tp.base_url,
                 "api_key": tp.api_key,
-                "models": json.loads(tp.models_json),
+                "models": _safe_json_loads(tp.models_json),
                 "is_active": tp.is_active,
             }
 
@@ -73,11 +76,11 @@ class TrashRepository:
                 "name": tp.name,
                 "base_url": tp.base_url,
                 "api_key": tp.api_key,
-                "models": json.loads(tp.models_json),
+                "models": _safe_json_loads(tp.models_json),
                 "is_active": tp.is_active,
             }
             self._db.delete(tp)
-            self._provider_repo.save(data)
+            self._provider_repo.save(data, auto_commit=False)
             self._db.commit()
             return True
         except Exception:
@@ -91,7 +94,7 @@ class TrashRepository:
                 return False
             content = tp.content
             self._db.delete(tp)
-            self._prompt_repo.save(name, content)
+            self._prompt_repo.save(name, content, auto_commit=False)
             self._db.commit()
             return True
         except Exception:
@@ -99,17 +102,25 @@ class TrashRepository:
             return False
 
     def permanent_delete_provider(self, name: str) -> bool:
-        tp = self._db.query(TrashProvider).filter(TrashProvider.name == name).first()
-        if not tp:
+        try:
+            tp = self._db.query(TrashProvider).filter(TrashProvider.name == name).first()
+            if not tp:
+                return False
+            self._db.delete(tp)
+            self._db.commit()
+            return True
+        except Exception:
+            self._db.rollback()
             return False
-        self._db.delete(tp)
-        self._db.commit()
-        return True
 
     def permanent_delete_prompt(self, name: str) -> bool:
-        tp = self._db.query(TrashPrompt).filter(TrashPrompt.name == name).first()
-        if not tp:
+        try:
+            tp = self._db.query(TrashPrompt).filter(TrashPrompt.name == name).first()
+            if not tp:
+                return False
+            self._db.delete(tp)
+            self._db.commit()
+            return True
+        except Exception:
+            self._db.rollback()
             return False
-        self._db.delete(tp)
-        self._db.commit()
-        return True

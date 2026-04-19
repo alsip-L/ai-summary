@@ -42,7 +42,7 @@ export const api = {
   },
   viewResult: (filePath) => request(`/api/files/result?path=${encodeURIComponent(filePath)}`),
 
-  getTrash: () => request('/api/settings/trash'),
+  getTrash: () => request('/api/settings/trash/'),
   restoreProvider: (name) => request(`/api/settings/trash/restore/provider/${encodeURIComponent(name)}`, { method: 'POST' }),
   permanentDeleteProvider: (name) => request(`/api/settings/trash/provider/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   restorePrompt: (name) => request(`/api/settings/trash/restore/prompt/${encodeURIComponent(name)}`, { method: 'POST' }),

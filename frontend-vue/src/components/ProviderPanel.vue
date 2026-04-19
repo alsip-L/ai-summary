@@ -39,13 +39,13 @@
     </div>
     <div class="form-group">
       <label class="form-label">API Key</label>
-      <input type="text" class="form-control" v-model="apiKeyInput" :placeholder="apiKeyInput ? '已配置' : '请输入 API Key'" @blur="saveApiKey">
+      <input type="text" class="form-control" v-model="store.apiKey" :placeholder="store.apiKey ? '已配置' : '请输入 API Key'" @blur="saveApiKey">
     </div>
     <div class="form-group">
       <label class="form-label">处理目录</label>
       <div class="input-group">
-        <input type="text" class="form-control" v-model="directoryPath" placeholder="输入目录路径" @blur="saveDirectoryPath">
-        <button type="button" class="btn btn-sm btn-secondary" @click="$emit('open-directory')">浏览</button>
+        <input type="text" class="form-control" v-model="store.directoryPath" placeholder="输入目录路径" @blur="saveDirectoryPath">
+        <button type="button" class="btn btn-sm btn-secondary" @click="openDirectoryBrowser">浏览</button>
       </div>
     </div>
 
@@ -78,11 +78,10 @@ const store = useProviderStore()
 const taskStore = useTaskStore()
 const trashStore = useTrashStore()
 const showMessage = inject('showMessage')
+const openDirectoryBrowser = inject('openDirectoryBrowser')
 
 const showProviderDropdown = ref(false)
 const showModelDropdown = ref(false)
-const apiKeyInput = ref(store.apiKey)
-const directoryPath = ref(taskStore.directoryPath)
 
 const modelKeys = computed(() => Object.keys(store.getCurrentModels()))
 
@@ -108,7 +107,6 @@ async function selectProvider(name) {
     const models = store.getCurrentModels()
     store.selectedModel = Object.keys(models)[0] || ''
     store.apiKey = store.getCurrentApiKey()
-    apiKeyInput.value = store.apiKey
     await store.savePreferences()
     showMessage('已保存', 'success')
   } catch (e) {
@@ -151,7 +149,10 @@ async function deleteModel(modelDisplay) {
 async function saveApiKey() {
   if (!store.selectedProvider) return
   try {
-    await store.saveApiKey(store.selectedProvider, apiKeyInput.value.trim())
+    const key = store.apiKey.trim()
+    await store.saveApiKey(store.selectedProvider, key)
+    store.apiKey = key
+    await store.savePreferences()
     showMessage('API Key 已保存', 'success')
   } catch (e) {
     showMessage('保存失败: ' + e.message, 'error')
@@ -159,11 +160,11 @@ async function saveApiKey() {
 }
 
 async function saveDirectoryPath() {
-  const path = directoryPath.value.trim()
+  const path = store.directoryPath.trim()
   if (!path) return
   try {
     taskStore.directoryPath = path
-    await store.savePreferences()
+    await store.savePreferences(path)
     showMessage('目录路径已保存', 'success')
   } catch (e) {
     showMessage('保存失败: ' + e.message, 'error')

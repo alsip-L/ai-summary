@@ -1,3 +1,10 @@
+FROM node:20-slim AS frontend-build
+WORKDIR /app/frontend-vue
+COPY frontend-vue/package.json frontend-vue/package-lock.json* ./
+RUN npm install
+COPY frontend-vue/ .
+RUN npm run build
+
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -17,8 +24,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+COPY --from=frontend-build /app/frontend-vue/dist ./frontend-vue/dist
 
-RUN mkdir -p /app/data /app/logs /app/output
+RUN mkdir -p /app/data
 
 EXPOSE 5000
 
