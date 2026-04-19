@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
-"""Application entry point."""
-
 import os
 import sys
 
-# Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import create_app
+import uvicorn
 from core.config import ConfigManager
 
+
 def main():
-    """Main entry point."""
-    # Read configuration from config.json
     settings = ConfigManager().get('system_settings', {})
     host = settings.get('host', '0.0.0.0')
     port = int(settings.get('port', 5000))
@@ -24,8 +20,13 @@ def main():
     print(f"Debug: {debug}")
     print(f"Access: http://{host if host != '0.0.0.0' else 'localhost'}:{port}")
 
-    app = create_app()
-    app.run(host=host, port=port, debug=debug, use_reloader=False)
+    uvicorn.run(
+        "app.main:app",
+        host=host,
+        port=port,
+        reload=debug,
+    )
+
 
 if __name__ == '__main__':
     main()
