@@ -40,8 +40,5 @@ Desktop.ini
 node_modules/
 frontend-vue/dist/
 
-# Database
-*.db
-
 # Windows
 nul
