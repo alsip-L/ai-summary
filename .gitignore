@@ -39,3 +39,9 @@ Desktop.ini
 # Node.js
 node_modules/
 frontend-vue/dist/
+
+# Database
+*.db
+
+# Windows
+nul
