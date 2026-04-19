@@ -2,7 +2,8 @@
 
 .app-shell {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     position: relative;
 }
 
@@ -88,21 +89,57 @@
 .main-content {
     flex: 1;
     min-width: 0;
-    padding: var(--space-10) var(--space-10);
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    overflow: hidden;
     position: relative;
     z-index: 1;
 }
 
+/* Upper zone: progress + results — 45% of height */
+.main-content-upper {
+    padding: var(--term-padding);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    height: 45vh;
+    max-height: 45vh;
+    min-height: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+    overflow: hidden;
+    background-color: var(--term-bg);
+    border-radius: var(--term-radius);
+    color: var(--term-text);
+}
+
+/* Lower zone: log panel — 55% of height */
+.main-content-lower {
+    height: 55vh;
+    min-height: 0;
+    max-height: 55vh;
+    flex-shrink: 0;
+    flex-grow: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-top: 1px solid var(--term-border);
+    padding: 4px;
+}
+
 /* Empty state for main content */
 .main-content-empty {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1;
-    min-height: 300px;
+}
+
+.empty-hint {
+    font-size: var(--text-sm);
+    color: var(--term-text);
+    opacity: 0.5;
 }
 
 /* ========== Responsive ========== */
@@ -117,10 +154,10 @@
         border-bottom: 1px solid var(--border);
         padding: var(--space-5);
     }
-    .main-content { padding: var(--space-6); }
+    .main-content-upper { padding: var(--space-4); }
 }
 
 @media (max-width: 640px) {
-    .main-content { padding: var(--space-4); }
+    .main-content-upper { padding: var(--space-3); }
     .sidebar { padding: var(--space-4); }
 }

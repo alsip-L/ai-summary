@@ -70,6 +70,19 @@
     --duration-base: 200ms;
     --duration-slow: 300ms;
 
+    /* Term-style dark theme tokens */
+    --term-bg: #1e1e1e;
+    --term-text: #c8c8c8;
+    --term-text-info: #6cb6d9;
+    --term-text-warning: #d4b95e;
+    --term-text-error: #d46a6a;
+    --term-text-debug: #c8c8c8;
+    --term-padding: 16px;
+    --term-radius: 8px;
+    --term-border: rgba(255, 255, 255, 0.06);
+    --term-scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    --term-scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+
     /* Layout */
     --sidebar-width: 280px;
 }
@@ -99,6 +112,12 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.08); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.15); }
+
+/* Dark terminal scrollbar */
+.main-content-upper::-webkit-scrollbar-thumb,
+.log-list::-webkit-scrollbar-thumb { background: var(--term-scrollbar-thumb); }
+.main-content-upper::-webkit-scrollbar-thumb:hover,
+.log-list::-webkit-scrollbar-thumb:hover { background: var(--term-scrollbar-thumb-hover); }
 
 /* Focus — always visible ring */
 *:focus-visible { outline: 1.5px solid var(--accent-indigo); outline-offset: 2px; }

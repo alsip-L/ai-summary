@@ -1,4 +1,4 @@
-/* components.css — Linear Aesthetic components with micro-interactions */
+/* components.css — Light theme components with micro-interactions */
 
 /* ========== Section Headers ========== */
 .section-header {
@@ -127,21 +127,17 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     border: 1px solid rgba(99, 102, 241, 0.35);
     border-radius: var(--radius-lg);
     color: white;
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.25), 0 4px 16px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.25), 0 4px 16px rgba(0, 0, 0, 0.15);
     letter-spacing: -0.01em;
     position: relative;
     overflow: hidden;
 }
-/* 45-degree shimmer per spec */
-.btn-start-process::after {
-    content: '';
-    position: absolute;
-    top: -50%; left: -50%; width: 50%; height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.08), transparent);
-    animation: shimmer 4s ease-in-out infinite;
+.btn-start-process {
+    transition: transform var(--duration-fast) var(--ease-out),
+                box-shadow var(--duration-fast) var(--ease-out);
 }
 .btn-start-process:hover {
-    box-shadow: 0 0 40px rgba(99, 102, 241, 0.4), 0 8px 24px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.35), 0 8px 24px rgba(0, 0, 0, 0.2);
     transform: translateY(-1px);
 }
 .btn-start-process:active { transform: translateY(0) scale(0.98); }
@@ -282,6 +278,15 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     overflow: hidden;
 }
 
+/* Top gradient accent line on modal */
+.modal-content::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-indigo), var(--accent-purple), transparent);
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -408,11 +413,15 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 
 /* ========== Log Panel ========== */
 .log-panel {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--bg-elevated);
+    border: none;
+    border-radius: var(--term-radius);
+    background: var(--term-bg);
     overflow: hidden;
-    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
 }
 
 .log-panel-header {
@@ -423,8 +432,9 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     cursor: pointer;
     user-select: none;
     transition: background var(--duration-fast) var(--ease-out);
+    background: rgba(255, 255, 255, 0.04);
 }
-.log-panel-header:hover { background: var(--bg-surface); }
+.log-panel-header:hover { background: rgba(255, 255, 255, 0.08); }
 
 .log-panel-title {
     display: flex;
@@ -432,12 +442,12 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     gap: 6px;
     font-size: var(--text-sm);
     font-weight: 500;
-    color: var(--text-primary);
+    color: var(--term-text);
 }
 
 .log-panel-icon {
     font-size: 10px;
-    color: var(--accent-indigo);
+    color: var(--term-text-info);
 }
 
 .log-panel-actions {
@@ -448,7 +458,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 
 .log-panel-arrow {
     font-size: 10px;
-    color: var(--text-tertiary);
+    color: rgba(200, 200, 200, 0.5);
 }
 
 .log-status {
@@ -457,31 +467,38 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     border-radius: 4px;
     font-weight: 500;
 }
-.log-status-connected { background: var(--success-dim); color: var(--success); }
-.log-status-disconnected { background: var(--danger-dim); color: var(--danger); }
+.log-status-connected { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.log-status-disconnected { background: rgba(239, 68, 68, 0.15); color: #f87171; }
 
 .log-btn { font-size: 10px; padding: 2px 8px; }
 
 .log-panel-body {
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--term-border);
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .log-list {
-    max-height: 280px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: 6px 0;
+    padding: var(--term-padding);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.5;
-    background: var(--bg-canvas);
+    background: var(--term-bg);
+    color: var(--term-text);
 }
 
 .log-empty {
-    color: var(--text-tertiary);
+    color: var(--term-text);
     text-align: center;
     padding: 16px 12px;
     font-family: var(--font-sans);
     font-size: var(--text-sm);
+    opacity: 0.5;
 }
 
 /* Log entry: time + level + message */
@@ -493,14 +510,13 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     white-space: nowrap;
 }
 .log-entry:hover {
-    background: rgba(0, 0, 0, 0.02);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .log-time {
     flex-shrink: 0;
-    color: var(--text-tertiary);
+    color: rgba(200, 200, 200, 0.5);
     font-size: 10px;
-    opacity: 0.7;
 }
 
 .log-level {
@@ -514,32 +530,32 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     min-width: 36px;
 }
 .log-info .log-level {
-    background: rgba(59, 130, 246, 0.08);
-    color: #3B82F6;
+    background: rgba(108, 182, 217, 0.15);
+    color: var(--term-text-info);
 }
 .log-error .log-level {
-    background: var(--danger-dim);
-    color: var(--danger);
+    background: rgba(212, 106, 106, 0.15);
+    color: var(--term-text-error);
 }
 .log-warning .log-level {
-    background: rgba(245, 158, 11, 0.08);
-    color: #D97706;
+    background: rgba(212, 185, 94, 0.15);
+    color: var(--term-text-warning);
 }
 .log-debug .log-level {
-    background: rgba(0, 0, 0, 0.04);
-    color: var(--text-tertiary);
+    background: rgba(200, 200, 200, 0.08);
+    color: var(--term-text-debug);
 }
 
 .log-msg {
     flex: 1;
     min-width: 0;
-    color: var(--text-secondary);
+    color: var(--term-text);
     white-space: pre-wrap;
     word-break: break-all;
     overflow: hidden;
 }
-.log-error .log-msg { color: var(--danger); }
-.log-warning .log-msg { color: #92400E; }
+.log-error .log-msg { color: var(--term-text-error); }
+.log-warning .log-msg { color: var(--term-text-warning); }
 
 /* Stream output */
 .log-stream {
@@ -549,8 +565,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     padding: 6px 12px;
     margin: 2px 8px;
     border-radius: var(--radius-sm);
-    background: rgba(99, 102, 241, 0.03);
-    border-left: 2px solid var(--accent-indigo, #6366f1);
+    background: rgba(108, 182, 217, 0.06);
+    border-left: 2px solid var(--term-text-info);
 }
 .log-stream-label {
     flex-shrink: 0;
@@ -558,8 +574,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     font-weight: 700;
     padding: 1px 5px;
     border-radius: 3px;
-    background: var(--accent-indigo, #6366f1);
-    color: #fff;
+    background: var(--term-text-info);
+    color: #1e1e1e;
     line-height: 1.4;
     margin-top: 1px;
     letter-spacing: 0.5px;
@@ -567,7 +583,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 .log-stream-content {
     flex: 1;
     min-width: 0;
-    color: var(--text-primary);
+    color: var(--term-text);
     white-space: pre-wrap;
     word-break: break-all;
     font-size: 11.5px;
@@ -577,7 +593,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     display: inline-block;
     width: 2px;
     height: 14px;
-    background: var(--accent-indigo, #6366f1);
+    background: var(--term-text-info);
     animation: log-blink 1s step-end infinite;
     vertical-align: text-bottom;
     margin-left: 1px;
@@ -587,8 +603,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     display: none;
 }
 .log-stream-ended {
-    background: rgba(99, 102, 241, 0.02);
-    border-left-color: rgba(99, 102, 241, 0.3);
+    background: rgba(108, 182, 217, 0.03);
+    border-left-color: rgba(108, 182, 217, 0.3);
 }
 @keyframes log-blink {
     0%, 100% { opacity: 1; }

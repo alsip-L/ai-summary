@@ -4,23 +4,16 @@
       <span>处理结果</span>
       <span class="results-count">{{ taskStore.results.length }}</span>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>源文件</th>
-          <th>输出</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(result, i) in taskStore.results" :key="i">
-          <td>{{ result.source }}</td>
-          <td>
-            <span v-if="result.error" style="color: red;">{{ result.error }}</span>
-            <a v-else-if="result.output" href="#" @click.prevent="viewResult(result.output)">{{ result.output }}</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="results-list">
+      <div v-for="(result, i) in taskStore.results" :key="i" class="result-item">
+        <span class="result-source" :title="result.source">{{ fileName(result.source) }}</span>
+        <span class="result-arrow">&#8594;</span>
+        <span class="result-output">
+          <span v-if="result.error" class="result-error">{{ result.error }}</span>
+          <a v-else-if="result.output" href="#" @click.prevent="viewResult(result.output)" :title="result.output">{{ fileName(result.output) }}</a>
+        </span>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -29,6 +22,13 @@ import { useTaskStore } from '../stores/task'
 import { api } from '../composables/useApi'
 
 const taskStore = useTaskStore()
+
+function fileName(path) {
+  if (!path) return ''
+  const sep = path.includes('/') ? '/' : '\\'
+  const parts = path.split(sep)
+  return parts[parts.length - 1] || path
+}
 
 async function viewResult(filePath) {
   try {

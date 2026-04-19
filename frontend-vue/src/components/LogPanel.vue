@@ -37,7 +37,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch, triggerRef } from 'vue'
 import { useTaskStore } from '../stores/task'
 
 const taskStore = useTaskStore()
-const expanded = ref(false)
+const expanded = ref(true)
 const logs = ref([])
 const connected = ref(false)
 const logList = ref(null)

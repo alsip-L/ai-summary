@@ -5,8 +5,11 @@
         <span class="icon">A</span>
         AI Summary
       </div>
+      <div v-if="!taskStore.isProcessing" class="sidebar-start">
+        <button type="button" class="btn btn-start-process" @click="taskStore.start()">开始处理</button>
+      </div>
       <div class="sidebar-scroll">
-        <div id="message" :class="['alert', message.type ? `alert-${message.type === 'error' ? 'danger' : message.type}` : '', { hidden: !message.show }]">
+        <div id="message" :class="['alert', message.type ? `alert-${message.type === 'error' ? 'danger' : message.type}` : '', { hidden: !message.show }, { 'alert-fading': message.fading }]">
           {{ message.text }}
         </div>
         <ProviderPanel />
@@ -23,12 +26,16 @@
       </div>
     </aside>
     <main class="main-content">
-      <div v-if="!taskStore.isProcessing" class="main-content-empty">
-        <button type="button" class="btn btn-start-process" @click="taskStore.start()">开始处理</button>
+      <div class="main-content-upper">
+        <div v-if="!taskStore.isProcessing && taskStore.results.length === 0" class="main-content-empty">
+          <span class="empty-hint">配置左侧参数后，点击「开始处理」</span>
+        </div>
+        <TaskProgress v-if="taskStore.isProcessing" />
+        <ResultTable v-if="taskStore.results.length > 0" />
       </div>
-      <TaskProgress v-else />
-      <ResultTable v-if="taskStore.results.length > 0" />
-      <LogPanel />
+      <div class="main-content-lower">
+        <LogPanel />
+      </div>
     </main>
   </div>
   <DirectoryBrowser ref="directoryBrowser" />
@@ -55,13 +62,17 @@ const trashStore = useTrashStore()
 
 const directoryBrowser = ref(null)
 
-const message = reactive({ show: false, text: '', type: 'info' })
+const message = reactive({ show: false, text: '', type: 'info', fading: false })
 
 function showMessage(text, type = 'info') {
   message.show = true
   message.text = text
   message.type = type
-  setTimeout(() => { message.show = false }, 2000)
+  message.fading = false
+  setTimeout(() => {
+    message.fading = true
+    setTimeout(() => { message.show = false; message.fading = false }, 200)
+  }, 1800)
 }
 
 provide('showMessage', showMessage)
@@ -76,3 +87,18 @@ onMounted(async () => {
   taskStore.directoryPath = providerStore.directoryPath
 })
 </script>
+
+<style scoped>
+/* ========== Sidebar Start Button ========== */
+.sidebar-start {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+}
+
+.sidebar-start .btn-start-process {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: var(--text-md);
+    border-radius: var(--radius-md);
+}
+</style>
