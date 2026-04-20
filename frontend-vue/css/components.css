@@ -429,12 +429,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    cursor: pointer;
-    user-select: none;
-    transition: background var(--duration-fast) var(--ease-out);
     background: rgba(255, 255, 255, 0.04);
 }
-.log-panel-header:hover { background: rgba(255, 255, 255, 0.08); }
 
 .log-panel-title {
     display: flex;
@@ -454,11 +450,6 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.log-panel-arrow {
-    font-size: 10px;
-    color: rgba(200, 200, 200, 0.5);
 }
 
 .log-status {

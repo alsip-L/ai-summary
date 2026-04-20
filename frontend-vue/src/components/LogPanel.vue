@@ -1,6 +1,6 @@
 <template>
-  <div class="log-panel" :class="{ 'log-panel-expanded': expanded }">
-    <div class="log-panel-header" @click="expanded = !expanded">
+  <div class="log-panel">
+    <div class="log-panel-header">
       <span class="log-panel-title">
         <span class="log-panel-icon">&#9654;</span>
         日志
@@ -8,11 +8,10 @@
       <div class="log-panel-actions">
         <span v-if="!connected" class="log-status log-status-disconnected">未连接</span>
         <span v-else class="log-status log-status-connected">已连接</span>
-        <button v-if="expanded" type="button" class="btn btn-sm btn-secondary log-btn" @click.stop="clearLogs">清空</button>
-        <span class="log-panel-arrow">{{ expanded ? '&#9650;' : '&#9650;' }}</span>
+        <button type="button" class="btn btn-sm btn-secondary log-btn" @click="clearLogs">清空</button>
       </div>
     </div>
-    <div v-if="expanded" class="log-panel-body">
+    <div class="log-panel-body">
       <div class="log-list" ref="logList">
         <div v-if="logs.length === 0" class="log-empty">暂无日志</div>
         <template v-for="(log, i) in logs" :key="i">
@@ -33,11 +32,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch, triggerRef } from 'vue'
-import { useTaskStore } from '../stores/task'
-
-const taskStore = useTaskStore()
-const expanded = ref(true)
+import { ref, onMounted, onUnmounted, nextTick, triggerRef } from 'vue'
 const logs = ref([])
 const connected = ref(false)
 const logList = ref(null)
@@ -185,12 +180,6 @@ function onVisibilityChange() {
     }
   }
 }
-
-watch(() => taskStore.isProcessing, (val) => {
-  if (val) {
-    expanded.value = true
-  }
-})
 
 onMounted(() => {
   shouldConnect = true
