@@ -36,9 +36,9 @@ export const useProviderStore = defineStore('provider', () => {
       await api.savePreferences({
         selected_provider: selectedProvider.value,
         selected_model: selectedModel.value,
-        api_key: apiKey.value,
       }).catch(() => {})
     }
+    return preferences
   }
 
   function getCurrentModels() {
@@ -63,6 +63,8 @@ export const useProviderStore = defineStore('provider', () => {
 
   async function saveApiKey(name, key) {
     await api.saveApiKey(name, key)
+    apiKey.value = key
+    await api.savePreferences({ api_key: key }).catch(() => {})
     await loadAll()
   }
 
@@ -80,7 +82,6 @@ export const useProviderStore = defineStore('provider', () => {
     const data = {
       selected_provider: selectedProvider.value,
       selected_model: selectedModel.value,
-      api_key: apiKey.value,
     }
     if (directoryPath !== undefined) {
       data.directory_path = directoryPath

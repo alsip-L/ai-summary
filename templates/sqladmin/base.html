@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  {% block head_meta %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  {% endblock %}
+  {% block head_css %}
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler-icons.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/fontawesome.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
+  {% endblock %}
+  {% if admin.favicon_url %}
+  <link rel="icon" href="{{ admin.favicon_url }}">
+  {% endif %}
+  <title>{{ admin.title }}</title>
+  {% block head %}
+  {% endblock %}
+  {% block head_tail %}
+  {% endblock %}
+</head>
+
+<body>
+  {% block body %}
+  <main>
+    {% block main %}
+    {% endblock %}
+  </main>
+  {% endblock %}
+  {% block tail_js %}
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/bootstrap.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}"></script>
+  {% endblock %}
+  {% block tail %}
+  {% endblock %}
+
+  {# SPA navigation: intercept admin links and fetch content via AJAX #}
+  <script>
+  (function() {
+    const ADMIN_PREFIX = '/admin/';
+    const CONTENT_SELECTOR = '.page-wrapper';
+    const NAV_SELECTOR = '.navbar-vertical';
+    const TITLE_SELECTOR = '.page-title';
+    const PRETITLE_SELECTOR = '.page-pretitle';
+    const ACTIVE_CLASS = 'active';
+
+    let isSpaNavigating = false;
+
+    function isAdminLink(url) {
+      try {
+        const u = new URL(url, location.origin);
+        return u.pathname.startsWith(ADMIN_PREFIX) && u.origin === location.origin;
+      } catch { return false; }
+    }
+
+    function isSamePage(url) {
+      try {
+        const u = new URL(url, location.origin);
+        return u.pathname === location.pathname && u.search === location.search;
+      } catch { return false; }
+    }
+
+    function updateActiveNav() {
+      const navLinks = document.querySelectorAll('.navbar-vertical .nav-link');
+      navLinks.forEach(function(link) {
+        link.classList.remove(ACTIVE_CLASS);
+        try {
+          const href = link.getAttribute('href');
+          if (href && href.startsWith(ADMIN_PREFIX)) {
+            const linkPath = new URL(href, location.origin).pathname;
+            if (linkPath === location.pathname) {
+              link.classList.add(ACTIVE_CLASS);
+            }
+          }
+        } catch {}
+      });
+    }
+
+    function showTransition() {
+      const content = document.querySelector(CONTENT_SELECTOR);
+      if (content) {
+        content.style.opacity = '0.4';
+        content.style.transition = 'opacity 0.15s ease';
+      }
+    }
+
+    function hideTransition() {
+      const content = document.querySelector(CONTENT_SELECTOR);
+      if (content) {
+        content.style.opacity = '1';
+      }
+    }
+
+    function replaceContent(html, url) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      // Replace main content area
+      const newContent = doc.querySelector(CONTENT_SELECTOR);
+      const oldContent = document.querySelector(CONTENT_SELECTOR);
+      if (newContent && oldContent) {
+        oldContent.replaceWith(newContent);
+      }
+
+      // Update page title
+      const newTitle = doc.querySelector(TITLE_SELECTOR);
+      const oldTitle = document.querySelector(TITLE_SELECTOR);
+      if (newTitle && oldTitle) {
+        oldTitle.textContent = newTitle.textContent;
+      }
+      const newPretitle = doc.querySelector(PRETITLE_SELECTOR);
+      const oldPretitle = document.querySelector(PRETITLE_SELECTOR);
+      if (newPretitle && oldPretitle) {
+        oldPretitle.textContent = newPretitle.textContent;
+      }
+
+      // Update document title
+      document.title = doc.title;
+
+      // Re-initialize JS components in the new content
+      reinitComponents();
+
+      // Update active nav state
+      updateActiveNav();
+    }
+
+    function reinitComponents() {
+      // Re-init Bootstrap tooltips
+      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+        new bootstrap.Tooltip(el);
+      });
+
+      // Re-init Select2
+      if (typeof $.fn.select2 === 'function') {
+        document.querySelectorAll('select.select2').forEach(function(el) {
+          $(el).select2();
+        });
+      }
+
+      // Re-init Flatpickr
+      if (typeof flatpickr === 'function') {
+        document.querySelectorAll('.flatpickr-input').forEach(function(el) {
+          flatpickr(el);
+        });
+      }
+
+      // Re-attach SPA click handlers to new content
+      attachContentClickHandlers();
+    }
+
+    function spaNavigate(url, pushState) {
+      if (isSpaNavigating) return;
+      isSpaNavigating = true;
+      showTransition();
+
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      })
+      .then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.text();
+      })
+      .then(function(html) {
+        replaceContent(html, url);
+        if (pushState !== false) {
+          history.pushState({ spa: true }, '', url);
+        }
+      })
+      .catch(function(err) {
+        // Fallback to full page load on error
+        location.href = url;
+      })
+      .finally(function() {
+        isSpaNavigating = false;
+        hideTransition();
+      });
+    }
+
+    function attachContentClickHandlers() {
+      const content = document.querySelector(CONTENT_SELECTOR);
+      if (!content) return;
+
+      content.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+        // Skip links with data-bs-toggle (dropdowns, modals, tooltips)
+        if (link.getAttribute('data-bs-toggle')) return;
+
+        // Skip links that open in new window
+        if (link.getAttribute('target')) return;
+
+        // Only intercept admin links
+        if (!isAdminLink(href)) return;
+
+        // Skip if same page (let hash changes work)
+        if (isSamePage(href)) return;
+
+        e.preventDefault();
+        spaNavigate(href);
+      });
+    }
+
+    function attachNavClickHandlers() {
+      const nav = document.querySelector(NAV_SELECTOR);
+      if (!nav) return;
+
+      nav.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href === '#' || href.startsWith('javascript:')) return;
+        if (link.getAttribute('data-bs-toggle')) return;
+        if (link.getAttribute('target')) return;
+        if (!isAdminLink(href)) return;
+        if (isSamePage(href)) return;
+
+        e.preventDefault();
+        spaNavigate(href);
+      });
+    }
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', function(e) {
+      if (e.state && e.state.spa) {
+        spaNavigate(location.href, false);
+      }
+    });
+
+    // Initialize on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      attachNavClickHandlers();
+      attachContentClickHandlers();
+
+      // Set initial history state
+      history.replaceState({ spa: true }, '');
+    });
+  })();
+  </script>
+
+</body>
+
+</html>

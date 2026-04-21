@@ -61,6 +61,49 @@
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
 }
 
+.sidebar-title .btn-rebuild {
+    margin-left: auto;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all var(--duration-fast) var(--ease-out);
+    flex-shrink: 0;
+}
+
+.sidebar-title .btn-rebuild:hover {
+    border-color: var(--accent-indigo);
+    color: var(--accent-indigo);
+    background: var(--accent-indigo-dim);
+}
+
+.sidebar-title .btn-rebuild:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sidebar-title .btn-rebuild-icon {
+    font-size: 14px;
+    line-height: 1;
+    display: inline-block;
+}
+
+.sidebar-title .btn-rebuild-icon.spinning {
+    animation: rebuild-spin 1s linear infinite;
+}
+
+@keyframes rebuild-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .sidebar-divider {
     height: 1px;
     background: linear-gradient(90deg, var(--border), var(--border-hover), var(--border));
@@ -103,11 +146,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    height: 45vh;
-    max-height: 45vh;
+    flex: 45 0 0;
     min-height: 0;
-    flex-shrink: 0;
-    flex-grow: 0;
     overflow: hidden;
     background-color: var(--term-bg);
     border-radius: var(--term-radius);
@@ -116,11 +156,8 @@
 
 /* Lower zone: log panel — 55% of height */
 .main-content-lower {
-    height: 55vh;
+    flex: 55 0 0;
     min-height: 0;
-    max-height: 55vh;
-    flex-shrink: 0;
-    flex-grow: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -150,6 +187,8 @@
         min-width: auto;
         height: auto;
         position: relative;
+        top: auto;
+        overflow: auto;
         border-right: none;
         border-bottom: 1px solid var(--border);
         padding: var(--space-5);

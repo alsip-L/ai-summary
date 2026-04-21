@@ -4,30 +4,44 @@
 import unittest
 import os
 import json
+import shutil
+import tempfile
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import SessionLocal, Base, engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.database import Base, DB_PATH
 from app.models import Provider, Prompt, TrashProvider, TrashPrompt
 from app.services.provider_repo import ProviderRepository
 from app.services.prompt_repo import PromptRepository
 from app.services.trash_repo import TrashRepository
 
 
+def _backup_production_db():
+    """从生产数据库备份一份到临时文件，返回临时文件路径。"""
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.db')
+    os.close(tmp_fd)
+    if DB_PATH.exists():
+        shutil.copy2(str(DB_PATH), tmp_path)
+    return tmp_path
+
+
 class _BaseDBTest(unittest.TestCase):
 
     def setUp(self):
-        Base.metadata.create_all(bind=engine)
-        self.db = SessionLocal()
+        self._db_path = _backup_production_db()
+        self._engine = create_engine(f"sqlite:///{self._db_path}", connect_args={"check_same_thread": False})
+        Base.metadata.create_all(bind=self._engine)
+        TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self._engine)
+        self.db = TestSessionLocal()
 
     def tearDown(self):
         self.db.rollback()
         self.db.close()
-        for table in reversed(Base.metadata.sorted_tables):
-            self.db.execute(table.delete())
-        self.db.commit()
-        self.db.close()
+        self._engine.dispose()
+        os.unlink(self._db_path)
 
 
 class TestProviderRepository(_BaseDBTest):
@@ -66,10 +80,11 @@ class TestPromptRepository(_BaseDBTest):
 
     def test_get_all(self):
         repo = PromptRepository(self.db)
+        existing_count = len(repo.get_all())
         repo.save("P1", "Content 1")
         repo.save("P2", "Content 2")
         all_prompts = repo.get_all()
-        self.assertEqual(len(all_prompts), 2)
+        self.assertEqual(len(all_prompts), existing_count + 2)
 
     def test_remove(self):
         repo = PromptRepository(self.db)

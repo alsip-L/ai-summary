@@ -14,9 +14,12 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from core.config import ConfigManager
-from core.errors import AISummaryException, ValidationError, ProviderError, FileProcessingError
+from core.errors import (
+    AISummaryException, ValidationError, ProviderError,
+    FileProcessingError, RetryableError, NetworkError, RateLimitError,
+)
 from app.database import engine, Base
-from app.routers import providers, prompts, tasks, files, trash, settings, logs
+from app.routers import providers, prompts, tasks, files, trash, settings, logs, system
 
 
 @asynccontextmanager
@@ -50,6 +53,10 @@ def create_app() -> FastAPI:
     async def file_error_handler(request: Request, exc: FileProcessingError):
         return JSONResponse(status_code=500, content={"success": False, "error": exc.message})
 
+    @app.exception_handler(RetryableError)
+    async def retryable_error_handler(request: Request, exc: RetryableError):
+        return JSONResponse(status_code=503, content={"success": False, "error": str(exc), "retryable": True})
+
     @app.exception_handler(AISummaryException)
     async def base_error_handler(request: Request, exc: AISummaryException):
         return JSONResponse(status_code=500, content={"success": False, "error": exc.message})
@@ -61,20 +68,23 @@ def create_app() -> FastAPI:
     app.include_router(trash.router)
     app.include_router(settings.router)
     app.include_router(logs.router)
+    app.include_router(system.router)
 
     from sqladmin import Admin
     from app.admin import (
         ProviderAdmin, PromptAdmin,
         TrashProviderAdmin, TrashPromptAdmin,
-        UserPreferenceAdmin,
+        UserPreferenceAdmin, FailedRecordAdmin,
     )
 
-    admin = Admin(app, engine)
+    templates_dir = Path(__file__).parent.parent / "templates"
+    admin = Admin(app, engine, templates_dir=str(templates_dir))
     admin.add_view(ProviderAdmin)
     admin.add_view(PromptAdmin)
     admin.add_view(TrashProviderAdmin)
     admin.add_view(TrashPromptAdmin)
     admin.add_view(UserPreferenceAdmin)
+    admin.add_view(FailedRecordAdmin)
 
     frontend_dist = Path(__file__).parent.parent / "frontend-vue" / "dist"
     if frontend_dist.is_dir():

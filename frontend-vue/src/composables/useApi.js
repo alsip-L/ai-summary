@@ -2,13 +2,16 @@ const BASE_URL = ''
 
 async function request(url, options = {}) {
   const defaults = {
-    headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',
+  }
+  // Only set Content-Type when there is a body
+  if (options.body) {
+    defaults.headers = { 'Content-Type': 'application/json' }
   }
   const merged = {
     ...defaults,
     ...options,
-    headers: { ...defaults.headers, ...(options.headers || {}) },
+    headers: { ...(defaults.headers || {}), ...(options.headers || {}) },
   }
 
   const response = await fetch(BASE_URL + url, merged)
@@ -35,6 +38,9 @@ export const api = {
   startProcessing: (data) => request('/api/tasks/start', { method: 'POST', body: JSON.stringify(data) }),
   cancelProcessing: () => request('/api/tasks/cancel', { method: 'POST' }),
   getProcessingStatus: () => request('/api/tasks/status'),
+  getFailedRecords: () => request('/api/tasks/failed'),
+  clearFailedRecords: () => request('/api/tasks/failed', { method: 'DELETE' }),
+  retryFailed: (data) => request('/api/tasks/retry-failed', { method: 'POST', body: JSON.stringify(data) }),
 
   getDirectoryContents: (path = '') => {
     const url = path ? `/api/files/directory?path=${encodeURIComponent(path)}` : '/api/files/drives'
@@ -50,4 +56,8 @@ export const api = {
 
   getPreferences: () => request('/api/settings/preferences'),
   savePreferences: (data) => request('/api/settings/preferences', { method: 'PUT', body: JSON.stringify(data) }),
+
+  clearLogs: () => request('/api/logs/clear', { method: 'POST' }),
+
+  rebuild: () => request('/api/system/rebuild', { method: 'POST' }),
 }

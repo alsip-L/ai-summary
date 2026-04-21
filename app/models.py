@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy import Column, Integer, String, Text, Boolean
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 from app.database import Base
 
 
@@ -47,3 +48,13 @@ class UserPreference(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String, unique=True, nullable=False)
     value = Column(Text, default="")
+
+
+class FailedRecord(Base):
+    __tablename__ = "failed_records"
+
+    id = Column(Integer, primary_key=True)
+    source = Column(String, nullable=False)
+    error = Column(Text, default="")
+    retryable = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

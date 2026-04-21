@@ -47,7 +47,7 @@
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 import { usePromptStore } from '../stores/prompt'
 import { useTrashStore } from '../stores/trash'
 
@@ -56,6 +56,15 @@ const trashStore = useTrashStore()
 const showMessage = inject('showMessage')
 
 const showDropdown = ref(false)
+
+function onDocumentClick(e) {
+  if (!e.target.closest('#prompt-section .custom-dropdown')) {
+    showDropdown.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onDocumentClick))
+onUnmounted(() => document.removeEventListener('click', onDocumentClick))
 const showDialog = ref(false)
 const newName = ref('')
 const newContent = ref('')

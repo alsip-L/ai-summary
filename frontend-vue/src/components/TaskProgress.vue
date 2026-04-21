@@ -28,6 +28,10 @@
             <span class="stat-label">耗时</span>
             <span class="stat-value">{{ elapsedTime }}</span>
           </div>
+          <div v-if="taskStore.retrying" class="stat-item stat-retry">
+            <span class="stat-label">重试</span>
+            <span class="stat-value">{{ taskStore.retryAttempt }} / {{ taskStore.retryMax }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -41,7 +45,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTaskStore } from '../stores/task'
 
 const taskStore = useTaskStore()
@@ -62,11 +66,29 @@ const statusMessage = computed(() => {
   return map[taskStore.status] || '等待开始...'
 })
 
-const elapsedTime = computed(() => {
-  if (!taskStore.startTime) return '0:00'
+const elapsedTime = ref('0:00')
+let elapsedTimer = null
+
+function updateElapsedTime() {
+  if (!taskStore.startTime) {
+    elapsedTime.value = '0:00'
+    return
+  }
   const elapsed = Math.floor((Date.now() / 1000) - taskStore.startTime)
   const min = Math.floor(elapsed / 60)
   const sec = elapsed % 60
-  return `${min}:${sec.toString().padStart(2, '0')}`
+  elapsedTime.value = `${min}:${sec.toString().padStart(2, '0')}`
+}
+
+onMounted(() => {
+  updateElapsedTime()
+  elapsedTimer = setInterval(updateElapsedTime, 1000)
+})
+
+onUnmounted(() => {
+  if (elapsedTimer) {
+    clearInterval(elapsedTimer)
+    elapsedTimer = null
+  }
 })
 </script>

@@ -1,0 +1,107 @@
+# -*- coding: utf-8 -*-
+import os
+import sys
+import subprocess
+import threading
+import signal
+import time
+from pathlib import Path
+from fastapi import APIRouter
+
+router = APIRouter(prefix="/api/system", tags=["system"])
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+FRONTEND_DIR = PROJECT_ROOT / "frontend-vue"
+
+# 记录后端启动时间，用于前端确认重启成功
+_started_at = time.time()
+
+
+@router.get("/info")
+def system_info():
+    """返回系统信息，前端用于确认重启后连接的是新进程。"""
+    return {
+        "started_at": _started_at,
+        "pid": os.getpid(),
+    }
+
+
+@router.post("/rebuild")
+def rebuild():
+    """重新构建前端并重启后端服务。"""
+    result = {"frontend": None, "backend": None}
+
+    # 1. 构建前端
+    try:
+        if sys.platform == "win32":
+            npm_cmd = "npm.cmd"
+        else:
+            npm_cmd = "npm"
+
+        build_proc = subprocess.run(
+            [npm_cmd, "run", "build"],
+            cwd=str(FRONTEND_DIR),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if build_proc.returncode == 0:
+            result["frontend"] = "success"
+        else:
+            result["frontend"] = f"failed: {build_proc.stderr[-500:]}" if build_proc.stderr else f"failed with code {build_proc.returncode}"
+    except subprocess.TimeoutExpired:
+        result["frontend"] = "failed: build timed out (120s)"
+    except FileNotFoundError:
+        result["frontend"] = "failed: npm not found"
+    except Exception as e:
+        result["frontend"] = f"failed: {str(e)}"
+
+    # 2. 重启后端（在子线程中延迟执行，先返回响应）
+    def _restart_backend():
+        time.sleep(2)  # 等待响应发送完毕
+
+        run_py = str(PROJECT_ROOT / "run.py")
+        cwd = str(PROJECT_ROOT)
+
+        if sys.platform == "win32":
+            # Windows: 用 Python 脚本做重启助手，避免弹出 CMD 窗口
+            helper_script = (
+                "import subprocess, time, sys, os\n"
+                "time.sleep(3)\n"
+                f"subprocess.Popen([sys.executable, r'{run_py}'], cwd=r'{cwd}',"
+                " creationflags=0x08000000)\n"  # CREATE_NO_WINDOW
+            )
+            helper_file = PROJECT_ROOT / "_restart_helper.py"
+            helper_file.write_text(helper_script, encoding="utf-8")
+            # CREATE_NO_WINDOW = 0x08000000 防止弹出控制台窗口
+            subprocess.Popen(
+                [sys.executable, str(helper_file)],
+                creationflags=0x08000000,
+                close_fds=True,
+            )
+        else:
+            # Linux/macOS: 用 nohup + sleep 后台启动
+            script = f'#!/bin/bash\nsleep 3\ncd "{cwd}"\n"{sys.executable}" "{run_py}"\n'
+            script_file = PROJECT_ROOT / "_restart_helper.sh"
+            script_file.write_text(script, encoding="utf-8")
+            script_file.chmod(0o755)
+            subprocess.Popen(
+                f'nohup "{script_file}" > /dev/null 2>&1 &',
+                shell=True,
+            )
+
+        # 终止当前进程
+        pid = os.getpid()
+        try:
+            os.kill(pid, signal.SIGINT)
+        except Exception:
+            os._exit(0)
+
+    if result["frontend"] == "success":
+        result["backend"] = "restarting"
+        t = threading.Thread(target=_restart_backend, daemon=True)
+        t.start()
+    else:
+        result["backend"] = "skipped (frontend build failed)"
+
+    return {"success": result["frontend"] == "success", "detail": result}

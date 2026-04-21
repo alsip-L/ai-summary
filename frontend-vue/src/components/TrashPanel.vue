@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
+import { ref, inject, onMounted, onUnmounted } from 'vue'
 import { useTrashStore } from '../stores/trash'
 import { useProviderStore } from '../stores/provider'
 import { usePromptStore } from '../stores/prompt'
@@ -49,6 +49,15 @@ const promptStore = usePromptStore()
 const showMessage = inject('showMessage')
 
 const showDropdown = ref(false)
+
+function onDocumentClick(e) {
+  if (!e.target.closest('#trash-dropdown')) {
+    showDropdown.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onDocumentClick))
+onUnmounted(() => document.removeEventListener('click', onDocumentClick))
 
 async function restoreProvider(name) {
   try {

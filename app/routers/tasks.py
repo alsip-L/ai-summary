@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.services.task_service import TaskService
 from app.dependencies import get_task_service
-from app.schemas.task import TaskStartRequest
+from app.schemas.task import TaskStartRequest, RetryFailedRequest
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -33,6 +33,38 @@ def get_status(svc: TaskService = Depends(get_task_service)):
 @router.post("/cancel")
 def cancel_task(svc: TaskService = Depends(get_task_service)):
     result = svc.cancel()
+    if result["success"]:
+        return result
+    raise HTTPException(status_code=400, detail=result["error"])
+
+
+@router.get("/failed")
+def get_failed_records():
+    result = TaskService.get_failed_records()
+    if result["success"]:
+        return result
+    raise HTTPException(status_code=500, detail=result["error"])
+
+
+@router.delete("/failed")
+def clear_failed_records():
+    result = TaskService.clear_failed_records()
+    if result["success"]:
+        return result
+    raise HTTPException(status_code=500, detail=result["error"])
+
+
+@router.post("/retry-failed")
+def retry_failed(
+    data: RetryFailedRequest,
+    svc: TaskService = Depends(get_task_service),
+):
+    result = svc.retry_failed(
+        provider_name=data.provider,
+        model_key=data.model,
+        api_key=data.api_key,
+        prompt_name=data.prompt,
+    )
     if result["success"]:
         return result
     raise HTTPException(status_code=400, detail=result["error"])

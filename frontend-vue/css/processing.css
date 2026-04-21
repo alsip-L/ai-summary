@@ -332,6 +332,88 @@
     color: var(--danger);
 }
 
+/* Failed result item highlight */
+.result-item-failed {
+    background: rgba(239, 68, 68, 0.06);
+    border-left: 2px solid var(--danger);
+    padding-left: 6px;
+}
+
+/* Retryable tag */
+.result-retryable-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+}
+
+/* Failed count badge */
+.results-failed-count {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--danger);
+    background: var(--danger-dim);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Failed actions bar */
+.failed-actions {
+    padding: var(--space-2) 0;
+    margin-bottom: var(--space-2);
+    border-bottom: 1px solid var(--term-border);
+}
+
+.failed-hint {
+    font-size: var(--text-xs);
+    color: rgba(200, 200, 200, 0.5);
+    margin-bottom: var(--space-2);
+}
+
+.failed-buttons {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* Retry error message */
+.retry-error-msg {
+    font-size: var(--text-xs);
+    color: var(--danger);
+    margin-top: var(--space-2);
+    padding: 4px 8px;
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid var(--danger);
+}
+
+/* Retry button */
+.btn-retry {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: var(--warning);
+}
+.btn-retry:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: var(--warning);
+}
+
+/* Retry stat highlight */
+.stat-retry {
+    border-color: rgba(245, 158, 11, 0.25) !important;
+}
+.stat-retry .stat-label {
+    color: var(--warning) !important;
+}
+
 .result-output a {
     color: var(--accent-indigo);
     text-decoration: none;

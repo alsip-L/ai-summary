@@ -69,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 import { useProviderStore } from '../stores/provider'
 import { useTaskStore } from '../stores/task'
 import { useTrashStore } from '../stores/trash'
@@ -82,6 +82,19 @@ const openDirectoryBrowser = inject('openDirectoryBrowser')
 
 const showProviderDropdown = ref(false)
 const showModelDropdown = ref(false)
+
+function closeAllDropdowns() {
+  showProviderDropdown.value = false
+  showModelDropdown.value = false
+}
+
+function onDocumentClick(e) {
+  const el = e.target.closest('.custom-dropdown')
+  if (!el) closeAllDropdowns()
+}
+
+onMounted(() => document.addEventListener('click', onDocumentClick))
+onUnmounted(() => document.removeEventListener('click', onDocumentClick))
 
 const modelKeys = computed(() => Object.keys(store.getCurrentModels()))
 
@@ -151,8 +164,6 @@ async function saveApiKey() {
   try {
     const key = store.apiKey.trim()
     await store.saveApiKey(store.selectedProvider, key)
-    store.apiKey = key
-    await store.savePreferences()
     showMessage('API Key 已保存', 'success')
   } catch (e) {
     showMessage('保存失败: ' + e.message, 'error')

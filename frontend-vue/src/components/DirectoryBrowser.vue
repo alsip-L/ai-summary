@@ -60,20 +60,28 @@ function close() {
 }
 
 async function loadDrives() {
-  const result = await api.getDirectoryContents()
-  if (result.success) {
-    directories.value = (result.drives || []).map(d => ({ name: d, path: d }))
-    currentPath.value = ''
-    parentPath.value = null
+  try {
+    const result = await api.getDirectoryContents()
+    if (result.success) {
+      directories.value = (result.drives || []).map(d => ({ name: d, path: d }))
+      currentPath.value = ''
+      parentPath.value = null
+    }
+  } catch (e) {
+    showMessage('加载驱动器失败: ' + e.message, 'error')
   }
 }
 
 async function navigateTo(path) {
-  const result = await api.getDirectoryContents(path)
-  if (result.success) {
-    currentPath.value = result.path
-    parentPath.value = result.parent
-    directories.value = result.directories || []
+  try {
+    const result = await api.getDirectoryContents(path)
+    if (result.success) {
+      currentPath.value = result.path
+      parentPath.value = result.parent
+      directories.value = result.directories || []
+    }
+  } catch (e) {
+    showMessage('无法访问该路径: ' + e.message, 'error')
   }
 }
 
@@ -96,8 +104,12 @@ async function refresh() {
 async function goToDirectPath() {
   const path = directPathInput.value.trim()
   if (!path) return
-  await navigateTo(path)
-  directPathInput.value = ''
+  try {
+    await navigateTo(path)
+    directPathInput.value = ''
+  } catch (e) {
+    showMessage('无法访问该路径: ' + e.message, 'error')
+  }
 }
 
 async function selectDirectory() {

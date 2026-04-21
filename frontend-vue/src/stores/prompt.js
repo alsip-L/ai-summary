@@ -7,14 +7,12 @@ export const usePromptStore = defineStore('prompt', () => {
   const promptNames = ref([])
   const selectedPrompt = ref('')
 
-  async function loadAll() {
-    const [preferences, promptData] = await Promise.all([
-      api.getPreferences().catch(() => ({})),
-      api.getPrompts().catch(() => ({})),
-    ])
+  async function loadAll(preferences = null) {
+    const prefs = preferences || await api.getPreferences().catch(() => ({}))
+    const promptData = await api.getPrompts().catch(() => ({}))
     prompts.value = promptData || {}
     promptNames.value = Object.keys(prompts.value)
-    selectedPrompt.value = preferences.selected_prompt || ''
+    selectedPrompt.value = prefs.selected_prompt || ''
     if (selectedPrompt.value && !prompts.value[selectedPrompt.value]) {
       selectedPrompt.value = ''
       await api.savePreferences({ selected_prompt: '' }).catch(() => {})
