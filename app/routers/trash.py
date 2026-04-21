@@ -6,12 +6,25 @@ from app.dependencies import get_trash_service
 router = APIRouter(prefix="/api/settings/trash", tags=["trash"])
 
 
-@router.get("/")
+@router.get(
+    "/",
+    summary="获取回收站内容",
+    description="返回回收站中所有已软删除的提供商和提示词列表。",
+    responses={200: {"description": "回收站内容"}},
+)
 def get_trash(svc: TrashService = Depends(get_trash_service)):
     return svc.get_all()
 
 
-@router.post("/restore/provider/{name}")
+@router.post(
+    "/restore/provider/{name}",
+    summary="恢复提供商",
+    description="从回收站恢复指定提供商，使其重新变为活跃状态。",
+    responses={
+        200: {"description": "恢复成功"},
+        400: {"description": "提供商不存在或名称冲突"},
+    },
+)
 def restore_provider(
     name: str,
     svc: TrashService = Depends(get_trash_service),
@@ -22,7 +35,15 @@ def restore_provider(
     raise HTTPException(status_code=400, detail=result["error"])
 
 
-@router.post("/restore/prompt/{name}")
+@router.post(
+    "/restore/prompt/{name}",
+    summary="恢复提示词",
+    description="从回收站恢复指定提示词，使其重新变为活跃状态。",
+    responses={
+        200: {"description": "恢复成功"},
+        400: {"description": "提示词不存在或名称冲突"},
+    },
+)
 def restore_prompt(
     name: str,
     svc: TrashService = Depends(get_trash_service),
@@ -33,7 +54,15 @@ def restore_prompt(
     raise HTTPException(status_code=400, detail=result["error"])
 
 
-@router.delete("/provider/{name}")
+@router.delete(
+    "/provider/{name}",
+    summary="永久删除提供商",
+    description="永久删除指定提供商，不可恢复。",
+    responses={
+        200: {"description": "删除成功"},
+        400: {"description": "提供商不存在"},
+    },
+)
 def permanent_delete_provider(
     name: str,
     svc: TrashService = Depends(get_trash_service),
@@ -44,7 +73,15 @@ def permanent_delete_provider(
     raise HTTPException(status_code=400, detail=result["error"])
 
 
-@router.delete("/prompt/{name}")
+@router.delete(
+    "/prompt/{name}",
+    summary="永久删除提示词",
+    description="永久删除指定提示词，不可恢复。",
+    responses={
+        200: {"description": "删除成功"},
+        400: {"description": "提示词不存在"},
+    },
+)
 def permanent_delete_prompt(
     name: str,
     svc: TrashService = Depends(get_trash_service),

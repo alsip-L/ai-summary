@@ -17,7 +17,12 @@ FRONTEND_DIR = PROJECT_ROOT / "frontend-vue"
 _started_at = time.time()
 
 
-@router.get("/info")
+@router.get(
+    "/info",
+    summary="获取系统信息",
+    description="返回系统信息，包含启动时间和进程ID，前端用于确认重启后连接的是新进程。",
+    responses={200: {"description": "系统信息"}},
+)
 def system_info():
     """返回系统信息，前端用于确认重启后连接的是新进程。"""
     return {
@@ -26,7 +31,15 @@ def system_info():
     }
 
 
-@router.post("/rebuild")
+@router.post(
+    "/rebuild",
+    summary="重建前端并重启",
+    description="重新构建前端并重启后端服务。前端构建成功后，后端将在延迟 2 秒后自动重启。",
+    responses={
+        200: {"description": "重建结果"},
+        500: {"description": "前端构建失败"},
+    },
+)
 def rebuild():
     """重新构建前端并重启后端服务。"""
     result = {"frontend": None, "backend": None}

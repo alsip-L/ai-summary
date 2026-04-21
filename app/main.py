@@ -20,6 +20,8 @@ from core.errors import (
 )
 from app.database import engine, Base
 from app.routers import providers, prompts, tasks, files, trash, settings, logs, system
+from app.openapi_config import custom_openapi
+from app.schemas.common import ErrorResponse
 
 
 @asynccontextmanager
@@ -35,11 +37,25 @@ def create_app() -> FastAPI:
     )
 
     app = FastAPI(
-        title="AI Summary",
+        title="AI Summary API",
+        summary="基于 FastAPI + OpenAI API 的智能文本批量处理服务",
+        description=(
+            "AI Summary 提供 AI 提供商管理、提示词管理、批量文件处理、"
+            "实时进度追踪、回收站和用户偏好等 REST API。\n\n"
+            "## 快速开始\n"
+            "1. 创建 AI 提供商（POST /api/providers/）\n"
+            "2. 创建提示词（POST /api/prompts/）\n"
+            "3. 启动处理任务（POST /api/tasks/start）\n"
+            "4. 查询处理状态（GET /api/tasks/status）\n"
+        ),
+        version="1.0.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",
         lifespan=lifespan,
     )
+
+    # 注入增强的 OpenAPI 规范
+    app.openapi = lambda: custom_openapi(app)
 
     @app.exception_handler(ValidationError)
     async def validation_error_handler(request: Request, exc: ValidationError):

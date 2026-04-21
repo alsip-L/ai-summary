@@ -12,7 +12,12 @@ REPLAY_BATCH_SIZE = 100  # 回放时每批发送的记录数
 POLL_INTERVAL = 0.1  # 实时推送轮询间隔（秒）
 
 
-@router.get("/api/logs/status")
+@router.get(
+    "/api/logs/status",
+    summary="获取日志状态",
+    description="返回日志处理器的状态信息，包含日志级别、处理器列表和缓冲区大小。",
+    responses={200: {"description": "日志状态信息"}},
+)
 def logs_status():
     logger = logging.getLogger(LOGGER_NAME)
     handler = get_ws_handler()
@@ -26,7 +31,12 @@ def logs_status():
     }
 
 
-@router.post("/api/logs/clear")
+@router.post(
+    "/api/logs/clear",
+    summary="清除日志缓冲",
+    description="清除 WebSocket 日志处理器的缓冲区，释放内存。",
+    responses={200: {"description": "清除成功"}},
+)
 def clear_logs():
     handler = get_ws_handler()
     if handler is None:
