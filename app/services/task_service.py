@@ -21,6 +21,7 @@ logger = get_logger()
 
 # 重试配置
 MAX_RETRIES = 3
+FILE_MAX_RETRIES = 2  # 文件级别最大重试次数（AI调用级已有3次重试，文件级2次即可）
 RETRY_BASE_DELAY = 2  # 秒，指数退避基数
 
 
@@ -48,7 +49,9 @@ def _classify_openai_error(e: Exception) -> Exception:
 
     # OpenAI SDK 的服务端错误 (5xx)
     if "APIStatusError" in error_name or "InternalServerError" in error_name:
-        if "5" in error_str[:20]:
+        status_code = getattr(e, "status_code", None)
+        if (status_code is not None and 500 <= status_code < 600) or \
+           (status_code is None and any(f" {code} " in f" {error_str} " for code in range(500, 600))):
             return RetryableError(f"服务端临时错误", cause=e)
 
     # 明确不可重试的客户端错误：认证失败、模型不存在
@@ -60,7 +63,11 @@ def _classify_openai_error(e: Exception) -> Exception:
     if "openai" in module.lower() or "APIStatusError" in error_name or "APIError" in error_name:
         return RetryableError(f"API 临时错误", cause=e)
 
-    # 非OpenAI异常，视为不可重试
+    # 非 OpenAI 异常：Python 内置的网络/IO 临时异常视为可重试
+    if isinstance(e, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError)):
+        return NetworkError(f"网络连接失败", cause=e)
+
+    # 其他非OpenAI异常，视为不可重试
     return ProviderError(f"AI 调用失败: {error_str}", cause=e)
 
 
@@ -91,7 +98,7 @@ class ProcessingState:
             self._cancelled = False
             self._retrying = False
             self._retry_attempt = 0
-            self._retry_max = MAX_RETRIES
+            self._retry_max = FILE_MAX_RETRIES
             self._initialized = True
 
     def get_dict(self) -> dict:
@@ -280,7 +287,7 @@ class TaskService:
                 progress_before = int((i / len(txt_files)) * 100)
                 self._state.update_progress(i, os.path.basename(file_path), progress_before)
                 logger.info(f"处理文件 [{i+1}/{len(txt_files)}]: {os.path.basename(file_path)}")
-                result = self._process_file(file_path, client, prompt_content, model_id)
+                result = self._process_file_with_retry(file_path, client, prompt_content, model_id)
                 progress_after = int(((i + 1) / len(txt_files)) * 100)
                 self._state.update_progress(i + 1, None, progress_after)
                 self._state.add_result(
@@ -336,6 +343,58 @@ class TaskService:
             return {"source": file_path, "error": str(e), "retryable": False}
 
     @staticmethod
+    def _process_file_with_retry(file_path, client, prompt_content, model_id):
+        """处理单个文件，失败时自动重试（仅对可重试错误，最多FILE_MAX_RETRIES次）"""
+        result = TaskService._process_file(file_path, client, prompt_content, model_id)
+
+        # 如果成功或不可重试，直接返回
+        if not result.get("error") or not result.get("retryable"):
+            return result
+
+        # 可重试错误：自动重试
+        last_error = result["error"]
+        state = ProcessingState()
+        for attempt in range(2, FILE_MAX_RETRIES + 1):
+            if state.is_cancelled():
+                logger.info(f"文件重试已取消: {os.path.basename(file_path)}")
+                return {"source": file_path, "error": "用户取消了处理", "retryable": False}
+
+            delay = RETRY_BASE_DELAY * (2 ** (attempt - 2))
+            logger.warning(
+                f"文件处理失败，第 {attempt}/{FILE_MAX_RETRIES} 次重试 "
+                f"({delay}秒后): {os.path.basename(file_path)} - {last_error}"
+            )
+            state.set_retrying(attempt)
+            time.sleep(delay)
+
+            if state.is_cancelled():
+                state.clear_retrying()
+                logger.info(f"文件重试已取消: {os.path.basename(file_path)}")
+                return {"source": file_path, "error": "用户取消了处理", "retryable": False}
+
+            result = TaskService._process_file(file_path, client, prompt_content, model_id)
+            if not result.get("error"):
+                logger.info(f"文件重试成功（第{attempt}次）: {os.path.basename(file_path)}")
+                state.clear_retrying()
+                return result
+
+            if not result.get("retryable"):
+                # 变为不可重试错误，不再尝试
+                state.clear_retrying()
+                return result
+
+            last_error = result["error"]
+
+        # 所有重试都失败
+        logger.error(
+            f"文件处理失败（已重试{FILE_MAX_RETRIES}次）: "
+            f"{os.path.basename(file_path)} - {last_error}"
+        )
+        state = ProcessingState()
+        state.clear_retrying()
+        return {"source": file_path, "error": f"重试{FILE_MAX_RETRIES}次仍失败: {last_error}", "retryable": True}
+
+    @staticmethod
     def _call_ai(client, content, system_prompt, model_id):
         """调用 AI API，带指数退避重试（仅对可重试异常）"""
         state = ProcessingState()
@@ -379,11 +438,21 @@ class TaskService:
                     ws_handler.put_stream_end()
                 state.clear_retrying()
                 raise
-            except RetryableError:
+            except RetryableError as e:
                 if ws_handler:
                     ws_handler.put_stream_end()
-                state.clear_retrying()
-                raise
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                    logger.warning(
+                        f"AI 调用失败（第{attempt}次，{delay}秒后重试）: {e}"
+                    )
+                    time.sleep(delay)
+                    continue
+                else:
+                    logger.error(f"AI 调用失败（已重试{MAX_RETRIES}次）: {e}")
+                    state.clear_retrying()
+                    raise
             except Exception as e:
                 # 确保流式输出结束标记已发送
                 if ws_handler:
@@ -455,6 +524,10 @@ class TaskService:
                 repo.remove_by_source(source)
         except Exception as e:
             logger.error(f"持久化失败记录时出错: {e}")
+            # 数据库写入失败时，将失败记录写入日志作为备份
+            if failed:
+                for r in failed:
+                    logger.error(f"[失败记录备份] source={r['source']}, error={r.get('error', '')}, retryable={r.get('retryable', False)}")
         finally:
             db.close()
 
@@ -565,7 +638,7 @@ class TaskService:
                 progress_before = int((i / len(file_paths)) * 100)
                 self._state.update_progress(i, os.path.basename(file_path), progress_before)
                 logger.info(f"重跑文件 [{i+1}/{len(file_paths)}]: {os.path.basename(file_path)}")
-                result = self._process_file(file_path, client, prompt_content, model_id)
+                result = self._process_file_with_retry(file_path, client, prompt_content, model_id)
                 progress_after = int(((i + 1) / len(file_paths)) * 100)
                 self._state.update_progress(i + 1, None, progress_after)
                 self._state.add_result(
