@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
-from app.services.trash_repo import TrashRepository
+from app.repositories.trash_repo import TrashRepository
 
 
 class TrashService:

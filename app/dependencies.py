@@ -2,6 +2,7 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
+from app.repositories.settings_repo import SettingsRepository
 from app.services.provider_service import ProviderService
 from app.services.prompt_service import PromptService
 from app.services.trash_service import TrashService
@@ -31,7 +32,8 @@ def get_trash_service(db: Session = Depends(get_db)) -> TrashService:
 
 
 def get_settings_service(db: Session = Depends(get_db)) -> SettingsService:
-    return SettingsService(db)
+    repo = SettingsRepository(db)
+    return SettingsService(repo)
 
 
 def get_task_service(db: Session = Depends(get_db)) -> TaskService:

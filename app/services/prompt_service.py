@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
-from app.services.prompt_repo import PromptRepository
+from app.repositories.prompt_repo import PromptRepository
 
 
 class PromptService:
@@ -20,7 +20,7 @@ class PromptService:
         return {"success": False, "error": "保存失败"}
 
     def delete(self, name: str) -> dict:
-        from app.services.trash_repo import TrashRepository
+        from app.repositories.trash_repo import TrashRepository
         trash_repo = TrashRepository(self._repo.db)
         if trash_repo.move_prompt_to_trash(name):
             return {"success": True}

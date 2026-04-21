@@ -1,38 +1,19 @@
 # -*- coding: utf-8 -*-
-import json
-from sqlalchemy.orm import Session
-from app.models import UserPreference
+from app.repositories.settings_repo import SettingsRepository
 from core.config import ConfigManager
 from core.log import update_log_level
 
 
 class SettingsService:
-    def __init__(self, db: Session):
-        self._db = db
+    def __init__(self, settings_repo: SettingsRepository):
+        self._repo = settings_repo
         self._config = ConfigManager()
 
     def get_preferences(self) -> dict:
-        prefs = self._db.query(UserPreference).all()
-        result = {}
-        for p in prefs:
-            result[p.key] = self._parse_value(p.value)
-        return result
+        return self._repo.get_all()
 
     def save_preferences(self, data: dict) -> dict:
-        try:
-            for key, value in data.items():
-                p = self._db.query(UserPreference).filter(UserPreference.key == key).first()
-                str_value = json.dumps(value, ensure_ascii=False)
-                if p:
-                    p.value = str_value
-                else:
-                    p = UserPreference(key=key, value=str_value)
-                    self._db.add(p)
-            self._db.commit()
-            return {"success": True}
-        except Exception:
-            self._db.rollback()
-            return {"success": False, "error": "保存失败"}
+        return self._repo.save(data)
 
     def get_system_settings(self) -> dict:
         return self._config.get("system_settings", {})
@@ -75,13 +56,3 @@ class SettingsService:
             )
             return {"success": True, "needs_restart": needs_restart}
         return {"success": False, "error": "保存失败"}
-
-    @staticmethod
-    def _parse_value(value: str):
-        if not value:
-            return ""
-        try:
-            parsed = json.loads(value)
-            return parsed
-        except (json.JSONDecodeError, TypeError):
-            return value

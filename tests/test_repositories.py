@@ -14,9 +14,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.database import Base, DB_PATH
 from app.models import Provider, Prompt, TrashProvider, TrashPrompt
-from app.services.provider_repo import ProviderRepository
-from app.services.prompt_repo import PromptRepository
-from app.services.trash_repo import TrashRepository
+from app.repositories.provider_repo import ProviderRepository
+from app.repositories.prompt_repo import PromptRepository
+from app.repositories.trash_repo import TrashRepository
 
 
 def _backup_production_db():

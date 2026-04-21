@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Depends, HTTPException
 from app.services.task_service import TaskService
+from app.services.failed_record_service import FailedRecordService
 from app.dependencies import get_task_service
 from app.schemas.task import TaskStartRequest, RetryFailedRequest
 
@@ -40,7 +41,7 @@ def cancel_task(svc: TaskService = Depends(get_task_service)):
 
 @router.get("/failed")
 def get_failed_records():
-    result = TaskService.get_failed_records()
+    result = FailedRecordService.get_failed_records()
     if result["success"]:
         return result
     raise HTTPException(status_code=500, detail=result["error"])
@@ -48,7 +49,7 @@ def get_failed_records():
 
 @router.delete("/failed")
 def clear_failed_records():
-    result = TaskService.clear_failed_records()
+    result = FailedRecordService.clear_failed_records()
     if result["success"]:
         return result
     raise HTTPException(status_code=500, detail=result["error"])

@@ -18,7 +18,9 @@ from app.services.provider_service import ProviderService
 from app.services.prompt_service import PromptService
 from app.services.trash_service import TrashService
 from app.services.settings_service import SettingsService
-from app.services.task_service import TaskService, ProcessingState
+from app.services.task_service import TaskService
+from app.services.processing_state import ProcessingState
+from app.repositories.settings_repo import SettingsRepository
 from core.config import ConfigManager
 
 
@@ -140,24 +142,24 @@ class TestTrashService(_BaseDBTest):
 class TestSettingsService(_BaseDBTest):
 
     def test_get_preferences(self):
-        svc = SettingsService(self.db)
+        svc = SettingsService(SettingsRepository(self.db))
         prefs = svc.get_preferences()
         self.assertIsInstance(prefs, dict)
 
     def test_save_preferences(self):
-        svc = SettingsService(self.db)
+        svc = SettingsService(SettingsRepository(self.db))
         result = svc.save_preferences({"selected_provider": "test"})
         self.assertTrue(result["success"])
         prefs = svc.get_preferences()
         self.assertEqual(prefs.get("selected_provider"), "test")
 
     def test_get_system_settings(self):
-        svc = SettingsService(self.db)
+        svc = SettingsService(SettingsRepository(self.db))
         settings = svc.get_system_settings()
         self.assertIn("debug_level", settings)
 
     def test_save_system_settings_port_validation(self):
-        svc = SettingsService(self.db)
+        svc = SettingsService(SettingsRepository(self.db))
         result = svc.save_system_settings({"port": "not_a_number"})
         self.assertFalse(result["success"])
         self.assertIn("端口", result["error"])

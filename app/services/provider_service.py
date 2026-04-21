@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
-from app.services.provider_repo import ProviderRepository
+from app.repositories.provider_repo import ProviderRepository
 
 
 class ProviderService:
@@ -21,7 +21,7 @@ class ProviderService:
             return {"success": False, "error": str(e)}
 
     def delete(self, name: str) -> dict:
-        from app.services.trash_repo import TrashRepository
+        from app.repositories.trash_repo import TrashRepository
         trash_repo = TrashRepository(self._repo.db)
         if trash_repo.move_provider_to_trash(name):
             return {"success": True}
