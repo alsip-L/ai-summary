@@ -13,20 +13,9 @@ venv/
 .venv/
 env/
 
-# Environment Variables
-.env
-
-# IDE
-.idea/
-.vscode/
+# Vim temp files
 *.swp
 *.swo
-
-# AI Tool Config
-.arts/
-.codeartsdoer/
-.codebuddy/
-.trae/
 
 # OS
 .DS_Store
