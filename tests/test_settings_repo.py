@@ -14,14 +14,10 @@ from sqlalchemy.orm import sessionmaker
 from app.database import Base, DB_PATH
 from app.models import UserPreference
 from app.repositories.settings_repo import SettingsRepository
+from core.utils import safe_json_loads
 
 
-def _backup_production_db():
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.db')
-    os.close(tmp_fd)
-    if DB_PATH.exists():
-        shutil.copy2(str(DB_PATH), tmp_path)
-    return tmp_path
+from .conftest import _backup_production_db
 
 
 class _BaseDBTest(unittest.TestCase):
@@ -62,11 +58,11 @@ class TestSettingsRepository(_BaseDBTest):
         self.assertEqual(prefs["key1"], "value2")
 
     def test_parse_value_json(self):
-        result = SettingsRepository._parse_value('"hello"')
+        result = safe_json_loads('"hello"', fallback="hello")
         self.assertEqual(result, "hello")
 
     def test_parse_value_plain_string(self):
-        result = SettingsRepository._parse_value("not_json")
+        result = safe_json_loads("not_json", fallback="not_json")
         self.assertEqual(result, "not_json")
 
 

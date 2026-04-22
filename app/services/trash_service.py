@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
 from app.repositories.trash_repo import TrashRepository
+from core.result import ok, fail
 
 
 class TrashService:
@@ -12,20 +13,20 @@ class TrashService:
 
     def restore_provider(self, name: str) -> dict:
         if self._repo.restore_provider(name):
-            return {"success": True}
-        return {"success": False, "error": "恢复失败"}
+            return ok()
+        return fail("恢复失败")
 
     def restore_prompt(self, name: str) -> dict:
         if self._repo.restore_prompt(name):
-            return {"success": True}
-        return {"success": False, "error": "恢复失败"}
+            return ok()
+        return fail("恢复失败")
 
     def permanent_delete_provider(self, name: str) -> dict:
         if self._repo.permanent_delete_provider(name):
-            return {"success": True}
-        return {"success": False, "error": "删除失败"}
+            return ok()
+        return fail("删除失败")
 
     def permanent_delete_prompt(self, name: str) -> dict:
         if self._repo.permanent_delete_prompt(name):
-            return {"success": True}
-        return {"success": False, "error": "删除失败"}
+            return ok()
+        return fail("删除失败")

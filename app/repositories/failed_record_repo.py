@@ -1,56 +1,54 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
-from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 from app.models import FailedRecord
+from app.repositories.base_repo import BaseRepository
 from core.log import get_logger
 
 logger = get_logger()
 
 
-class FailedRecordRepository:
-    def __init__(self, db: Session):
-        self._db = db
+class FailedRecordRepository(BaseRepository):
 
     def add(self, source: str, error: str, retryable: bool = False) -> bool:
         """新增或更新一条失败记录（按 source 去重）"""
         try:
-            existing = self._db.query(FailedRecord).filter(FailedRecord.source == source).first()
-            if existing:
-                existing.error = error
-                existing.retryable = retryable
-                existing.created_at = datetime.utcnow()
-            else:
-                record = FailedRecord(source=source, error=error, retryable=retryable)
-                self._db.add(record)
-            self._db.commit()
+            with self._write_session():
+                existing = self._db.query(FailedRecord).filter(FailedRecord.source == source).first()
+                if existing:
+                    existing.error = error
+                    existing.retryable = retryable
+                    existing.created_at = datetime.now(timezone.utc)
+                else:
+                    record = FailedRecord(source=source, error=error, retryable=retryable)
+                    self._db.add(record)
             return True
-        except Exception:
-            self._db.rollback()
+        except Exception as e:
+            logger.error(f"新增失败记录失败: {e}", exc_info=True)
             return False
 
     def add_batch(self, records: list[dict]) -> int:
         """批量新增失败记录（按 source 去重：已存在则更新，不存在则插入）"""
         try:
             count = 0
-            for r in records:
-                source = r["source"]
-                existing = self._db.query(FailedRecord).filter(FailedRecord.source == source).first()
-                if existing:
-                    existing.error = r.get("error", "")
-                    existing.retryable = r.get("retryable", False)
-                    existing.created_at = datetime.utcnow()
-                else:
-                    record = FailedRecord(
-                        source=source,
-                        error=r.get("error", ""),
-                        retryable=r.get("retryable", False),
-                    )
-                    self._db.add(record)
-                    count += 1
-            self._db.commit()
+            with self._write_session():
+                for r in records:
+                    source = r["source"]
+                    existing = self._db.query(FailedRecord).filter(FailedRecord.source == source).first()
+                    if existing:
+                        existing.error = r.get("error", "")
+                        existing.retryable = r.get("retryable", False)
+                        existing.created_at = datetime.now(timezone.utc)
+                    else:
+                        record = FailedRecord(
+                            source=source,
+                            error=r.get("error", ""),
+                            retryable=r.get("retryable", False),
+                        )
+                        self._db.add(record)
+                        count += 1
             return count
-        except Exception:
-            self._db.rollback()
+        except Exception as e:
+            logger.error(f"批量新增失败记录失败: {e}", exc_info=True)
             return 0
 
     def get_all(self) -> list[dict]:
@@ -79,20 +77,20 @@ class FailedRecordRepository:
     def remove_by_source(self, source: str) -> bool:
         """按源文件路径删除失败记录（处理成功后调用）"""
         try:
-            deleted = self._db.query(FailedRecord).filter(FailedRecord.source == source).delete()
-            self._db.commit()
+            with self._write_session():
+                deleted = self._db.query(FailedRecord).filter(FailedRecord.source == source).delete()
             return deleted > 0
-        except Exception:
-            self._db.rollback()
+        except Exception as e:
+            logger.error(f"删除失败记录失败: {e}", exc_info=True)
             return False
 
     def clear_all(self) -> int:
         """清除所有失败记录，返回删除数量"""
         try:
             count = self._db.query(FailedRecord).count()
-            self._db.query(FailedRecord).delete()
-            self._db.commit()
+            with self._write_session():
+                self._db.query(FailedRecord).delete()
             return count
-        except Exception:
-            self._db.rollback()
+        except Exception as e:
+            logger.error(f"清除失败记录失败: {e}", exc_info=True)
             return 0

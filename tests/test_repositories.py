@@ -10,22 +10,16 @@ import tempfile
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker
 from app.database import Base, DB_PATH
-from app.models import Provider, Prompt, TrashProvider, TrashPrompt
+from app.models import Provider, Prompt
 from app.repositories.provider_repo import ProviderRepository
 from app.repositories.prompt_repo import PromptRepository
 from app.repositories.trash_repo import TrashRepository
 
 
-def _backup_production_db():
-    """从生产数据库备份一份到临时文件，返回临时文件路径。"""
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.db')
-    os.close(tmp_fd)
-    if DB_PATH.exists():
-        shutil.copy2(str(DB_PATH), tmp_path)
-    return tmp_path
+from .conftest import _backup_production_db, _ensure_soft_delete_columns
 
 
 class _BaseDBTest(unittest.TestCase):
@@ -34,6 +28,7 @@ class _BaseDBTest(unittest.TestCase):
         self._db_path = _backup_production_db()
         self._engine = create_engine(f"sqlite:///{self._db_path}", connect_args={"check_same_thread": False})
         Base.metadata.create_all(bind=self._engine)
+        _ensure_soft_delete_columns(self._engine)
         TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self._engine)
         self.db = TestSessionLocal()
 
@@ -62,12 +57,50 @@ class TestProviderRepository(_BaseDBTest):
         self.assertIn("P1", all_providers)
         self.assertIn("P2", all_providers)
 
-    def test_remove(self):
+    def test_soft_delete(self):
         repo = ProviderRepository(self.db)
-        repo.save({"name": "ToRemove", "base_url": "https://t.com", "api_key": "k", "models": {}})
-        data = repo.remove("ToRemove")
-        self.assertIsNotNone(data)
-        self.assertIsNone(repo.get("ToRemove"))
+        repo.save({"name": "ToDelete", "base_url": "https://t.com", "api_key": "k", "models": {}})
+        self.assertTrue(repo.soft_delete("ToDelete"))
+        self.assertIsNone(repo.get("ToDelete"))
+        self.assertNotIn("ToDelete", repo.get_all())
+
+    def test_restore(self):
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "ToRestore", "base_url": "https://t.com", "api_key": "k", "models": {}})
+        repo.soft_delete("ToRestore")
+        self.assertTrue(repo.restore("ToRestore"))
+        self.assertIsNotNone(repo.get("ToRestore"))
+
+    def test_permanent_delete(self):
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "ToPermDelete", "base_url": "https://t.com", "api_key": "k", "models": {}})
+        repo.soft_delete("ToPermDelete")
+        self.assertTrue(repo.permanent_delete("ToPermDelete"))
+        self.assertNotIn("ToPermDelete", repo.get_all_deleted())
+
+    def test_get_all_deleted(self):
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "P1", "base_url": "https://p.com", "api_key": "k", "models": {}})
+        repo.save({"name": "P2", "base_url": "https://p.com", "api_key": "k", "models": {}})
+        repo.soft_delete("P1")
+        deleted = repo.get_all_deleted()
+        self.assertIn("P1", deleted)
+        self.assertNotIn("P2", deleted)
+
+    def test_save_restores_soft_deleted_record(self):
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "P1", "base_url": "https://p.com", "api_key": "k", "models": {}})
+        repo.soft_delete("P1")
+        self.assertTrue(repo.save({"name": "P1", "base_url": "https://new.com", "api_key": "k2", "models": {}}))
+        result = repo.get("P1")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["base_url"], "https://new.com")
+
+    def test_is_deleted_default_false(self):
+        repo = ProviderRepository(self.db)
+        repo.save({"name": "P1", "base_url": "https://p.com", "api_key": "k", "models": {}})
+        p = self.db.query(Provider).filter(Provider.name == "P1").first()
+        self.assertFalse(p.is_deleted)
 
 
 class TestPromptRepository(_BaseDBTest):
@@ -86,12 +119,42 @@ class TestPromptRepository(_BaseDBTest):
         all_prompts = repo.get_all()
         self.assertEqual(len(all_prompts), existing_count + 2)
 
-    def test_remove(self):
+    def test_soft_delete(self):
         repo = PromptRepository(self.db)
         repo.save("ToDelete", "Content")
-        content = repo.remove("ToDelete")
-        self.assertEqual(content, "Content")
+        self.assertTrue(repo.soft_delete("ToDelete"))
         self.assertIsNone(repo.get("ToDelete"))
+        self.assertNotIn("ToDelete", repo.get_all())
+
+    def test_restore(self):
+        repo = PromptRepository(self.db)
+        repo.save("ToRestore", "Content")
+        repo.soft_delete("ToRestore")
+        self.assertTrue(repo.restore("ToRestore"))
+        self.assertEqual(repo.get("ToRestore"), "Content")
+
+    def test_permanent_delete(self):
+        repo = PromptRepository(self.db)
+        repo.save("ToPermDelete", "Content")
+        repo.soft_delete("ToPermDelete")
+        self.assertTrue(repo.permanent_delete("ToPermDelete"))
+        self.assertNotIn("ToPermDelete", repo.get_all_deleted())
+
+    def test_get_all_deleted(self):
+        repo = PromptRepository(self.db)
+        repo.save("P1", "Content 1")
+        repo.save("P2", "Content 2")
+        repo.soft_delete("P1")
+        deleted = repo.get_all_deleted()
+        self.assertIn("P1", deleted)
+        self.assertNotIn("P2", deleted)
+
+    def test_save_restores_soft_deleted_record(self):
+        repo = PromptRepository(self.db)
+        repo.save("P1", "old content")
+        repo.soft_delete("P1")
+        self.assertTrue(repo.save("P1", "new content"))
+        self.assertEqual(repo.get("P1"), "new content")
 
 
 class TestTrashRepository(_BaseDBTest):

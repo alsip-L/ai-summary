@@ -1,8 +1,30 @@
 # -*- coding: utf-8 -*-
 """公共工具函数"""
 
+import json
 import os
 from core.errors import FileProcessingError
+from core.log import get_logger
+
+logger = get_logger()
+
+
+def safe_json_loads(json_str: str, fallback=None):
+    """安全解析 JSON，失败时返回降级值
+
+    Args:
+        json_str: JSON 字符串
+        fallback: 解析失败时的降级返回值，默认为空字典
+    """
+    if fallback is None:
+        fallback = {}
+    if not json_str:
+        return fallback
+    try:
+        return json.loads(json_str)
+    except (json.JSONDecodeError, TypeError):
+        logger.warning(f"JSON解析失败，降级为{fallback}: {str(json_str)[:50]}")
+        return fallback
 
 
 def read_file_with_encoding(file_path: str, encodings: list[str] = None) -> str:

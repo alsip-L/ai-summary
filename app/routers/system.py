@@ -6,7 +6,8 @@ import threading
 import signal
 import time
 from pathlib import Path
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.auth import require_auth
 
 router = APIRouter(prefix="/api/system", tags=["system"])
 
@@ -40,7 +41,7 @@ def system_info():
         500: {"description": "前端构建失败"},
     },
 )
-def rebuild():
+def rebuild(_auth=Depends(require_auth)):
     """重新构建前端并重启后端服务。"""
     result = {"frontend": None, "backend": None}
 
@@ -93,14 +94,16 @@ def rebuild():
                 close_fds=True,
             )
         else:
-            # Linux/macOS: 用 nohup + sleep 后台启动
+            # Linux/macOS: 用 nohup + sleep 后台启动（不使用 shell=True）
             script = f'#!/bin/bash\nsleep 3\ncd "{cwd}"\n"{sys.executable}" "{run_py}"\n'
             script_file = PROJECT_ROOT / "_restart_helper.sh"
             script_file.write_text(script, encoding="utf-8")
             script_file.chmod(0o755)
             subprocess.Popen(
-                f'nohup "{script_file}" > /dev/null 2>&1 &',
-                shell=True,
+                ["/usr/bin/env", "bash", str(script_file)],
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
 
         # 终止当前进程

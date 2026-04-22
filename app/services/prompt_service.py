@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
 from app.repositories.prompt_repo import PromptRepository
+from core.result import ok, fail
 
 
 class PromptService:
@@ -14,14 +15,14 @@ class PromptService:
         name = data.get("name", "")
         content = data.get("content", "")
         if not name or not content:
-            return {"success": False, "error": "名称和内容为必填项"}
+            return fail("名称和内容为必填项")
         if self._repo.save(name, content):
-            return {"success": True}
-        return {"success": False, "error": "保存失败"}
+            return ok()
+        return fail("保存失败")
 
     def delete(self, name: str) -> dict:
         from app.repositories.trash_repo import TrashRepository
         trash_repo = TrashRepository(self._repo.db)
         if trash_repo.move_prompt_to_trash(name):
-            return {"success": True}
-        return {"success": False, "error": "删除失败"}
+            return ok()
+        return fail("删除失败")

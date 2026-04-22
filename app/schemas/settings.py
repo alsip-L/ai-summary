@@ -19,3 +19,23 @@ class PreferencesUpdate(BaseModel):
             }]
         }
     }
+
+
+class SystemSettingsUpdate(BaseModel):
+    debug_level: str | None = Field(default=None, description="日志级别")
+    secret_key: str | None = Field(default=None, description="密钥")
+    host: str | None = Field(default=None, description="监听地址")
+    port: int | None = Field(default=None, description="监听端口")
+    debug: bool | None = Field(default=None, description="调试模式")
+    admin_username: str | None = Field(default=None, description="管理员用户名")
+    admin_password: str | None = Field(default=None, description="管理员密码")
+    allowed_paths: list[str] | None = Field(default=None, description="允许的文件路径白名单")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{
+                "debug_level": "ERROR",
+                "port": 5000,
+            }]
+        }
+    }

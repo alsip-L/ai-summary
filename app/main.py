@@ -27,11 +27,14 @@ from app.schemas.common import ErrorResponse
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    from app.migration_soft_delete import migrate_soft_delete
+    migrate_soft_delete()
     yield
 
 
 def create_app() -> FastAPI:
     config = ConfigManager()
+    # secret_key 用于 API Token 认证（app.auth.require_auth 依赖此值）
     secret_key = config.get(
         'system_settings.secret_key', 'default-dev-secret-key-please-change-in-prod'
     )
@@ -55,7 +58,8 @@ def create_app() -> FastAPI:
     )
 
     # 注入增强的 OpenAPI 规范
-    app.openapi = lambda: custom_openapi(app)
+    _original_openapi = app.openapi
+    app.openapi = lambda: custom_openapi(app, _original_openapi)
 
     @app.exception_handler(ValidationError)
     async def validation_error_handler(request: Request, exc: ValidationError):
@@ -89,7 +93,6 @@ def create_app() -> FastAPI:
     from sqladmin import Admin
     from app.admin import (
         ProviderAdmin, PromptAdmin,
-        TrashProviderAdmin, TrashPromptAdmin,
         UserPreferenceAdmin, FailedRecordAdmin,
     )
 
@@ -97,8 +100,6 @@ def create_app() -> FastAPI:
     admin = Admin(app, engine, templates_dir=str(templates_dir))
     admin.add_view(ProviderAdmin)
     admin.add_view(PromptAdmin)
-    admin.add_view(TrashProviderAdmin)
-    admin.add_view(TrashPromptAdmin)
     admin.add_view(UserPreferenceAdmin)
     admin.add_view(FailedRecordAdmin)
 

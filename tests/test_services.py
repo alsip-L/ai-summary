@@ -10,10 +10,10 @@ import tempfile
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker
 from app.database import Base, DB_PATH
-from app.models import Provider, Prompt, TrashProvider, TrashPrompt, UserPreference
+from app.models import Provider, Prompt, UserPreference
 from app.services.provider_service import ProviderService
 from app.services.prompt_service import PromptService
 from app.services.trash_service import TrashService
@@ -24,13 +24,7 @@ from app.repositories.settings_repo import SettingsRepository
 from core.config import ConfigManager
 
 
-def _backup_production_db():
-    """从生产数据库备份一份到临时文件，返回临时文件路径。"""
-    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.db')
-    os.close(tmp_fd)
-    if DB_PATH.exists():
-        shutil.copy2(str(DB_PATH), tmp_path)
-    return tmp_path
+from .conftest import _backup_production_db, _ensure_soft_delete_columns
 
 
 class _BaseDBTest(unittest.TestCase):
@@ -39,6 +33,7 @@ class _BaseDBTest(unittest.TestCase):
         self._db_path = _backup_production_db()
         self._engine = create_engine(f"sqlite:///{self._db_path}", connect_args={"check_same_thread": False})
         Base.metadata.create_all(bind=self._engine)
+        _ensure_soft_delete_columns(self._engine)
         TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self._engine)
         self.db = TestSessionLocal()
 

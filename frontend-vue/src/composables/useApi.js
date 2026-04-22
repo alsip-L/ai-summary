@@ -27,6 +27,7 @@ export const api = {
   getProviders: () => request('/api/providers/'),
   createProvider: (data) => request('/api/providers/', { method: 'POST', body: JSON.stringify(data) }),
   deleteProvider: (name) => request(`/api/providers/${encodeURIComponent(name)}`, { method: 'DELETE' }),
+  getApiKey: (name) => request(`/api/providers/${encodeURIComponent(name)}/api-key`),
   saveApiKey: (name, apiKey) => request(`/api/providers/${encodeURIComponent(name)}/api-key`, { method: 'PUT', body: JSON.stringify({ api_key: apiKey }) }),
   addModel: (name, data) => request(`/api/providers/${encodeURIComponent(name)}/models`, { method: 'POST', body: JSON.stringify(data) }),
   deleteModel: (name, modelDisplay) => request(`/api/providers/${encodeURIComponent(name)}/models/${encodeURIComponent(modelDisplay)}`, { method: 'DELETE' }),

@@ -152,5 +152,6 @@ export const useTaskStore = defineStore('task', () => {
     retrying, retryAttempt, retryMax,
     failedRecords, failedCount, failedResults, successResults,
     start, cancel, loadStatus, loadFailedRecords, clearFailed, retryFailed,
+    startPolling, stopPolling,
   }
 })

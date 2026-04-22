@@ -51,6 +51,16 @@ export const useProviderStore = defineStore('provider', () => {
     return provider ? provider.api_key || '' : ''
   }
 
+  function isCurrentApiKeyMasked() {
+    const provider = providers.value[selectedProvider.value]
+    return provider ? !!provider.api_key_masked : false
+  }
+
+  async function fetchFullApiKey(name) {
+    const result = await api.getApiKey(name)
+    return result.api_key || ''
+  }
+
   async function createProvider(data) {
     await api.createProvider(data)
     await loadAll()
@@ -91,7 +101,7 @@ export const useProviderStore = defineStore('provider', () => {
 
   return {
     providers, providerNames, selectedProvider, selectedModel, apiKey, directoryPath,
-    loadAll, getCurrentModels, getCurrentApiKey,
+    loadAll, getCurrentModels, getCurrentApiKey, isCurrentApiKeyMasked, fetchFullApiKey,
     createProvider, deleteProvider, saveApiKey, addModel, deleteModel, savePreferences,
   }
 })

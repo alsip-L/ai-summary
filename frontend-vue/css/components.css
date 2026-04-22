@@ -76,6 +76,13 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
 }
 .input-group .form-control,
 .input-group input { flex: 1; min-width: 0; }
+.input-group input[readonly] {
+    background: var(--bg-canvas);
+    cursor: default;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+}
 
 /* ========== Buttons ========== */
 .btn {

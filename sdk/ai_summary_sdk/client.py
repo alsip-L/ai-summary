@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """AI Summary 同步 SDK 客户端"""
 import httpx
-from ._base import BaseClientConfig, BaseResourceGroup, _handle_response, _validate_response
-from ._retry import retry_with_backoff
+from ._base import BaseClientConfig, BaseResourceGroup, _handle_response
 from . import models
 
 
@@ -211,3 +210,9 @@ class AISummaryClient:
 
     def __exit__(self, *args):
         self.close()
+
+    def __del__(self):
+        try:
+            self._client.close()
+        except Exception:
+            pass

@@ -37,12 +37,12 @@ OPENAPI_TAGS = [
 ]
 
 
-def custom_openapi(app):
+def custom_openapi(app, original_openapi):
     """为 FastAPI 应用生成增强的 OpenAPI 规范"""
     if app.openapi_schema:
         return app.openapi_schema
 
-    openapi_schema = app.openapi()
+    openapi_schema = original_openapi()
 
     # 注入 tags 描述
     openapi_schema["tags"] = OPENAPI_TAGS

@@ -6,13 +6,12 @@ from core.errors import (
     NetworkError, RateLimitError,
 )
 from core.log import get_logger, get_ws_handler
-from app.services.processing_state import ProcessingState
+from app.services.processing_state import ProcessingState, RETRY_BASE_DELAY
 
 logger = get_logger()
 
 # AI调用级重试配置
 MAX_RETRIES = 3
-RETRY_BASE_DELAY = 2  # 秒，指数退避基数
 
 
 def classify_openai_error(e: Exception) -> Exception:
@@ -128,6 +127,7 @@ class AIClient:
                     ws_handler.put_stream_end()
                 classified = classify_openai_error(e)
                 if isinstance(classified, RetryableError):
+                    # 可重试错误：复用 RetryableError 分支的重试逻辑
                     last_error = classified
                     if attempt < MAX_RETRIES:
                         delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
@@ -144,6 +144,3 @@ class AIClient:
                     logger.error(f"AI 调用失败（不可重试）: {classified}")
                     self._state.clear_retrying()
                     raise classified
-        self._state.clear_retrying()
-        if last_error:
-            raise last_error

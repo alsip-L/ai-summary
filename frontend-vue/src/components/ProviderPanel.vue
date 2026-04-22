@@ -39,7 +39,11 @@
     </div>
     <div class="form-group">
       <label class="form-label">API Key</label>
-      <input type="text" class="form-control" v-model="store.apiKey" :placeholder="store.apiKey ? '已配置' : '请输入 API Key'" @blur="saveApiKey">
+      <div class="input-group">
+        <input type="password" class="form-control" :value="store.apiKey" :placeholder="store.apiKey ? '已配置' : '未配置'" readonly>
+        <button type="button" class="btn btn-sm btn-secondary" @click="copyApiKey" title="复制完整 API Key">复制</button>
+        <button type="button" class="btn btn-sm btn-secondary" @click="editApiKey" title="修改 API Key">修改</button>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">处理目录</label>
@@ -159,15 +163,32 @@ async function deleteModel(modelDisplay) {
   }
 }
 
-async function saveApiKey() {
-  if (!store.selectedProvider) return
+async function copyApiKey() {
+  if (!store.selectedProvider) { showMessage('请先选择服务商', 'warning'); return }
   try {
-    const key = store.apiKey.trim()
-    await store.saveApiKey(store.selectedProvider, key)
-    showMessage('API Key 已保存', 'success')
+    const fullKey = await store.fetchFullApiKey(store.selectedProvider)
+    if (!fullKey) { showMessage('未配置 API Key', 'warning'); return }
+    await navigator.clipboard.writeText(fullKey)
+    showMessage('API Key 已复制到剪贴板', 'success')
   } catch (e) {
-    showMessage('保存失败: ' + e.message, 'error')
+    showMessage('复制失败: ' + e.message, 'error')
   }
+}
+
+function editApiKey() {
+  if (!store.selectedProvider) { showMessage('请先选择服务商', 'warning'); return }
+  dialogTitle.value = `修改 API Key — ${store.selectedProvider}`
+  dialogFields.value = [
+    { id: 'api_key', label: 'API Key', placeholder: '输入新的 API Key', value: '', type: 'password' },
+  ]
+  dialogSubmit = async () => {
+    const key = dialogFields.value[0].value.trim()
+    if (!key) { showMessage('API Key 不能为空', 'warning'); return false }
+    await store.saveApiKey(store.selectedProvider, key)
+    showMessage('API Key 已更新', 'success')
+    return true
+  }
+  showDialog.value = true
 }
 
 async function saveDirectoryPath() {

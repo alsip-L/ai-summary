@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.services.provider_service import ProviderService
 from app.dependencies import get_provider_service
 from app.schemas.provider import ProviderCreate, ApiKeyUpdate, ModelCreate
+from app.auth import require_auth
+from core.result import check_result
 
 router = APIRouter(prefix="/api/providers", tags=["providers"])
 
@@ -30,10 +32,7 @@ def create_provider(
     data: ProviderCreate,
     svc: ProviderService = Depends(get_provider_service),
 ):
-    result = svc.create(data.model_dump())
-    if result["success"]:
-        return result
-    raise HTTPException(status_code=400, detail=result["error"])
+    return check_result(svc.create(data.model_dump()))
 
 
 @router.delete(
@@ -49,10 +48,24 @@ def delete_provider(
     name: str,
     svc: ProviderService = Depends(get_provider_service),
 ):
-    result = svc.delete(name)
-    if result["success"]:
-        return result
-    raise HTTPException(status_code=400, detail=result["error"])
+    return check_result(svc.delete(name))
+
+
+@router.get(
+    "/{name}/api-key",
+    summary="获取完整 API Key",
+    description="获取指定提供商的完整 API Key（未脱敏），供复制使用。",
+    responses={
+        200: {"description": "API Key"},
+        400: {"description": "提供商不存在"},
+    },
+)
+def get_api_key(
+    name: str,
+    svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
+):
+    return check_result(svc.get_api_key(name))
 
 
 @router.put(
@@ -69,10 +82,7 @@ def update_api_key(
     data: ApiKeyUpdate,
     svc: ProviderService = Depends(get_provider_service),
 ):
-    result = svc.update_api_key(name, data.api_key)
-    if result["success"]:
-        return result
-    raise HTTPException(status_code=400, detail=result["error"])
+    return check_result(svc.update_api_key(name, data.api_key))
 
 
 @router.post(
@@ -89,10 +99,7 @@ def add_model(
     data: ModelCreate,
     svc: ProviderService = Depends(get_provider_service),
 ):
-    result = svc.add_model(name, data.display_name, data.model_id)
-    if result["success"]:
-        return result
-    raise HTTPException(status_code=400, detail=result["error"])
+    return check_result(svc.add_model(name, data.display_name, data.model_id))
 
 
 @router.delete(
@@ -109,7 +116,4 @@ def delete_model(
     model_name: str,
     svc: ProviderService = Depends(get_provider_service),
 ):
-    result = svc.delete_model(name, model_name)
-    if result["success"]:
-        return result
-    raise HTTPException(status_code=400, detail=result["error"])
+    return check_result(svc.delete_model(name, model_name))

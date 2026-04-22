@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 from app.database import Base
 
@@ -13,6 +13,7 @@ class Provider(Base):
     api_key = Column(String, nullable=False)
     models_json = Column(Text, default="{}")
     is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)
 
 
 class Prompt(Base):
@@ -21,25 +22,7 @@ class Prompt(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     content = Column(Text, nullable=False)
-
-
-class TrashProvider(Base):
-    __tablename__ = "trash_providers"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    base_url = Column(String, nullable=False)
-    api_key = Column(String, nullable=False)
-    models_json = Column(Text, default="{}")
-    is_active = Column(Boolean, default=True)
-
-
-class TrashPrompt(Base):
-    __tablename__ = "trash_prompts"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    content = Column(Text, nullable=False)
+    is_deleted = Column(Boolean, default=False)
 
 
 class UserPreference(Base):
@@ -57,4 +40,4 @@ class FailedRecord(Base):
     source = Column(String, nullable=False)
     error = Column(Text, default="")
     retryable = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

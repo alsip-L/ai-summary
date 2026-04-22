@@ -29,7 +29,7 @@ class TestConfigManager(unittest.TestCase):
         test_config = {
             "system_settings": {
                 "debug_level": "ERROR",
-                "flask_secret_key": "test-secret",
+                "secret_key": "test-secret",
                 "host": "0.0.0.0",
                 "port": 5000,
                 "debug": False,

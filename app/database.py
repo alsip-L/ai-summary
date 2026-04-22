@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pathlib import Path
@@ -14,3 +15,13 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     pass
+
+
+@contextmanager
+def get_db_session():
+    """数据库会话上下文管理器，自动管理会话的获取和释放"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

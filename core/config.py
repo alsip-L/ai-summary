@@ -47,6 +47,12 @@ class ConfigManager:
             if self._config_path.exists():
                 with open(self._config_path, 'r', encoding='utf-8') as f:
                     self._cache = json.load(f)
+                # 迁移旧键名 flask_secret_key → secret_key
+                settings = self._cache.get("system_settings", {})
+                if "flask_secret_key" in settings:
+                    settings["secret_key"] = settings.pop("flask_secret_key")
+                    self._save_unsafe()
+                    logger.warning("已将 flask_secret_key 迁移为 secret_key，请更新配置文件")
             else:
                 logger.warning(f"配置文件不存在: {self._config_path}")
                 self._cache = self._default_config()
@@ -59,6 +65,10 @@ class ConfigManager:
             self._cache = self._default_config()
         finally:
             self._loaded = True
+            # 检测默认弱凭据
+            settings = self._cache.get("system_settings", {})
+            if settings.get("admin_username") == "admin" and settings.get("admin_password") == "admin":
+                logger.warning("检测到默认管理员凭据 (admin/admin)，请在生产环境中修改")
 
     def _save_unsafe(self) -> bool:
         """内部保存方法（原子写入：先写临时文件再替换，调用方需持有锁）"""

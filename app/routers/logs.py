@@ -93,7 +93,7 @@ async def logs_ws(ws: WebSocket):
         last_seq = buffered[-1][0] if buffered else 0
 
         # 4. 实时推送循环（统一从缓冲区增量读取）
-        last_ping_time = asyncio.get_event_loop().time()
+        last_ping_time = asyncio.get_running_loop().time()
         while True:
             # 接收并丢弃客户端消息（保持连接健康，避免缓冲区堆积）
             # 使用 asyncio.wait 竞争替代 timeout=0，避免高频 TimeoutError 异常
@@ -121,7 +121,7 @@ async def logs_ws(ws: WebSocket):
 
             new_entries = handler.get_buffer_since(last_seq)
             if new_entries:
-                last_ping_time = asyncio.get_event_loop().time()
+                last_ping_time = asyncio.get_running_loop().time()
                 for seq, msg in new_entries:
                     try:
                         await ws.send_text(msg)
@@ -130,7 +130,7 @@ async def logs_ws(ws: WebSocket):
                 last_seq = new_entries[-1][0]
 
             # 基于时间戳判断是否需要发送心跳，避免浮点除法精度问题
-            now = asyncio.get_event_loop().time()
+            now = asyncio.get_running_loop().time()
             if now - last_ping_time >= PING_INTERVAL:
                 try:
                     await ws.send_json({"type": "ping"})

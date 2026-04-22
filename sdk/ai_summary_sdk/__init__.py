@@ -5,7 +5,7 @@ from .client import AISummaryClient
 from .async_client import AsyncAISummaryClient
 from .exceptions import (
     AISummarySDKError,
-    ConnectionError,
+    SDKConnectionError,
     AuthenticationError,
     ValidationError,
     APIError,
@@ -13,10 +13,14 @@ from .exceptions import (
 )
 from . import models
 
+# 向后兼容别名
+ConnectionError = SDKConnectionError
+
 __all__ = [
     "AISummaryClient",
     "AsyncAISummaryClient",
     "AISummarySDKError",
+    "SDKConnectionError",
     "ConnectionError",
     "AuthenticationError",
     "ValidationError",

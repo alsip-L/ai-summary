@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """AI Summary 异步 SDK 客户端"""
 import httpx
-from ._base import BaseClientConfig, BaseResourceGroup, _handle_response, _validate_response
-from ._retry import retry_with_backoff
+from ._base import BaseClientConfig, BaseResourceGroup, _handle_response
 from . import models
 
 
@@ -211,3 +210,14 @@ class AsyncAISummaryClient:
 
     async def __aexit__(self, *args):
         await self.close()
+
+    def __del__(self):
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(self._client.aclose())
+            else:
+                loop.run_until_complete(self._client.aclose())
+        except Exception:
+            pass

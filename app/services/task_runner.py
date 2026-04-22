@@ -25,52 +25,20 @@ class TaskRunner:
 
     def run_batch(self, directory, client, prompt_content, model_id, skip_existing):
         """批量处理主循环"""
-        self._state.start()
-        try:
-            if self._state.is_cancelled():
-                self._state.cancel()
-                return
-
-            logger.info(f"开始扫描目录: {directory}")
-            txt_files = self._file_processor.scan_txt_files(directory, skip_existing)
-            if not txt_files:
-                raise ValueError("未找到需要处理的 txt 文件")
-
-            logger.info(f"扫描完成: 找到 {len(txt_files)} 个 txt 文件")
-            self._state.start_processing(len(txt_files))
-
-            for i, file_path in enumerate(txt_files):
-                if self._state.is_cancelled():
-                    self._state.cancel()
-                    return
-
-                progress_before = int((i / len(txt_files)) * 100)
-                self._state.update_progress(i, os.path.basename(file_path), progress_before)
-                logger.info(f"处理文件 [{i+1}/{len(txt_files)}]: {os.path.basename(file_path)}")
-                result = self._process_file_with_retry(file_path, client, prompt_content, model_id)
-                progress_after = int(((i + 1) / len(txt_files)) * 100)
-                self._state.update_progress(i + 1, None, progress_after)
-                self._state.add_result(
-                    result["source"],
-                    result.get("output"),
-                    result.get("error"),
-                    result.get("retryable", False),
-                )
-
-            self._state.complete()
-            with self._state._state_lock:
-                results = list(self._state._results)
-            success_count = sum(1 for r in results if not r.get("error"))
-            fail_count = sum(1 for r in results if r.get("error"))
-            logger.info(f"处理完成: 共处理 {len(txt_files)} 个文件, 成功 {success_count} 个, 失败 {fail_count} 个")
-            self._failed_record_svc.persist_from_state()
-        except Exception as e:
-            logger.error(f"处理任务失败: {e}")
-            self._state.set_error(f"处理失败: {str(e)}")
-            self._failed_record_svc.persist_from_state()
+        logger.info(f"开始扫描目录: {directory}")
+        txt_files = self._file_processor.scan_txt_files(directory, skip_existing)
+        if not txt_files:
+            raise ValueError("未找到需要处理的 txt 文件")
+        logger.info(f"扫描完成: 找到 {len(txt_files)} 个 txt 文件")
+        self._run_processing_loop(txt_files, client, prompt_content, model_id, "处理")
 
     def run_retry_batch(self, file_paths, client, prompt_content, model_id):
         """重跑失败文件的主循环"""
+        logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
+        self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑")
+
+    def _run_processing_loop(self, file_paths, client, prompt_content, model_id, log_prefix):
+        """通用的文件处理循环"""
         self._state.start()
         try:
             if self._state.is_cancelled():
@@ -78,7 +46,6 @@ class TaskRunner:
                 return
 
             self._state.start_processing(len(file_paths))
-            logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
 
             for i, file_path in enumerate(file_paths):
                 if self._state.is_cancelled():
@@ -87,7 +54,7 @@ class TaskRunner:
 
                 progress_before = int((i / len(file_paths)) * 100)
                 self._state.update_progress(i, os.path.basename(file_path), progress_before)
-                logger.info(f"重跑文件 [{i+1}/{len(file_paths)}]: {os.path.basename(file_path)}")
+                logger.info(f"{log_prefix}文件 [{i+1}/{len(file_paths)}]: {os.path.basename(file_path)}")
                 result = self._process_file_with_retry(file_path, client, prompt_content, model_id)
                 progress_after = int(((i + 1) / len(file_paths)) * 100)
                 self._state.update_progress(i + 1, None, progress_after)
@@ -99,15 +66,14 @@ class TaskRunner:
                 )
 
             self._state.complete()
-            with self._state._state_lock:
-                results = list(self._state._results)
+            results = self._state.get_dict()["results"]
             success_count = sum(1 for r in results if not r.get("error"))
             fail_count = sum(1 for r in results if r.get("error"))
-            logger.info(f"重跑完成: 共处理 {len(file_paths)} 个文件, 成功 {success_count} 个, 失败 {fail_count} 个")
+            logger.info(f"{log_prefix}完成: 共处理 {len(file_paths)} 个文件, 成功 {success_count} 个, 失败 {fail_count} 个")
             self._failed_record_svc.persist_from_state()
         except Exception as e:
-            logger.error(f"重跑任务失败: {e}")
-            self._state.set_error(f"重跑失败: {str(e)}")
+            logger.error(f"{log_prefix}任务失败: {e}")
+            self._state.set_error(f"{log_prefix}失败: {str(e)}")
             self._failed_record_svc.persist_from_state()
 
     def _process_file_with_retry(self, file_path, client, prompt_content, model_id):

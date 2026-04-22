@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """SDK 异常层次定义"""
 
+import warnings
+
 
 class AISummarySDKError(Exception):
     """SDK 基础异常，所有 SDK 异常的基类"""
@@ -10,12 +12,24 @@ class AISummarySDKError(Exception):
         super().__init__(self.message)
 
 
-class ConnectionError(AISummarySDKError):
+class SDKConnectionError(AISummarySDKError):
     """连接错误 - 服务不可达或网络异常"""
 
     def __init__(self, message: str = "", *, url: str = ""):
         self.url = url
         super().__init__(message or f"无法连接到服务: {url}")
+
+
+# 向后兼容别名（已弃用，避免遮蔽 Python 内置 ConnectionError）
+def __getattr__(name):
+    if name == "ConnectionError":
+        warnings.warn(
+            "ai_summary_sdk.ConnectionError is deprecated, use SDKConnectionError instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return SDKConnectionError
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class AuthenticationError(AISummarySDKError):

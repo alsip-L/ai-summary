@@ -29,7 +29,7 @@ echo
 # 检查配置文件
 if [ ! -f "config.json" ]; then
     echo "配置文件不存在，创建默认配置..."
-    echo '{"system_settings":{"debug_level":"ERROR","flask_secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}}' > config.json
+    echo '{"system_settings":{"debug_level":"ERROR","secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}}' > config.json
     echo "默认配置已创建"
     echo
 fi

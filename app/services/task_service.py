@@ -5,7 +5,8 @@ from openai import OpenAI
 from sqlalchemy.orm import Session
 
 from app.models import Provider, Prompt
-from app.repositories.provider_repo import ProviderRepository, _safe_json_loads
+from app.repositories.provider_repo import ProviderRepository
+from core.utils import safe_json_loads
 from app.repositories.prompt_repo import PromptRepository
 from app.services.processing_state import ProcessingState
 from app.services.task_runner import TaskRunner
@@ -21,12 +22,40 @@ class TaskService:
     def __init__(self, db: Session):
         self._db = db
         self._state = ProcessingState()
+        self._failed_record_svc = FailedRecordService()
         self._runner = TaskRunner(
             state=self._state,
             file_processor=FileProcessor(AIClient(self._state)),
-            failed_record_service=FailedRecordService(),
+            failed_record_service=self._failed_record_svc,
         )
-        self._failed_record_svc = FailedRecordService()
+
+    def _validate_and_create_client(
+        self, provider_name: str, model_key: str, api_key: str, prompt_name: str
+    ) -> dict:
+        """验证 Provider/Prompt 并创建 OpenAI client
+
+        Returns:
+            成功: {"client": OpenAI, "model_id": str, "prompt_content": str}
+            失败: {"success": False, "error": str}
+        """
+        provider = self._db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True, Provider.is_deleted == False).first()
+        if not provider:
+            return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
+
+        models = safe_json_loads(provider.models_json)
+        if model_key not in models:
+            return {"success": False, "error": f"模型 '{model_key}' 未找到"}
+        model_id = models[model_key]
+
+        prompt = self._db.query(Prompt).filter(Prompt.name == prompt_name, Prompt.is_deleted == False).first()
+        if not prompt:
+            return {"success": False, "error": f"Prompt '{prompt_name}' 未找到"}
+
+        if not api_key:
+            return {"success": False, "error": "API Key 未配置"}
+
+        client = OpenAI(api_key=api_key, base_url=provider.base_url)
+        return {"client": client, "model_id": model_id, "prompt_content": prompt.content}
 
     def start(
         self,
@@ -46,24 +75,18 @@ class TaskService:
         if not directory or not os.path.exists(directory) or not os.path.isdir(directory):
             return {"success": False, "error": "请提供有效的目录路径"}
 
-        provider = self._db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True).first()
-        if not provider:
-            return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
+        validation = self._validate_and_create_client(provider_name, model_key, api_key, prompt_name)
+        if not validation.get("client"):
+            return validation
 
-        models = _safe_json_loads(provider.models_json)
-        if model_key not in models:
-            return {"success": False, "error": f"模型 '{model_key}' 未找到"}
-        model_id = models[model_key]
+        client = validation["client"]
+        model_id = validation["model_id"]
+        prompt_content = validation["prompt_content"]
 
-        prompt = self._db.query(Prompt).filter(Prompt.name == prompt_name).first()
-        if not prompt:
-            return {"success": False, "error": f"Prompt '{prompt_name}' 未找到"}
-
-        client = OpenAI(api_key=api_key, base_url=provider.base_url)
         logger.info(f"启动处理任务: provider={provider_name}, model={model_id}, directory={directory}")
         thread = threading.Thread(
             target=self._runner.run_batch,
-            args=(directory, client, prompt.content, model_id, skip_existing),
+            args=(directory, client, prompt_content, model_id, skip_existing),
             daemon=True,
         )
         thread.start()
@@ -103,28 +126,19 @@ class TaskService:
             return {"success": False, "error": "失败记录中的文件已不存在，请清除失败记录"}
 
         # 验证 provider/prompt
-        provider = self._db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True).first()
-        if not provider:
-            return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
+        validation = self._validate_and_create_client(provider_name, model_key, api_key, prompt_name)
+        if not validation.get("client"):
+            return validation
 
-        models = _safe_json_loads(provider.models_json)
-        if model_key not in models:
-            return {"success": False, "error": f"模型 '{model_key}' 未找到"}
-        model_id = models[model_key]
+        client = validation["client"]
+        model_id = validation["model_id"]
+        prompt_content = validation["prompt_content"]
 
-        prompt = self._db.query(Prompt).filter(Prompt.name == prompt_name).first()
-        if not prompt:
-            return {"success": False, "error": f"Prompt '{prompt_name}' 未找到"}
-
-        if not api_key:
-            return {"success": False, "error": "API Key 未配置"}
-
-        client = OpenAI(api_key=api_key, base_url=provider.base_url)
         logger.info(f"启动失败重跑: {len(existing_sources)} 个文件")
 
         thread = threading.Thread(
             target=self._runner.run_retry_batch,
-            args=(existing_sources, client, prompt.content, model_id),
+            args=(existing_sources, client, prompt_content, model_id),
             daemon=True,
         )
         thread.start()

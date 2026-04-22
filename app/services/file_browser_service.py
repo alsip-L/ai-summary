@@ -3,9 +3,30 @@ import sys
 import os
 from core.utils import read_file_with_encoding
 from core.errors import FileProcessingError
+from core.config import ConfigManager
+from core.log import get_logger
+
+logger = get_logger()
 
 
 class FileBrowserService:
+    def _validate_path(self, path: str) -> bool:
+        """校验路径是否在 allowed_paths 白名单内
+
+        allowed_paths 为空时允许所有路径（向后兼容）。
+        非空时仅允许访问列表中路径及其子路径。
+        """
+        allowed_paths = ConfigManager().get("system_settings.allowed_paths", [])
+        if not allowed_paths:
+            return True
+
+        real_path = os.path.realpath(path)
+        for allowed in allowed_paths:
+            real_allowed = os.path.realpath(allowed)
+            if real_path == real_allowed or real_path.startswith(real_allowed + os.sep):
+                return True
+        return False
+
     def get_drives(self) -> dict:
         try:
             drives = []
@@ -25,6 +46,9 @@ class FileBrowserService:
     def get_directory(self, path: str) -> dict:
         if not path:
             return self.get_drives()
+        if not self._validate_path(path):
+            logger.warning(f"路径遍历防护: 拒绝访问路径 {path}")
+            return {"success": False, "error": "路径不在允许的访问范围内"}
         if not os.path.exists(path) or not os.path.isdir(path):
             return {"success": False, "error": "路径不存在"}
 
@@ -41,7 +65,7 @@ class FileBrowserService:
                 if os.path.isdir(item_path) and not item.startswith("."):
                     directories.append({"name": item, "path": item_path})
         except PermissionError:
-            pass
+            return {"success": False, "error": "权限不足，无法访问该目录"}
 
         directories.sort(key=lambda x: x["name"].lower())
         return {"success": True, "path": path, "parent": parent, "directories": directories}
@@ -49,6 +73,9 @@ class FileBrowserService:
     def view_result(self, file_path: str) -> dict:
         if not file_path:
             return {"success": False, "error": "未提供文件路径"}
+        if not self._validate_path(file_path):
+            logger.warning(f"路径遍历防护: 拒绝访问文件 {file_path}")
+            return {"success": False, "error": "路径不在允许的访问范围内"}
 
         real_path = os.path.realpath(file_path)
         if not os.path.exists(real_path) or not os.path.isfile(real_path):

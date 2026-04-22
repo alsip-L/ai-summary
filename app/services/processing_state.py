@@ -16,7 +16,7 @@ class ProcessingState:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
                 cls._instance._initialized = False
-        return cls._instance
+            return cls._instance
 
     def __init__(self):
         with self.__class__._lock:
@@ -147,6 +147,20 @@ class ProcessingState:
     def is_running(self) -> bool:
         with self._state_lock:
             return self._status in ("processing", "scanning")
+
+    def get_results_summary(self) -> tuple[list[dict], list[str]]:
+        """获取失败和成功结果的摘要（线程安全，替代直接访问 _state_lock 和 _results）
+
+        Returns:
+            (failed, succeeded): failed 为失败记录列表，succeeded 为成功文件路径列表
+        """
+        with self._state_lock:
+            failed = [
+                {"source": r["source"], "error": r.get("error", ""), "retryable": r.get("retryable", False)}
+                for r in self._results if r.get("error")
+            ]
+            succeeded = [r["source"] for r in self._results if not r.get("error")]
+        return failed, succeeded
 
     @classmethod
     def reset(cls):

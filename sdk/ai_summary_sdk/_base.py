@@ -4,7 +4,7 @@ import os
 from typing import Any, TypeVar, Type
 
 import httpx
-from pydantic import BaseModel, ValidationError as PydanticValidationError
+from pydantic import BaseModel
 
 from .exceptions import (
     AISummarySDKError,
@@ -14,7 +14,6 @@ from .exceptions import (
     APIError,
     NotFoundError,
 )
-from ._retry import retry_with_backoff
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -98,24 +97,3 @@ def _handle_response(response: httpx.Response) -> dict:
         retryable=retryable,
     )
 
-
-def _validate_response(data: dict, model: Type[T]) -> T:
-    """使用 Pydantic 模型校验响应数据
-
-    Args:
-        data: API 响应字典
-        model: 目标 Pydantic 模型类
-
-    Returns:
-        校验后的模型实例
-
-    Raises:
-        ValidationError: 校验失败
-    """
-    try:
-        return model.model_validate(data)
-    except PydanticValidationError as e:
-        raise ValidationError(
-            message=f"响应校验失败: {e.error_count()} 个错误",
-            errors=e.errors(),
-        )
