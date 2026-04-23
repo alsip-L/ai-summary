@@ -20,7 +20,7 @@ logger = get_logger()
 
 class TaskService:
     def __init__(self, db: Session):
-        self._db = db
+        # db 仅在请求线程中使用，不保存为实例变量以避免后台线程误用
         self._state = ProcessingState()
         self._failed_record_svc = FailedRecordService()
         self._runner = TaskRunner(
@@ -28,17 +28,19 @@ class TaskService:
             file_processor=FileProcessor(AIClient(self._state)),
             failed_record_service=self._failed_record_svc,
         )
+        self._db = db
 
     def _validate_and_create_client(
         self, provider_name: str, model_key: str, api_key: str, prompt_name: str
     ) -> dict:
-        """验证 Provider/Prompt 并创建 OpenAI client
+        """验证 Provider/Prompt 并返回连接参数
 
         Returns:
-            成功: {"client": OpenAI, "model_id": str, "prompt_content": str}
+            成功: {"api_key": str, "base_url": str, "model_id": str, "prompt_content": str}
             失败: {"success": False, "error": str}
         """
-        provider = self._db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True, Provider.is_deleted == False).first()
+        db = self._db
+        provider = db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True, Provider.is_deleted == False).first()
         if not provider:
             return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
 
@@ -47,15 +49,14 @@ class TaskService:
             return {"success": False, "error": f"模型 '{model_key}' 未找到"}
         model_id = models[model_key]
 
-        prompt = self._db.query(Prompt).filter(Prompt.name == prompt_name, Prompt.is_deleted == False).first()
+        prompt = db.query(Prompt).filter(Prompt.name == prompt_name, Prompt.is_deleted == False).first()
         if not prompt:
             return {"success": False, "error": f"Prompt '{prompt_name}' 未找到"}
 
         if not api_key:
             return {"success": False, "error": "API Key 未配置"}
 
-        client = OpenAI(api_key=api_key, base_url=provider.base_url)
-        return {"client": client, "model_id": model_id, "prompt_content": prompt.content}
+        return {"api_key": api_key, "base_url": provider.base_url, "model_id": model_id, "prompt_content": prompt.content}
 
     def start(
         self,
@@ -76,19 +77,22 @@ class TaskService:
             return {"success": False, "error": "请提供有效的目录路径"}
 
         validation = self._validate_and_create_client(provider_name, model_key, api_key, prompt_name)
-        if not validation.get("client"):
+        if not validation.get("api_key"):
             return validation
 
-        client = validation["client"]
         model_id = validation["model_id"]
         prompt_content = validation["prompt_content"]
+        # 在后台线程中创建独立的 OpenAI 客户端，避免跨线程共享
+        client_api_key = validation["api_key"]
+        client_base_url = validation["base_url"]
 
         logger.info(f"启动处理任务: provider={provider_name}, model={model_id}, directory={directory}")
-        thread = threading.Thread(
-            target=self._runner.run_batch,
-            args=(directory, client, prompt_content, model_id, skip_existing),
-            daemon=True,
-        )
+
+        def _run_in_thread():
+            client = OpenAI(api_key=client_api_key, base_url=client_base_url)
+            self._runner.run_batch(directory, client, prompt_content, model_id, skip_existing)
+
+        thread = threading.Thread(target=_run_in_thread, daemon=True)
         thread.start()
         return {"success": True, "message": "处理已启动"}
 
@@ -127,19 +131,20 @@ class TaskService:
 
         # 验证 provider/prompt
         validation = self._validate_and_create_client(provider_name, model_key, api_key, prompt_name)
-        if not validation.get("client"):
+        if not validation.get("api_key"):
             return validation
 
-        client = validation["client"]
         model_id = validation["model_id"]
         prompt_content = validation["prompt_content"]
+        client_api_key = validation["api_key"]
+        client_base_url = validation["base_url"]
 
         logger.info(f"启动失败重跑: {len(existing_sources)} 个文件")
 
-        thread = threading.Thread(
-            target=self._runner.run_retry_batch,
-            args=(existing_sources, client, prompt_content, model_id),
-            daemon=True,
-        )
+        def _run_in_thread():
+            client = OpenAI(api_key=client_api_key, base_url=client_base_url)
+            self._runner.run_retry_batch(existing_sources, client, prompt_content, model_id)
+
+        thread = threading.Thread(target=_run_in_thread, daemon=True)
         thread.start()
         return {"success": True, "message": f"重跑已启动，共 {len(existing_sources)} 个文件"}

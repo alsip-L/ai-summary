@@ -168,12 +168,10 @@ def get_ws_handler() -> WebSocketLogHandler:
 
 
 def _get_log_level() -> int:
-    """从配置文件读取日志级别"""
+    """从 ConfigManager 读取日志级别"""
     try:
-        config_path = Path(__file__).parent.parent / "config.json"
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        level_str = config.get('system_settings', {}).get('debug_level', 'ERROR').upper()
+        from core.config import ConfigManager
+        level_str = ConfigManager().get('system_settings.debug_level', 'ERROR').upper()
     except Exception:
         level_str = 'ERROR'
 

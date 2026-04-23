@@ -51,7 +51,8 @@ class ConfigManager:
                 settings = self._cache.get("system_settings", {})
                 if "flask_secret_key" in settings:
                     settings["secret_key"] = settings.pop("flask_secret_key")
-                    self._save_unsafe()
+                    with self._lock:
+                        self._save_unsafe()
                     logger.warning("已将 flask_secret_key 迁移为 secret_key，请更新配置文件")
             else:
                 logger.warning(f"配置文件不存在: {self._config_path}")

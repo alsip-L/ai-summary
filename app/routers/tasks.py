@@ -4,6 +4,7 @@ from app.services.task_service import TaskService
 from app.services.failed_record_service import FailedRecordService
 from app.dependencies import get_task_service
 from app.schemas.task import TaskStartRequest, RetryFailedRequest
+from app.auth import require_auth
 from core.result import check_result
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 def start_task(
     data: TaskStartRequest,
     svc: TaskService = Depends(get_task_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.start(
         provider_name=data.provider,
@@ -87,6 +89,7 @@ def clear_failed_records():
 def retry_failed(
     data: RetryFailedRequest,
     svc: TaskService = Depends(get_task_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.retry_failed(
         provider_name=data.provider,

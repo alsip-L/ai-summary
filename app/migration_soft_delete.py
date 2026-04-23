@@ -1,10 +1,26 @@
 # -*- coding: utf-8 -*-
-"""软删除重构的数据库迁移脚本（幂等、原子性）"""
+"""数据库迁移脚本（幂等、原子性）
+
+包含：
+1. 软删除重构迁移（trash_providers/trash_prompts → is_deleted）
+2. 通用 schema 同步（检测模型定义中新增的列并自动添加）
+"""
 from sqlalchemy import text, inspect
+from sqlalchemy.types import Boolean, Integer, String, Text, DateTime
 from app.database import engine, SessionLocal
+from app.models import Base
 from core.log import get_logger
 
 logger = get_logger()
+
+# SQLAlchemy 类型 → SQLite 类型映射
+_TYPE_MAP = {
+    Boolean: "BOOLEAN",
+    Integer: "INTEGER",
+    String: "VARCHAR",
+    Text: "TEXT",
+    DateTime: "DATETIME",
+}
 
 
 def migrate_soft_delete():
@@ -13,11 +29,52 @@ def migrate_soft_delete():
     try:
         _migrate_providers(db)
         _migrate_prompts(db)
+        _migrate_unique_constraints(db)
         db.commit()
         logger.info("软删除迁移完成")
     except Exception as e:
         db.rollback()
         logger.error(f"软删除迁移失败: {e}")
+        raise
+    finally:
+        db.close()
+
+
+def sync_schema():
+    """同步模型定义到数据库：检测并添加模型中新增但数据库中缺失的列
+
+    在 Base.metadata.create_all() 之后调用，处理已存在表的新增列。
+    仅支持添加列，不支持修改列类型或删除列。
+    """
+    insp = inspect(engine)
+    db = SessionLocal()
+    try:
+        added = False
+        for table_name, table in Base.metadata.tables.items():
+            if table_name not in insp.get_table_names():
+                continue  # 新表由 create_all 处理
+            existing_cols = {c["name"] for c in insp.get_columns(table_name)}
+            for column in table.columns:
+                if column.name not in existing_cols:
+                    sqlite_type = _TYPE_MAP.get(type(column.type), "TEXT")
+                    default_clause = ""
+                    if column.default is not None:
+                        default_val = column.default.arg
+                        if isinstance(default_val, bool):
+                            default_val = 1 if default_val else 0
+                        default_clause = f" DEFAULT {default_val}"
+                    elif column.server_default is not None:
+                        default_clause = f" DEFAULT {column.server_default.arg}"
+                    sql = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {sqlite_type}{default_clause}"
+                    logger.info(f"Schema 同步: {sql}")
+                    db.execute(text(sql))
+                    added = True
+        if added:
+            db.commit()
+            logger.info("Schema 同步完成")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Schema 同步失败: {e}")
         raise
     finally:
         db.close()
@@ -73,3 +130,81 @@ def _has_column(insp, table_name: str, column_name: str) -> bool:
         return column_name in columns
     except Exception:
         return False
+
+
+def _migrate_unique_constraints(db):
+    """将 name 列的单一 unique 约束迁移为 (name, is_deleted) 复合 unique 约束
+
+    SQLite 不支持 ALTER INDEX，需要重建表。幂等：如果旧索引不存在则跳过。
+    """
+    insp = inspect(engine)
+
+    for table_name in ("providers", "prompts"):
+        # 检查是否存在旧的 name 单列 unique 索引
+        old_index_name = None
+        for idx in insp.get_indexes(table_name):
+            if idx["column_names"] == ["name"] and idx.get("unique", False):
+                old_index_name = idx["name"]
+                break
+
+        if not old_index_name:
+            continue
+
+        logger.info(f"迁移 {table_name} 的 name unique 约束为 (name, is_deleted) 复合约束")
+
+        # 获取当前表结构
+        columns = insp.get_columns(table_name)
+        col_defs = []
+        for col in columns:
+            col_type = _TYPE_MAP.get(type(col.get("type")), "TEXT")
+            col_name = col["name"]
+            nullable = "" if col.get("nullable", True) else " NOT NULL"
+            default = ""
+            default_val = col.get("default")
+            if default_val is not None:
+                # 处理 SQLAlchemy DefaultClause 对象
+                if hasattr(default_val, 'arg'):
+                    default_val = default_val.arg
+                if isinstance(default_val, bool):
+                    default_val = 1 if default_val else 0
+                if isinstance(default_val, (int, float, str)):
+                    if isinstance(default_val, str):
+                        default = f" DEFAULT '{default_val}'"
+                    else:
+                        default = f" DEFAULT {default_val}"
+            elif col.get("server_default") is not None:
+                sd = col["server_default"]
+                if hasattr(sd, 'arg'):
+                    default = f" DEFAULT {sd.arg}"
+                elif isinstance(sd, str):
+                    default = f" DEFAULT {sd}"
+            col_defs.append(f"{col_name} {col_type}{nullable}{default}")
+
+        # 获取非 name-unique 的其他索引
+        other_indexes = []
+        for idx in insp.get_indexes(table_name):
+            if idx["name"] != old_index_name:
+                cols = ", ".join(idx["column_names"])
+                unique = "UNIQUE" if idx.get("unique") else ""
+                other_indexes.append(f"CREATE {unique} INDEX IF NOT EXISTS {idx['name']} ON {table_name} ({cols})")
+
+        # 重建表：去掉 name 的单列 unique，加上 (name, is_deleted) 复合 unique
+        temp_table = f"{table_name}_temp"
+        pk_col = columns[0]["name"]  # id
+
+        col_defs_str = ", ".join(col_defs)
+        db.execute(text(f"CREATE TABLE {temp_table} ({col_defs_str}, PRIMARY KEY ({pk_col}))"))
+        db.execute(text(f"INSERT INTO {temp_table} SELECT * FROM {table_name}"))
+        db.execute(text(f"DROP TABLE {table_name}"))
+        db.execute(text(f"ALTER TABLE {temp_table} RENAME TO {table_name}"))
+
+        # 重建其他索引
+        for idx_sql in other_indexes:
+            db.execute(text(idx_sql))
+
+        # 添加复合唯一索引
+        db.execute(text(
+            f"CREATE UNIQUE INDEX IF NOT EXISTS ix_{table_name}_name_is_deleted ON {table_name} (name, is_deleted)"
+        ))
+
+        logger.info(f"{table_name} unique 约束迁移完成")

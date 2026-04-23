@@ -19,14 +19,12 @@ class ProviderService:
         return fail("保存失败")
 
     def delete(self, name: str) -> dict:
-        from app.repositories.trash_repo import TrashRepository
-        trash_repo = TrashRepository(self._repo.db)
-        if trash_repo.move_provider_to_trash(name):
+        if self._repo.soft_delete(name):
             return ok()
         return fail("删除失败")
 
     def get_api_key(self, name: str) -> dict:
-        provider = self._repo._get_raw(name)
+        provider = self._repo.get_raw(name)
         if not provider:
             return fail("提供商不存在")
         return ok(api_key=provider.get("api_key", ""))

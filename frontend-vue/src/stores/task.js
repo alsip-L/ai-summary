@@ -17,7 +17,7 @@ export const useTaskStore = defineStore('task', () => {
   const directoryPath = ref('')
   const retrying = ref(false)
   const retryAttempt = ref(0)
-  const retryMax = ref(3)
+  const retryMax = ref(2)
   const failedRecords = ref([])
   const failedCount = ref(0)
 
@@ -71,7 +71,7 @@ export const useTaskStore = defineStore('task', () => {
         cancelled.value = data.cancelled
         retrying.value = data.retrying || false
         retryAttempt.value = data.retry_attempt || 0
-        retryMax.value = data.retry_max || 3
+        retryMax.value = data.retry_max || 2
 
         if (!isProcessing.value) {
           stopPolling()
@@ -103,7 +103,7 @@ export const useTaskStore = defineStore('task', () => {
     cancelled.value = data.cancelled
     retrying.value = data.retrying || false
     retryAttempt.value = data.retry_attempt || 0
-    retryMax.value = data.retry_max || 3
+    retryMax.value = data.retry_max || 2
   }
 
   async function loadFailedRecords() {

@@ -8,9 +8,9 @@ logger = get_logger()
 
 class PromptRepository(BaseRepository):
 
-    def get_all(self) -> dict[str, str]:
+    def get_all(self) -> list[dict]:
         prompts = self._db.query(Prompt).filter(Prompt.is_deleted == False).all()
-        return {p.name: p.content for p in prompts}
+        return [{"name": p.name, "content": p.content} for p in prompts]
 
     def get(self, name: str) -> str | None:
         p = self._db.query(Prompt).filter(Prompt.name == name, Prompt.is_deleted == False).first()
@@ -79,7 +79,7 @@ class PromptRepository(BaseRepository):
             logger.error(f"永久删除提示词失败: {e}", exc_info=True)
             return False
 
-    def get_all_deleted(self) -> dict[str, str]:
+    def get_all_deleted(self) -> list[dict]:
         """获取所有已软删除的 Prompt"""
         prompts = self._db.query(Prompt).filter(Prompt.is_deleted == True).all()
-        return {p.name: p.content for p in prompts}
+        return [{"name": p.name, "content": p.content} for p in prompts]

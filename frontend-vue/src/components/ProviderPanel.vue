@@ -218,6 +218,7 @@ function addNew() {
     const apiKey = dialogFields.value[2].value.trim()
     const modelName = dialogFields.value[3].value.trim()
     if (!name || !url) { showMessage('名称和地址为必填', 'warning'); return false }
+    if (!/^https?:\/\//.test(url)) { showMessage('API 地址须以 http:// 或 https:// 开头', 'warning'); return false }
     const models = modelName ? { [modelName]: modelName } : { 'default': name.toLowerCase().replace(/\s+/g, '-') + '-model' }
     await store.createProvider({ name, base_url: url, api_key: apiKey, models })
     return true

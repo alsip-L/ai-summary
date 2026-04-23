@@ -77,11 +77,23 @@ def rebuild(_auth=Depends(require_auth)):
         run_py = str(PROJECT_ROOT / "run.py")
         cwd = str(PROJECT_ROOT)
 
+        # 清理旧的临时重启脚本
+        for helper_name in ("_restart_helper.py", "_restart_helper.sh", "_restart_helper.bat"):
+            helper_path = PROJECT_ROOT / helper_name
+            try:
+                if helper_path.exists():
+                    helper_path.unlink()
+            except Exception:
+                pass
+
         if sys.platform == "win32":
             # Windows: 用 Python 脚本做重启助手，避免弹出 CMD 窗口
             helper_script = (
-                "import subprocess, time, sys, os\n"
+                "import subprocess, time, sys, os, pathlib\n"
                 "time.sleep(3)\n"
+                # 清理自身
+                "try: pathlib.Path(sys.argv[0]).unlink(missing_ok=True)\n"
+                "except Exception: pass\n"
                 f"subprocess.Popen([sys.executable, r'{run_py}'], cwd=r'{cwd}',"
                 " creationflags=0x08000000)\n"  # CREATE_NO_WINDOW
             )
@@ -95,7 +107,14 @@ def rebuild(_auth=Depends(require_auth)):
             )
         else:
             # Linux/macOS: 用 nohup + sleep 后台启动（不使用 shell=True）
-            script = f'#!/bin/bash\nsleep 3\ncd "{cwd}"\n"{sys.executable}" "{run_py}"\n'
+            script = (
+                f'#!/bin/bash\n'
+                f'sleep 3\n'
+                # 清理自身
+                f'rm -f "$0"\n'
+                f'cd "{cwd}"\n'
+                f'"{sys.executable}" "{run_py}"\n'
+            )
             script_file = PROJECT_ROOT / "_restart_helper.sh"
             script_file.write_text(script, encoding="utf-8")
             script_file.chmod(0o755)

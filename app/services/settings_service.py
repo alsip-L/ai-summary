@@ -43,6 +43,12 @@ class SettingsService:
                 return {"success": False, "error": "端口必须为数字"}
         if "debug" in data:
             current["debug"] = bool(data["debug"])
+        if "admin_username" in data and data["admin_username"].strip():
+            current["admin_username"] = data["admin_username"].strip()
+        if "admin_password" in data and data["admin_password"].strip():
+            current["admin_password"] = data["admin_password"].strip()
+        if "allowed_paths" in data:
+            current["allowed_paths"] = data["allowed_paths"]
 
         if self._config.set("system_settings", current):
             if current.get("debug_level") != old_debug_level:

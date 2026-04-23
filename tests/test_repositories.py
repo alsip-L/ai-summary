@@ -54,15 +54,17 @@ class TestProviderRepository(_BaseDBTest):
         repo.save({"name": "P1", "base_url": "https://p1.com", "api_key": "k1", "models": {}})
         repo.save({"name": "P2", "base_url": "https://p2.com", "api_key": "k2", "models": {}})
         all_providers = repo.get_all()
-        self.assertIn("P1", all_providers)
-        self.assertIn("P2", all_providers)
+        names = [p["name"] for p in all_providers]
+        self.assertIn("P1", names)
+        self.assertIn("P2", names)
 
     def test_soft_delete(self):
         repo = ProviderRepository(self.db)
         repo.save({"name": "ToDelete", "base_url": "https://t.com", "api_key": "k", "models": {}})
         self.assertTrue(repo.soft_delete("ToDelete"))
         self.assertIsNone(repo.get("ToDelete"))
-        self.assertNotIn("ToDelete", repo.get_all())
+        names = [p["name"] for p in repo.get_all()]
+        self.assertNotIn("ToDelete", names)
 
     def test_restore(self):
         repo = ProviderRepository(self.db)
@@ -76,7 +78,8 @@ class TestProviderRepository(_BaseDBTest):
         repo.save({"name": "ToPermDelete", "base_url": "https://t.com", "api_key": "k", "models": {}})
         repo.soft_delete("ToPermDelete")
         self.assertTrue(repo.permanent_delete("ToPermDelete"))
-        self.assertNotIn("ToPermDelete", repo.get_all_deleted())
+        names = [p["name"] for p in repo.get_all_deleted()]
+        self.assertNotIn("ToPermDelete", names)
 
     def test_get_all_deleted(self):
         repo = ProviderRepository(self.db)
@@ -84,8 +87,9 @@ class TestProviderRepository(_BaseDBTest):
         repo.save({"name": "P2", "base_url": "https://p.com", "api_key": "k", "models": {}})
         repo.soft_delete("P1")
         deleted = repo.get_all_deleted()
-        self.assertIn("P1", deleted)
-        self.assertNotIn("P2", deleted)
+        names = [p["name"] for p in deleted]
+        self.assertIn("P1", names)
+        self.assertNotIn("P2", names)
 
     def test_save_restores_soft_deleted_record(self):
         repo = ProviderRepository(self.db)
@@ -124,7 +128,8 @@ class TestPromptRepository(_BaseDBTest):
         repo.save("ToDelete", "Content")
         self.assertTrue(repo.soft_delete("ToDelete"))
         self.assertIsNone(repo.get("ToDelete"))
-        self.assertNotIn("ToDelete", repo.get_all())
+        names = [p["name"] for p in repo.get_all()]
+        self.assertNotIn("ToDelete", names)
 
     def test_restore(self):
         repo = PromptRepository(self.db)
@@ -138,7 +143,8 @@ class TestPromptRepository(_BaseDBTest):
         repo.save("ToPermDelete", "Content")
         repo.soft_delete("ToPermDelete")
         self.assertTrue(repo.permanent_delete("ToPermDelete"))
-        self.assertNotIn("ToPermDelete", repo.get_all_deleted())
+        names = [p["name"] for p in repo.get_all_deleted()]
+        self.assertNotIn("ToPermDelete", names)
 
     def test_get_all_deleted(self):
         repo = PromptRepository(self.db)
@@ -146,8 +152,9 @@ class TestPromptRepository(_BaseDBTest):
         repo.save("P2", "Content 2")
         repo.soft_delete("P1")
         deleted = repo.get_all_deleted()
-        self.assertIn("P1", deleted)
-        self.assertNotIn("P2", deleted)
+        names = [p["name"] for p in deleted]
+        self.assertIn("P1", names)
+        self.assertNotIn("P2", names)
 
     def test_save_restores_soft_deleted_record(self):
         repo = PromptRepository(self.db)
@@ -164,7 +171,8 @@ class TestTrashRepository(_BaseDBTest):
         repo = TrashRepository(self.db)
         self.assertTrue(repo.move_provider_to_trash("TestProvider"))
         trash = repo.get_all()
-        self.assertIn("TestProvider", trash["providers"])
+        names = [p["name"] for p in trash["providers"]]
+        self.assertIn("TestProvider", names)
 
     def test_restore_provider(self):
         ProviderRepository(self.db).save({"name": "TestProvider", "base_url": "https://test.com", "api_key": "key", "models": {}})
@@ -180,7 +188,8 @@ class TestTrashRepository(_BaseDBTest):
         repo.move_provider_to_trash("TestProvider")
         self.assertTrue(repo.permanent_delete_provider("TestProvider"))
         trash = repo.get_all()
-        self.assertNotIn("TestProvider", trash.get("providers", {}))
+        names = [p["name"] for p in trash.get("providers", [])]
+        self.assertNotIn("TestProvider", names)
 
 
 if __name__ == '__main__':

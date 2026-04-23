@@ -39,8 +39,7 @@ def classify_openai_error(e: Exception) -> Exception:
     # OpenAI SDK 的服务端错误 (5xx)
     if "APIStatusError" in error_name or "InternalServerError" in error_name:
         status_code = getattr(e, "status_code", None)
-        if (status_code is not None and 500 <= status_code < 600) or \
-           (status_code is None and any(f" {code} " in f" {error_str} " for code in range(500, 600))):
+        if status_code is not None and 500 <= status_code < 600:
             return RetryableError(f"服务端临时错误", cause=e)
 
     # 明确不可重试的客户端错误：认证失败、模型不存在
@@ -71,6 +70,7 @@ class AIClient:
         last_error = None
         for attempt in range(1, MAX_RETRIES + 1):
             ws_handler = get_ws_handler()
+            stream_ended = False
             try:
                 if attempt > 1:
                     self._state.set_retrying(attempt)
@@ -93,8 +93,6 @@ class AIClient:
                         if ws_handler:
                             ws_handler.put_stream(token)
                 response = "".join(full_response)
-                if ws_handler:
-                    ws_handler.put_stream_end()
                 if not response:
                     raise ProviderError("API 返回空响应")
                 logger.info(f"AI 响应完成, 字符数: {len(response)}")
@@ -103,13 +101,15 @@ class AIClient:
                 self._state.clear_retrying()
                 return response
             except (ProviderError, FileProcessingError):
-                if ws_handler:
+                if ws_handler and not stream_ended:
                     ws_handler.put_stream_end()
+                    stream_ended = True
                 self._state.clear_retrying()
                 raise
             except RetryableError as e:
-                if ws_handler:
+                if ws_handler and not stream_ended:
                     ws_handler.put_stream_end()
+                    stream_ended = True
                 last_error = e
                 if attempt < MAX_RETRIES:
                     delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
@@ -123,8 +123,9 @@ class AIClient:
                     self._state.clear_retrying()
                     raise
             except Exception as e:
-                if ws_handler:
+                if ws_handler and not stream_ended:
                     ws_handler.put_stream_end()
+                    stream_ended = True
                 classified = classify_openai_error(e)
                 if isinstance(classified, RetryableError):
                     # 可重试错误：复用 RetryableError 分支的重试逻辑
@@ -144,3 +145,7 @@ class AIClient:
                     logger.error(f"AI 调用失败（不可重试）: {classified}")
                     self._state.clear_retrying()
                     raise classified
+            finally:
+                # 确保流式输出始终有结束标记
+                if ws_handler and not stream_ended:
+                    ws_handler.put_stream_end()

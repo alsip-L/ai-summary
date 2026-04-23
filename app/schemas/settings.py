@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -22,13 +23,13 @@ class PreferencesUpdate(BaseModel):
 
 
 class SystemSettingsUpdate(BaseModel):
-    debug_level: str | None = Field(default=None, description="日志级别")
-    secret_key: str | None = Field(default=None, description="密钥")
+    debug_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] | None = Field(default=None, description="日志级别")
+    secret_key: str | None = Field(default=None, min_length=8, description="密钥")
     host: str | None = Field(default=None, description="监听地址")
-    port: int | None = Field(default=None, description="监听端口")
+    port: int | None = Field(default=None, ge=1, le=65535, description="监听端口")
     debug: bool | None = Field(default=None, description="调试模式")
-    admin_username: str | None = Field(default=None, description="管理员用户名")
-    admin_password: str | None = Field(default=None, description="管理员密码")
+    admin_username: str | None = Field(default=None, max_length=50, description="管理员用户名")
+    admin_password: str | None = Field(default=None, min_length=4, max_length=100, description="管理员密码")
     allowed_paths: list[str] | None = Field(default=None, description="允许的文件路径白名单")
 
     model_config = {

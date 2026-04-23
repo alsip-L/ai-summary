@@ -53,6 +53,8 @@ class FileProcessor:
         """保存 AI 响应为 .md 文件"""
         md_path = os.path.splitext(file_path)[0] + ".md"
         try:
+            if os.path.exists(md_path):
+                logger.warning(f"覆盖已有结果文件: {os.path.basename(md_path)}")
             with open(md_path, "w", encoding="utf-8") as f:
                 f.write(response)
             return md_path

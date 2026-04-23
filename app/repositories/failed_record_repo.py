@@ -31,9 +31,16 @@ class FailedRecordRepository(BaseRepository):
         try:
             count = 0
             with self._write_session():
+                # 批量查询所有已存在的 source，避免 N+1 查询
+                sources = [r["source"] for r in records]
+                existing_records = self._db.query(FailedRecord).filter(
+                    FailedRecord.source.in_(sources)
+                ).all()
+                existing_map = {r.source: r for r in existing_records}
+
                 for r in records:
                     source = r["source"]
-                    existing = self._db.query(FailedRecord).filter(FailedRecord.source == source).first()
+                    existing = existing_map.get(source)
                     if existing:
                         existing.error = r.get("error", "")
                         existing.retryable = r.get("retryable", False)

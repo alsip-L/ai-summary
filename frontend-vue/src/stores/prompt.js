@@ -9,9 +9,15 @@ export const usePromptStore = defineStore('prompt', () => {
 
   async function loadAll(preferences = null) {
     const prefs = preferences || await api.getPreferences().catch(() => ({}))
-    const promptData = await api.getPrompts().catch(() => ({}))
-    prompts.value = promptData || {}
-    promptNames.value = Object.keys(prompts.value)
+    const promptData = await api.getPrompts().catch(() => ([]))
+    // promptData 现在是列表格式 [{name, content}, ...]
+    const promptList = Array.isArray(promptData) ? promptData : []
+    const promptMap = {}
+    for (const p of promptList) {
+      promptMap[p.name] = p.content
+    }
+    prompts.value = promptMap
+    promptNames.value = Object.keys(promptMap)
     selectedPrompt.value = prefs.selected_prompt || ''
     if (selectedPrompt.value && !prompts.value[selectedPrompt.value]) {
       selectedPrompt.value = ''

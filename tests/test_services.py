@@ -57,7 +57,8 @@ class TestProviderService(_BaseDBTest):
         })
         self.assertTrue(result["success"])
         all_providers = svc.list_all()
-        self.assertIn("TestProvider", all_providers)
+        names = [p["name"] for p in all_providers]
+        self.assertIn("TestProvider", names)
 
     def test_create_provider_invalid_data(self):
         svc = ProviderService(self.db)
@@ -69,7 +70,8 @@ class TestProviderService(_BaseDBTest):
         svc.create({"name": "ToDelete", "base_url": "https://t.com", "api_key": "k", "models": {}})
         result = svc.delete("ToDelete")
         self.assertTrue(result["success"])
-        self.assertNotIn("ToDelete", svc.list_all())
+        names = [p["name"] for p in svc.list_all()]
+        self.assertNotIn("ToDelete", names)
 
     def test_update_api_key(self):
         svc = ProviderService(self.db)
@@ -93,14 +95,16 @@ class TestPromptService(_BaseDBTest):
         result = svc.create({"name": "Summary", "content": "Summarize this"})
         self.assertTrue(result["success"])
         all_prompts = svc.list_all()
-        self.assertIn("Summary", all_prompts)
+        names = [p["name"] for p in all_prompts]
+        self.assertIn("Summary", names)
 
     def test_delete_prompt_moves_to_trash(self):
         svc = PromptService(self.db)
         svc.create({"name": "ToDelete", "content": "content"})
         result = svc.delete("ToDelete")
         self.assertTrue(result["success"])
-        self.assertNotIn("ToDelete", svc.list_all())
+        names = [p["name"] for p in svc.list_all()]
+        self.assertNotIn("ToDelete", names)
 
 
 class TestTrashService(_BaseDBTest):

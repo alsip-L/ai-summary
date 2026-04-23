@@ -3,8 +3,8 @@ from pydantic import BaseModel, Field
 
 
 class PromptCreate(BaseModel):
-    name: str = Field(description="提示词名称")
-    content: str = Field(description="提示词内容，作为 system prompt 发送")
+    name: str = Field(max_length=100, description="提示词名称")
+    content: str = Field(max_length=100000, description="提示词内容，作为 system prompt 发送")
 
     model_config = {
         "json_schema_extra": {

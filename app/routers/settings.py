@@ -1,13 +1,33 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 from app.services.settings_service import SettingsService
 from app.dependencies import get_settings_service
 from app.schemas.settings import PreferencesUpdate, SystemSettingsUpdate
-from app.auth import require_auth
+from app.auth import require_auth, generate_api_token
 from core.result import check_result
 from core.config import ConfigManager
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
+
+
+class TokenRequest(BaseModel):
+    secret_key: str = Field(min_length=1, description="用于派生 API Token 的密钥")
+
+
+@router.post(
+    "/token",
+    summary="获取 API Token",
+    description="使用 secret_key 派生 API Token，用于后续需要认证的请求。",
+    responses={200: {"description": "API Token"}, 401: {"description": "密钥不匹配"}},
+)
+def get_token(data: TokenRequest):
+    config_key = ConfigManager().get("system_settings.secret_key", "")
+    if not config_key or data.secret_key != config_key:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="密钥不匹配")
+    token = generate_api_token(data.secret_key)
+    return {"success": True, "token": token}
 
 
 @router.get(

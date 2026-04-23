@@ -81,6 +81,7 @@ def update_api_key(
     name: str,
     data: ApiKeyUpdate,
     svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.update_api_key(name, data.api_key))
 

@@ -1,5 +1,16 @@
 const BASE_URL = ''
 
+// API Token 缓存：从后端获取后缓存，用于需要认证的端点
+let _apiToken = null
+
+export function setApiToken(token) {
+  _apiToken = token
+}
+
+export function getStoredApiToken() {
+  return _apiToken
+}
+
 async function request(url, options = {}) {
   const defaults = {
     credentials: 'same-origin',
@@ -7,6 +18,10 @@ async function request(url, options = {}) {
   // Only set Content-Type when there is a body
   if (options.body) {
     defaults.headers = { 'Content-Type': 'application/json' }
+  }
+  // 自动附加 API Token（如果已设置）
+  if (_apiToken) {
+    defaults.headers = { ...(defaults.headers || {}), 'X-API-Token': _apiToken }
   }
   const merged = {
     ...defaults,
@@ -24,6 +39,9 @@ async function request(url, options = {}) {
 }
 
 export const api = {
+  // 使用 secret_key 获取 API Token
+  getToken: (secretKey) => request('/api/settings/token', { method: 'POST', body: JSON.stringify({ secret_key: secretKey }) }),
+
   getProviders: () => request('/api/providers/'),
   createProvider: (data) => request('/api/providers/', { method: 'POST', body: JSON.stringify(data) }),
   deleteProvider: (name) => request(`/api/providers/${encodeURIComponent(name)}`, { method: 'DELETE' }),
@@ -57,6 +75,9 @@ export const api = {
 
   getPreferences: () => request('/api/settings/preferences'),
   savePreferences: (data) => request('/api/settings/preferences', { method: 'PUT', body: JSON.stringify(data) }),
+
+  getSystemSettings: () => request('/api/settings/system'),
+  saveSystemSettings: (data) => request('/api/settings/system', { method: 'PUT', body: JSON.stringify(data) }),
 
   clearLogs: () => request('/api/logs/clear', { method: 'POST' }),
 

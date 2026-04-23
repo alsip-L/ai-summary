@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import threading
 import time
+from collections import deque
 
 # 文件级别重试配置
 FILE_MAX_RETRIES = 2  # 文件级别最大重试次数（AI调用级已有3次重试，文件级2次即可）
 RETRY_BASE_DELAY = 2  # 秒，指数退避基数
+
+# 结果列表最大容量，防止处理大量文件时内存无界增长
+MAX_RESULTS = 10000
 
 
 class ProcessingState:
@@ -28,7 +32,7 @@ class ProcessingState:
             self._total_files = 0
             self._processed_files_count = 0
             self._current_file = ""
-            self._results = []
+            self._results = deque()
             self._error = None
             self._start_time = None
             self._cancelled = False
@@ -61,7 +65,7 @@ class ProcessingState:
             self._total_files = total_files
             self._processed_files_count = 0
             self._current_file = ""
-            self._results = []
+            self._results = deque()
             self._error = None
             self._start_time = time.time()
             self._cancelled = False
@@ -86,6 +90,9 @@ class ProcessingState:
 
     def add_result(self, source: str, output: str = None, error: str = None, retryable: bool = False):
         with self._state_lock:
+            # 超过最大容量时，移除最早的结果（O(1) popleft）
+            if len(self._results) >= MAX_RESULTS:
+                self._results.popleft()
             self._results.append({
                 "source": source,
                 "output": output,
@@ -165,4 +172,9 @@ class ProcessingState:
     @classmethod
     def reset(cls):
         with cls._lock:
+            if cls._instance is not None:
+                # 等待正在运行的任务完成后再重置
+                with cls._instance._state_lock:
+                    if cls._instance._status in ("processing", "scanning"):
+                        return  # 拒绝在任务运行时重置
             cls._instance = None

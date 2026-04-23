@@ -81,8 +81,14 @@ class PromptInfo(BaseModel):
 class TaskStatus(BaseModel):
     """任务状态"""
     status: str = Field(description="任务状态: idle/processing/completed/error/cancelled")
-    total: int = Field(default=0, description="总文件数")
-    processed: int = Field(default=0, description="已处理数")
+    total_files: int = Field(default=0, description="总文件数")
+    processed_files_count: int = Field(default=0, description="已处理数")
     progress: int = Field(default=0, description="进度百分比")
     current_file: str | None = Field(default=None, description="当前处理文件")
     results: list = Field(default_factory=list, description="处理结果列表")
+    error: str | None = Field(default=None, description="错误信息")
+    start_time: float | None = Field(default=None, description="开始时间")
+    cancelled: bool = Field(default=False, description="是否已取消")
+    retrying: bool = Field(default=False, description="是否正在重试")
+    retry_attempt: int = Field(default=0, description="当前重试次数")
+    retry_max: int = Field(default=0, description="最大重试次数")

@@ -55,7 +55,7 @@ class BaseResourceGroup:
         """构造请求头"""
         headers = {"Content-Type": "application/json"}
         if self._config.api_key:
-            headers["Authorization"] = f"Bearer {self._config.api_key}"
+            headers["X-API-Token"] = self._config.api_key
         return headers
 
 

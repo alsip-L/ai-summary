@@ -47,8 +47,8 @@ const MAX_RECONNECT_DELAY = 10000  // 最大延迟10秒
 let logIdCounter = 0  // 唯一日志 ID 计数器
 let isReplaying = false  // 是否正在回放历史日志
 let userScrolledUp = false  // 用户是否正在向上查看历史日志
-// 从 sessionStorage 恢复清空标记，确保刷新后仍能阻止回放旧日志
-let logsCleared = sessionStorage.getItem('logsCleared') === '1'
+// 页面刷新后不恢复清空标记，允许回放历史日志
+let logsCleared = false
 
 // 预编译日志级别正则，避免重复创建
 const LOG_LEVEL_REGEX = /\]\s*(INFO|ERROR|WARNING|DEBUG|CRITICAL):/

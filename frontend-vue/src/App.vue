@@ -50,7 +50,7 @@ import { useProviderStore } from './stores/provider'
 import { usePromptStore } from './stores/prompt'
 import { useTaskStore } from './stores/task'
 import { useTrashStore } from './stores/trash'
-import { api } from './composables/useApi'
+import { api, setApiToken } from './composables/useApi'
 import ProviderPanel from './components/ProviderPanel.vue'
 import PromptPanel from './components/PromptPanel.vue'
 import TrashPanel from './components/TrashPanel.vue'
@@ -194,6 +194,29 @@ async function handleStart() {
 }
 
 onMounted(async () => {
+  // 初始化时获取 API Token（使用配置中的 secret_key）
+  try {
+    const settingsResp = await fetch('/api/settings/system')
+    if (settingsResp.ok) {
+      const settingsData = await settingsResp.json()
+      const maskedKey = settingsData.settings?.secret_key || ''
+      // 如果 secret_key 是默认的（未修改），尝试用默认值获取 token
+      if (maskedKey.includes('******')) {
+        // 密钥已设置但脱敏，尝试用默认密钥获取 token
+        try {
+          const tokenResult = await api.getToken('default-dev-secret-key-please-change-in-prod')
+          if (tokenResult.success && tokenResult.token) {
+            setApiToken(tokenResult.token)
+          }
+        } catch {
+          // 默认密钥不匹配，用户已修改密钥，需要手动输入
+        }
+      }
+    }
+  } catch {
+    // 获取系统设置失败，继续初始化
+  }
+
   const preferences = await providerStore.loadAll()
   await Promise.all([
     promptStore.loadAll(preferences),

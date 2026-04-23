@@ -6,7 +6,7 @@ from app.models import Provider, Prompt, UserPreference, FailedRecord
 class ProviderAdmin(ModelView, model=Provider):
     column_list = [Provider.id, Provider.name, Provider.base_url, Provider.is_active, Provider.is_deleted]
     column_searchable_list = [Provider.name]
-    form_excluded_columns = [Provider.id, Provider.api_key]
+    form_excluded_columns = [Provider.id]
     can_export = True
     name = "提供商"
     name_plural = "提供商"

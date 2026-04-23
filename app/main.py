@@ -12,6 +12,7 @@ if sys.stdout.encoding != 'utf-8':
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from core.config import ConfigManager
 from core.errors import (
@@ -27,8 +28,9 @@ from app.schemas.common import ErrorResponse
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    from app.migration_soft_delete import migrate_soft_delete
+    from app.migration_soft_delete import migrate_soft_delete, sync_schema
     migrate_soft_delete()
+    sync_schema()
     yield
 
 
@@ -56,6 +58,41 @@ def create_app() -> FastAPI:
         redoc_url="/api/redoc",
         lifespan=lifespan,
     )
+
+    # CORS 配置：允许独立部署的前端跨域访问
+    cors_origins = config.get("system_settings.cors_origins", [])
+    # credentials=True 时 origins 不能为 ["*"]，需指定具体域名
+    if not cors_origins or cors_origins == ["*"]:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    else:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+    # 生产环境默认凭据安全校验
+    if not config.get("system_settings.debug", False):
+        if secret_key == "default-dev-secret-key-please-change-in-prod":
+            import warnings
+            warnings.warn(
+                "安全警告: 生产环境中使用了默认 secret_key，请修改 config.json 中的 system_settings.secret_key"
+            )
+        admin_user = config.get("system_settings.admin_username", "admin")
+        admin_pass = config.get("system_settings.admin_password", "admin")
+        if admin_user == "admin" and admin_pass == "admin":
+            import warnings
+            warnings.warn(
+                "安全警告: 生产环境中使用了默认管理员凭据 (admin/admin)，请修改 config.json"
+            )
 
     # 注入增强的 OpenAPI 规范
     _original_openapi = app.openapi
@@ -90,14 +127,26 @@ def create_app() -> FastAPI:
     app.include_router(logs.router)
     app.include_router(system.router)
 
-    from sqladmin import Admin
+    from sqladmin import Admin, AdminAuth
     from app.admin import (
         ProviderAdmin, PromptAdmin,
         UserPreferenceAdmin, FailedRecordAdmin,
     )
 
+    class SimpleAdminAuth(AdminAuth):
+        """SQLAdmin 认证：使用与 API 相同的 secret_key 派生 token"""
+        async def authenticate(self, request):
+            token = request.cookies.get("admin_token") or request.headers.get("X-API-Token")
+            if not token:
+                return False
+            from app.auth import generate_api_token
+            expected = generate_api_token(secret_key)
+            import hmac
+            return hmac.compare_digest(token, expected)
+
     templates_dir = Path(__file__).parent.parent / "templates"
-    admin = Admin(app, engine, templates_dir=str(templates_dir))
+    admin_auth = SimpleAdminAuth(secret_key=secret_key)
+    admin = Admin(app, engine, templates_dir=str(templates_dir), authentication_backend=admin_auth)
     admin.add_view(ProviderAdmin)
     admin.add_view(PromptAdmin)
     admin.add_view(UserPreferenceAdmin)
@@ -128,10 +177,12 @@ def create_app() -> FastAPI:
             ext = full_path.suffix.lower()
             mime_map = {".js": "application/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2"}
             media_type = mime_map.get(ext, "application/octet-stream")
+            # Vite 构建的 assets 文件名含 hash（如 index-abc123.js），可长期缓存
+            cache_control = "public, max-age=31536000, immutable"
             return Response(
                 content=content,
                 media_type=media_type,
-                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+                headers={"Cache-Control": cache_control},
             )
 
         @app.middleware("http")
@@ -139,8 +190,13 @@ def create_app() -> FastAPI:
             response = await call_next(request)
             if response.status_code == 404 and request.method == "GET" and not request.url.path.startswith("/api"):
                 file_path = frontend_dist / request.url.path.lstrip("/")
-                if file_path.is_file():
-                    return FileResponse(str(file_path))
+                # 防止路径遍历：确保解析后的路径仍在前端目录内
+                try:
+                    resolved = file_path.resolve()
+                    if resolved.is_file() and resolved.is_relative_to(frontend_dist.resolve()):
+                        return FileResponse(str(resolved))
+                except (ValueError, OSError):
+                    pass
                 return FileResponse(str(frontend_dist / "index.html"))
             return response
 

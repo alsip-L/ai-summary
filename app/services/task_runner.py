@@ -25,17 +25,27 @@ class TaskRunner:
 
     def run_batch(self, directory, client, prompt_content, model_id, skip_existing):
         """批量处理主循环"""
-        logger.info(f"开始扫描目录: {directory}")
-        txt_files = self._file_processor.scan_txt_files(directory, skip_existing)
-        if not txt_files:
-            raise ValueError("未找到需要处理的 txt 文件")
-        logger.info(f"扫描完成: 找到 {len(txt_files)} 个 txt 文件")
-        self._run_processing_loop(txt_files, client, prompt_content, model_id, "处理")
+        try:
+            logger.info(f"开始扫描目录: {directory}")
+            txt_files = self._file_processor.scan_txt_files(directory, skip_existing)
+            if not txt_files:
+                self._state.set_error("未找到需要处理的 txt 文件")
+                logger.error("未找到需要处理的 txt 文件")
+                return
+            logger.info(f"扫描完成: 找到 {len(txt_files)} 个 txt 文件")
+            self._run_processing_loop(txt_files, client, prompt_content, model_id, "处理")
+        except Exception as e:
+            logger.error(f"批量处理启动失败: {e}")
+            self._state.set_error(f"批量处理启动失败: {str(e)}")
 
     def run_retry_batch(self, file_paths, client, prompt_content, model_id):
         """重跑失败文件的主循环"""
-        logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
-        self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑")
+        try:
+            logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
+            self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑")
+        except Exception as e:
+            logger.error(f"重跑启动失败: {e}")
+            self._state.set_error(f"重跑启动失败: {str(e)}")
 
     def _run_processing_loop(self, file_paths, client, prompt_content, model_id, log_prefix):
         """通用的文件处理循环"""

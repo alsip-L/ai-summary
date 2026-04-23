@@ -3,6 +3,7 @@ import json
 from app.models import Provider
 from app.repositories.base_repo import BaseRepository
 from core.utils import safe_json_loads
+from core.crypto import encrypt_api_key, decrypt_api_key
 from core.log import get_logger
 
 logger = get_logger()
@@ -21,11 +22,12 @@ class ProviderRepository(BaseRepository):
 
     def _to_dict_masked(self, p: Provider) -> dict:
         """Provider ORM → 字典（API Key 脱敏）"""
+        raw_key = decrypt_api_key(p.api_key)
         return {
             "name": p.name,
             "base_url": p.base_url,
-            "api_key": _mask_api_key(p.api_key),
-            "api_key_masked": bool(p.api_key),
+            "api_key": _mask_api_key(raw_key),
+            "api_key_masked": bool(raw_key),
             "models": safe_json_loads(p.models_json),
             "is_active": p.is_active,
         }
@@ -35,14 +37,14 @@ class ProviderRepository(BaseRepository):
         return {
             "name": p.name,
             "base_url": p.base_url,
-            "api_key": p.api_key,
+            "api_key": decrypt_api_key(p.api_key),
             "models": safe_json_loads(p.models_json),
             "is_active": p.is_active,
         }
 
-    def get_all(self) -> dict[str, dict]:
+    def get_all(self) -> list[dict]:
         providers = self._db.query(Provider).filter(Provider.is_deleted == False).all()
-        return {p.name: self._to_dict_masked(p) for p in providers}
+        return [self._to_dict_masked(p) for p in providers]
 
     def get(self, name: str) -> dict | None:
         p = self._db.query(Provider).filter(Provider.name == name, Provider.is_deleted == False).first()
@@ -50,7 +52,7 @@ class ProviderRepository(BaseRepository):
             return None
         return self._to_dict_masked(p)
 
-    def _get_raw(self, name: str) -> dict | None:
+    def get_raw(self, name: str) -> dict | None:
         """获取未脱敏的完整provider数据（供TaskService使用）"""
         p = self._db.query(Provider).filter(Provider.name == name, Provider.is_deleted == False).first()
         if not p:
@@ -64,7 +66,8 @@ class ProviderRepository(BaseRepository):
                 p = self._db.query(Provider).filter(Provider.name == name).first()
                 if p:
                     p.base_url = data.get("base_url", p.base_url)
-                    p.api_key = data.get("api_key", p.api_key)
+                    if "api_key" in data:
+                        p.api_key = encrypt_api_key(data["api_key"])
                     p.models_json = json.dumps(data.get("models", {}), ensure_ascii=False)
                     if "is_active" in data:
                         p.is_active = data["is_active"]
@@ -75,7 +78,7 @@ class ProviderRepository(BaseRepository):
                     p = Provider(
                         name=name,
                         base_url=data.get("base_url", ""),
-                        api_key=data.get("api_key", ""),
+                        api_key=encrypt_api_key(data.get("api_key", "")),
                         models_json=json.dumps(data.get("models", {}), ensure_ascii=False),
                         is_active=data.get("is_active", True),
                     )
@@ -92,7 +95,7 @@ class ProviderRepository(BaseRepository):
                 p = self._db.query(Provider).filter(Provider.name == name).first()
                 if not p:
                     return False
-                p.api_key = api_key
+                p.api_key = encrypt_api_key(api_key)
                 logger.info(f"更新API Key: {name}")
             return True
         except Exception as e:
@@ -174,7 +177,7 @@ class ProviderRepository(BaseRepository):
             logger.error(f"永久删除服务商失败: {e}", exc_info=True)
             return False
 
-    def get_all_deleted(self) -> dict[str, dict]:
+    def get_all_deleted(self) -> list[dict]:
         """获取所有已软删除的 Provider"""
         providers = self._db.query(Provider).filter(Provider.is_deleted == True).all()
-        return {p.name: self._to_dict_masked(p) for p in providers}
+        return [self._to_dict_masked(p) for p in providers]

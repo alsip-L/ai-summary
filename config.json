@@ -4,6 +4,10 @@
     "secret_key": "default-dev-secret-key-please-change-in-prod",
     "host": "0.0.0.0",
     "port": 5000,
-    "debug": false
+    "debug": false,
+    "admin_username": "admin",
+    "admin_password": "admin",
+    "allowed_paths": [],
+    "cors_origins": []
   }
 }
