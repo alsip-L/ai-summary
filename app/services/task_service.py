@@ -13,14 +13,14 @@ from app.services.task_runner import TaskRunner
 from app.services.ai_client import AIClient
 from app.services.file_processor import FileProcessor
 from app.services.failed_record_service import FailedRecordService
+from app.services.file_browser_service import FileBrowserService
 from core.log import get_logger
 
 logger = get_logger()
 
 
 class TaskService:
-    def __init__(self, db: Session):
-        # db 仅在请求线程中使用，不保存为实例变量以避免后台线程误用
+    def __init__(self):
         self._state = ProcessingState()
         self._failed_record_svc = FailedRecordService()
         self._runner = TaskRunner(
@@ -28,10 +28,9 @@ class TaskService:
             file_processor=FileProcessor(AIClient(self._state)),
             failed_record_service=self._failed_record_svc,
         )
-        self._db = db
 
     def _validate_and_create_client(
-        self, provider_name: str, model_key: str, api_key: str, prompt_name: str
+        self, db: Session, provider_name: str, model_key: str, api_key: str, prompt_name: str
     ) -> dict:
         """验证 Provider/Prompt 并返回连接参数
 
@@ -39,7 +38,6 @@ class TaskService:
             成功: {"api_key": str, "base_url": str, "model_id": str, "prompt_content": str}
             失败: {"success": False, "error": str}
         """
-        db = self._db
         provider = db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True, Provider.is_deleted == False).first()
         if not provider:
             return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
@@ -60,6 +58,7 @@ class TaskService:
 
     def start(
         self,
+        db: Session,
         provider_name: str,
         model_key: str,
         api_key: str,
@@ -73,12 +72,16 @@ class TaskService:
         if not api_key:
             return {"success": False, "error": "API Key 未配置"}
 
+        validation = self._validate_and_create_client(db, provider_name, model_key, api_key, prompt_name)
+        if not validation.get("api_key"):
+            return validation
+
         if not directory or not os.path.exists(directory) or not os.path.isdir(directory):
             return {"success": False, "error": "请提供有效的目录路径"}
 
-        validation = self._validate_and_create_client(provider_name, model_key, api_key, prompt_name)
-        if not validation.get("api_key"):
-            return validation
+        file_browser = FileBrowserService()
+        if not file_browser._validate_path(directory):
+            return {"success": False, "error": "目录不在允许的访问范围内"}
 
         model_id = validation["model_id"]
         prompt_content = validation["prompt_content"]
@@ -88,9 +91,18 @@ class TaskService:
 
         logger.info(f"启动处理任务: provider={provider_name}, model={model_id}, directory={directory}")
 
+        self._state.start()
+
         def _run_in_thread():
             client = OpenAI(api_key=client_api_key, base_url=client_base_url)
-            self._runner.run_batch(directory, client, prompt_content, model_id, skip_existing)
+            try:
+                self._runner.run_batch(directory, client, prompt_content, model_id, skip_existing)
+            except Exception as e:
+                logger.error(f"后台任务异常: {e}")
+                self._state.set_error(f"后台任务异常: {str(e)}")
+                self._failed_record_svc.persist_from_state()
+            finally:
+                client.close()
 
         thread = threading.Thread(target=_run_in_thread, daemon=True)
         thread.start()
@@ -106,6 +118,7 @@ class TaskService:
 
     def retry_failed(
         self,
+        db: Session,
         provider_name: str,
         model_key: str,
         api_key: str,
@@ -130,7 +143,7 @@ class TaskService:
             return {"success": False, "error": "失败记录中的文件已不存在，请清除失败记录"}
 
         # 验证 provider/prompt
-        validation = self._validate_and_create_client(provider_name, model_key, api_key, prompt_name)
+        validation = self._validate_and_create_client(db, provider_name, model_key, api_key, prompt_name)
         if not validation.get("api_key"):
             return validation
 
@@ -141,9 +154,18 @@ class TaskService:
 
         logger.info(f"启动失败重跑: {len(existing_sources)} 个文件")
 
+        self._state.start()
+
         def _run_in_thread():
             client = OpenAI(api_key=client_api_key, base_url=client_base_url)
-            self._runner.run_retry_batch(existing_sources, client, prompt_content, model_id)
+            try:
+                self._runner.run_retry_batch(existing_sources, client, prompt_content, model_id)
+            except Exception as e:
+                logger.error(f"后台重跑任务异常: {e}")
+                self._state.set_error(f"后台重跑任务异常: {str(e)}")
+                self._failed_record_svc.persist_from_state()
+            finally:
+                client.close()
 
         thread = threading.Thread(target=_run_in_thread, daemon=True)
         thread.start()

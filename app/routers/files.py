@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, Query
 from app.services.file_browser_service import FileBrowserService
 from app.dependencies import get_file_browser_service
+from app.auth import require_auth
 from core.result import check_result
 
 router = APIRouter(prefix="/api/files", tags=["files"])
@@ -13,7 +14,10 @@ router = APIRouter(prefix="/api/files", tags=["files"])
     description="返回系统上所有可用的磁盘驱动器列表，用于目录浏览的起始点。",
     responses={200: {"description": "驱动器列表"}},
 )
-def get_drives(svc: FileBrowserService = Depends(get_file_browser_service)):
+def get_drives(
+    svc: FileBrowserService = Depends(get_file_browser_service),
+    _auth=Depends(require_auth),
+):
     return check_result(svc.get_drives(), status_code=500)
 
 
@@ -29,6 +33,7 @@ def get_drives(svc: FileBrowserService = Depends(get_file_browser_service)):
 def get_directory(
     path: str = Query(""),
     svc: FileBrowserService = Depends(get_file_browser_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.get_directory(path))
 
@@ -46,6 +51,7 @@ def get_directory(
 def view_result(
     path: str = Query(""),
     svc: FileBrowserService = Depends(get_file_browser_service),
+    _auth=Depends(require_auth),
 ):
     result = svc.view_result(path)
     if not result.get("success"):

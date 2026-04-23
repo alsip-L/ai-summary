@@ -36,8 +36,8 @@ def get_settings_service(db: Session = Depends(get_db)) -> SettingsService:
     return SettingsService(repo)
 
 
-def get_task_service(db: Session = Depends(get_db)) -> TaskService:
-    return TaskService(db)
+def get_task_service() -> TaskService:
+    return TaskService()
 
 
 def get_file_browser_service() -> FileBrowserService:

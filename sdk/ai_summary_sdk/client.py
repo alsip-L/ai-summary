@@ -11,7 +11,8 @@ class ProvidersResource(BaseResourceGroup):
     def list(self) -> list[dict]:
         """列出所有活跃提供商"""
         resp = self._client.get(self._url("/api/providers/"), headers=self._headers())
-        return _handle_response(resp)
+        data = _handle_response(resp)
+        return data.get("providers", data) if isinstance(data, dict) else data
 
     def create(self, name: str, base_url: str, api_key: str,
                models_map: dict[str, str] | None = None, is_active: bool = True) -> dict:
@@ -52,7 +53,8 @@ class PromptsResource(BaseResourceGroup):
     def list(self) -> list[dict]:
         """列出所有提示词"""
         resp = self._client.get(self._url("/api/prompts/"), headers=self._headers())
-        return _handle_response(resp)
+        data = _handle_response(resp)
+        return data.get("prompts", data) if isinstance(data, dict) else data
 
     def create(self, name: str, content: str) -> dict:
         """创建提示词"""

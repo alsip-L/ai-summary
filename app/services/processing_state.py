@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 import threading
 import time
 from collections import deque
@@ -9,6 +10,26 @@ RETRY_BASE_DELAY = 2  # 秒，指数退避基数
 
 # 结果列表最大容量，防止处理大量文件时内存无界增长
 MAX_RESULTS = 10000
+
+
+def interruptible_sleep(state: ProcessingState, delay: float) -> bool:
+    """可中断的 sleep，在等待期间检查取消状态
+
+    Args:
+        state: ProcessingState 实例，用于检查 is_cancelled()
+        delay: 等待秒数
+
+    Returns:
+        True 表示等待完成，False 表示被取消
+    """
+    remaining = delay
+    while remaining > 0:
+        if state.is_cancelled():
+            return False
+        chunk = min(0.5, remaining)
+        time.sleep(chunk)
+        remaining -= chunk
+    return True
 
 
 class ProcessingState:
@@ -170,11 +191,10 @@ class ProcessingState:
         return failed, succeeded
 
     @classmethod
-    def reset(cls):
+    def reset(cls, force: bool = False):
         with cls._lock:
             if cls._instance is not None:
-                # 等待正在运行的任务完成后再重置
                 with cls._instance._state_lock:
-                    if cls._instance._status in ("processing", "scanning"):
-                        return  # 拒绝在任务运行时重置
+                    if not force and cls._instance._status in ("processing", "scanning"):
+                        return
             cls._instance = None

@@ -13,10 +13,9 @@ export const useProviderStore = defineStore('provider', () => {
   async function loadAll() {
     const [preferences, providerData] = await Promise.all([
       api.getPreferences().catch(() => ({})),
-      api.getProviders().catch(() => ([])),
+      api.getProviders().catch(() => ({ providers: [] })),
     ])
-    // providerData 现在是列表格式 [{name, base_url, ...}, ...]
-    const providerList = Array.isArray(providerData) ? providerData : []
+    const providerList = providerData.providers || []
     const providerMap = {}
     for (const p of providerList) {
       providerMap[p.name] = p

@@ -9,7 +9,8 @@ class ProviderService:
         self._repo = ProviderRepository(db)
 
     def list_all(self) -> dict:
-        return self._repo.get_all()
+        providers = self._repo.get_all()
+        return ok(providers=providers)
 
     def create(self, data: dict) -> dict:
         if not data.get("name") or not data.get("base_url"):

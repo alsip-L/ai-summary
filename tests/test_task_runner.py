@@ -18,10 +18,10 @@ from app.services.failed_record_service import FailedRecordService
 class TestTaskRunner(unittest.TestCase):
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def test_run_batch_empty_directory(self):
         state = ProcessingState()
@@ -29,8 +29,9 @@ class TestTaskRunner(unittest.TestCase):
         mock_fp.scan_txt_files.return_value = []
         mock_frs = MagicMock(spec=FailedRecordService)
         runner = TaskRunner(state=state, file_processor=mock_fp, failed_record_service=mock_frs)
-        with self.assertRaises(ValueError):
-            runner.run_batch("/some/dir", None, None, None, False)
+        runner.run_batch("/some/dir", None, None, None, False)
+        self.assertEqual(state.get_dict()["status"], "error")
+        self.assertIn("未找到", state.get_dict()["error"])
 
     def test_run_batch_cancelled_during_scan(self):
         """在扫描阶段被取消"""

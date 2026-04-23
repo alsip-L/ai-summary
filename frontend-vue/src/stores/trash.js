@@ -7,10 +7,9 @@ export const useTrashStore = defineStore('trash', () => {
   const trashPrompts = ref({})
 
   async function loadAll() {
-    const data = await api.getTrash().catch(() => ({ providers: [], custom_prompts: [] }))
-    // providers 和 custom_prompts 现在是列表格式
-    const providerList = Array.isArray(data.providers) ? data.providers : []
-    const promptList = Array.isArray(data.custom_prompts) ? data.custom_prompts : []
+    const data = await api.getTrash().catch(() => ({ success: true, providers: [], custom_prompts: [] }))
+    const providerList = data.providers || []
+    const promptList = data.custom_prompts || []
     const providerMap = {}
     for (const p of providerList) {
       providerMap[p.name] = p

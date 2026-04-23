@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import time
 from openai import OpenAI
 from core.errors import (
     FileProcessingError, ProviderError, RetryableError,
     NetworkError, RateLimitError,
 )
 from core.log import get_logger, get_ws_handler
-from app.services.processing_state import ProcessingState, RETRY_BASE_DELAY
+from app.services.processing_state import ProcessingState, RETRY_BASE_DELAY, interruptible_sleep
 
 logger = get_logger()
 
@@ -116,7 +115,9 @@ class AIClient:
                     logger.warning(
                         f"AI 调用失败（第{attempt}次，{delay}秒后重试）: {e}"
                     )
-                    time.sleep(delay)
+                    if not interruptible_sleep(self._state, delay):
+                        self._state.clear_retrying()
+                        raise ProviderError("用户取消了处理")
                     continue
                 else:
                     logger.error(f"AI 调用失败（已重试{MAX_RETRIES}次）: {e}")
@@ -128,14 +129,15 @@ class AIClient:
                     stream_ended = True
                 classified = classify_openai_error(e)
                 if isinstance(classified, RetryableError):
-                    # 可重试错误：复用 RetryableError 分支的重试逻辑
                     last_error = classified
                     if attempt < MAX_RETRIES:
                         delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
                         logger.warning(
                             f"AI 调用失败（第{attempt}次，{delay}秒后重试）: {classified}"
                         )
-                        time.sleep(delay)
+                        if not interruptible_sleep(self._state, delay):
+                            self._state.clear_retrying()
+                            raise ProviderError("用户取消了处理")
                         continue
                     else:
                         logger.error(f"AI 调用失败（已重试{MAX_RETRIES}次）: {classified}")

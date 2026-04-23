@@ -33,7 +33,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, triggerRef } from 'vue'
-import { api } from '../composables/useApi'
+import { api, getStoredApiToken } from '../composables/useApi'
 const logs = ref([])
 const connected = ref(false)
 const logList = ref(null)
@@ -184,9 +184,11 @@ function connect() {
   }
   if (ws && ws.readyState === WebSocket.OPEN) return
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-  // 从当前页面路径推断基础路径，支持反向代理路径前缀部署
   const basePath = location.pathname.replace(/\/[^/]*$/, '')
-  const url = `${protocol}//${location.host}${basePath}/api/logs/ws`
+  const token = getStoredApiToken()
+  const url = token
+    ? `${protocol}//${location.host}${basePath}/api/logs/ws?token=${encodeURIComponent(token)}`
+    : `${protocol}//${location.host}${basePath}/api/logs/ws`
   ws = new WebSocket(url)
 
   ws.onopen = () => {

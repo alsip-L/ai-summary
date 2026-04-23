@@ -3,6 +3,7 @@ import json
 from app.models import UserPreference
 from app.repositories.base_repo import BaseRepository
 from core.utils import safe_json_loads
+from core.crypto import encrypt_api_key, decrypt_api_key
 from core.log import get_logger
 
 logger = get_logger()
@@ -15,7 +16,11 @@ class SettingsRepository(BaseRepository):
         prefs = self._db.query(UserPreference).all()
         result = {}
         for p in prefs:
-            result[p.key] = safe_json_loads(p.value, fallback=p.value) if p.value else ""
+            parsed = safe_json_loads(p.value, fallback=p.value) if p.value else ""
+            if p.key == "api_key" and isinstance(parsed, str) and parsed:
+                result[p.key] = decrypt_api_key(parsed)
+            else:
+                result[p.key] = parsed
         return result
 
     def save(self, data: dict) -> dict:
@@ -24,7 +29,10 @@ class SettingsRepository(BaseRepository):
             with self._write_session():
                 for key, value in data.items():
                     p = self._db.query(UserPreference).filter(UserPreference.key == key).first()
-                    str_value = json.dumps(value, ensure_ascii=False)
+                    if key == "api_key" and isinstance(value, str) and value:
+                        str_value = json.dumps(encrypt_api_key(value), ensure_ascii=False)
+                    else:
+                        str_value = json.dumps(value, ensure_ascii=False)
                     if p:
                         p.value = str_value
                     else:

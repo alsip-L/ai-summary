@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from .exceptions import (
     AISummarySDKError,
-    ConnectionError,
+    SDKConnectionError,
     AuthenticationError,
     ValidationError,
     APIError,

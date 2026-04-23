@@ -1,25 +1,50 @@
 const BASE_URL = ''
 
-// API Token 缓存：从后端获取后缓存，用于需要认证的端点
-let _apiToken = null
+const TOKEN_KEY = 'ai_summary_api_token'
+
+function _loadToken() {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+function _saveToken(token) {
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token)
+    } else {
+      sessionStorage.removeItem(TOKEN_KEY)
+    }
+  } catch {
+    // sessionStorage 不可用时静默失败
+  }
+}
+
+let _apiToken = _loadToken()
 
 export function setApiToken(token) {
   _apiToken = token
+  _saveToken(token)
 }
 
 export function getStoredApiToken() {
   return _apiToken
 }
 
+export function clearApiToken() {
+  _apiToken = null
+  _saveToken(null)
+}
+
 async function request(url, options = {}) {
   const defaults = {
     credentials: 'same-origin',
   }
-  // Only set Content-Type when there is a body
   if (options.body) {
     defaults.headers = { 'Content-Type': 'application/json' }
   }
-  // 自动附加 API Token（如果已设置）
   if (_apiToken) {
     defaults.headers = { ...(defaults.headers || {}), 'X-API-Token': _apiToken }
   }
@@ -31,6 +56,9 @@ async function request(url, options = {}) {
 
   const response = await fetch(BASE_URL + url, merged)
   if (!response.ok) {
+    if (response.status === 401) {
+      clearApiToken()
+    }
     const errData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }))
     throw new Error(errData.error || errData.message || `HTTP ${response.status}`)
   }
@@ -39,7 +67,6 @@ async function request(url, options = {}) {
 }
 
 export const api = {
-  // 使用 secret_key 获取 API Token
   getToken: (secretKey) => request('/api/settings/token', { method: 'POST', body: JSON.stringify({ secret_key: secretKey }) }),
 
   getProviders: () => request('/api/providers/'),

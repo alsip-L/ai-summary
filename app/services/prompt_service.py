@@ -9,7 +9,8 @@ class PromptService:
         self._repo = PromptRepository(db)
 
     def list_all(self) -> dict:
-        return self._repo.get_all()
+        prompts = self._repo.get_all()
+        return ok(prompts=prompts)
 
     def create(self, data: dict) -> dict:
         name = data.get("name", "")

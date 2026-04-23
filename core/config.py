@@ -38,8 +38,9 @@ class ConfigManager:
             return cls._instance
 
     def __init__(self):
-        if not self._loaded:
-            self._load()
+        with self._class_lock:
+            if not self._loaded:
+                self._load()
 
     def _load(self) -> None:
         """加载配置文件"""

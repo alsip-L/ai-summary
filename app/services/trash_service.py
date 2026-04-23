@@ -9,7 +9,8 @@ class TrashService:
         self._repo = TrashRepository(db)
 
     def get_all(self) -> dict:
-        return self._repo.get_all()
+        data = self._repo.get_all()
+        return ok(providers=data.get("providers", []), custom_prompts=data.get("custom_prompts", []))
 
     def restore_provider(self, name: str) -> dict:
         if self._repo.restore_provider(name):

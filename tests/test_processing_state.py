@@ -13,10 +13,10 @@ from app.services.processing_state import ProcessingState
 class TestProcessingState(unittest.TestCase):
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def test_initial_state_is_idle(self):
         state = ProcessingState()
@@ -84,7 +84,7 @@ class TestProcessingState(unittest.TestCase):
         state1.start(total_files=5)
         self.assertEqual(state1.get_dict()["status"], "scanning")
 
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
         state2 = ProcessingState()
         self.assertEqual(state2.get_dict()["status"], "idle")
 

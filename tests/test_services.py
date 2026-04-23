@@ -42,7 +42,7 @@ class _BaseDBTest(unittest.TestCase):
         self.db.close()
         self._engine.dispose()
         os.unlink(self._db_path)
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
 
 class TestProviderService(_BaseDBTest):
@@ -56,8 +56,8 @@ class TestProviderService(_BaseDBTest):
             "models": {"m1": "model-1"},
         })
         self.assertTrue(result["success"])
-        all_providers = svc.list_all()
-        names = [p["name"] for p in all_providers]
+        all_data = svc.list_all()
+        names = [p["name"] for p in all_data["providers"]]
         self.assertIn("TestProvider", names)
 
     def test_create_provider_invalid_data(self):
@@ -70,7 +70,8 @@ class TestProviderService(_BaseDBTest):
         svc.create({"name": "ToDelete", "base_url": "https://t.com", "api_key": "k", "models": {}})
         result = svc.delete("ToDelete")
         self.assertTrue(result["success"])
-        names = [p["name"] for p in svc.list_all()]
+        all_data = svc.list_all()
+        names = [p["name"] for p in all_data["providers"]]
         self.assertNotIn("ToDelete", names)
 
     def test_update_api_key(self):
@@ -94,8 +95,8 @@ class TestPromptService(_BaseDBTest):
         svc = PromptService(self.db)
         result = svc.create({"name": "Summary", "content": "Summarize this"})
         self.assertTrue(result["success"])
-        all_prompts = svc.list_all()
-        names = [p["name"] for p in all_prompts]
+        all_data = svc.list_all()
+        names = [p["name"] for p in all_data["prompts"]]
         self.assertIn("Summary", names)
 
     def test_delete_prompt_moves_to_trash(self):
@@ -103,7 +104,8 @@ class TestPromptService(_BaseDBTest):
         svc.create({"name": "ToDelete", "content": "content"})
         result = svc.delete("ToDelete")
         self.assertTrue(result["success"])
-        names = [p["name"] for p in svc.list_all()]
+        all_data = svc.list_all()
+        names = [p["name"] for p in all_data["prompts"]]
         self.assertNotIn("ToDelete", names)
 
 
@@ -167,8 +169,9 @@ class TestSettingsService(_BaseDBTest):
 class TestTaskService(_BaseDBTest):
 
     def test_start_missing_api_key(self):
-        svc = TaskService(self.db)
+        svc = TaskService()
         result = svc.start(
+            db=self.db,
             provider_name="P1", model_key="m1", api_key="",
             prompt_name="Prompt1", directory="/tmp",
         )
@@ -176,8 +179,11 @@ class TestTaskService(_BaseDBTest):
         self.assertIn("API Key", result["error"])
 
     def test_start_invalid_directory(self):
-        svc = TaskService(self.db)
+        ProviderService(self.db).create({"name": "P1", "base_url": "https://p.com", "api_key": "k", "models": {"m1": "model-1"}})
+        PromptService(self.db).create({"name": "Prompt1", "content": "test prompt"})
+        svc = TaskService()
         result = svc.start(
+            db=self.db,
             provider_name="P1", model_key="m1", api_key="key",
             prompt_name="Prompt1", directory="/nonexistent_dir_xyz",
         )
@@ -185,8 +191,9 @@ class TestTaskService(_BaseDBTest):
         self.assertIn("目录", result["error"])
 
     def test_start_provider_not_found(self):
-        svc = TaskService(self.db)
+        svc = TaskService()
         result = svc.start(
+            db=self.db,
             provider_name="NonExistent", model_key="m1", api_key="key",
             prompt_name="Prompt1", directory=tempfile.mkdtemp(),
         )
@@ -194,12 +201,12 @@ class TestTaskService(_BaseDBTest):
         self.assertIn("提供商", result["error"])
 
     def test_get_status(self):
-        svc = TaskService(self.db)
+        svc = TaskService()
         status = svc.get_status()
         self.assertIn("status", status)
 
     def test_cancel_when_idle(self):
-        svc = TaskService(self.db)
+        svc = TaskService()
         result = svc.cancel()
         self.assertFalse(result["success"])
 
@@ -207,17 +214,17 @@ class TestTaskService(_BaseDBTest):
 class TestProcessingStateReset(unittest.TestCase):
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def test_reset_creates_fresh_instance(self):
         state1 = ProcessingState()
         state1.start(total_files=5)
         self.assertEqual(state1.get_dict()["status"], "scanning")
 
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
         state2 = ProcessingState()
         self.assertEqual(state2.get_dict()["status"], "idle")
 

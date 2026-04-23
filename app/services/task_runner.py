@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
-import time
 from openai import OpenAI
-from app.services.processing_state import ProcessingState, FILE_MAX_RETRIES, RETRY_BASE_DELAY
+from app.services.processing_state import ProcessingState, FILE_MAX_RETRIES, RETRY_BASE_DELAY, interruptible_sleep
 from app.services.file_processor import FileProcessor
 from app.services.failed_record_service import FailedRecordService
 from core.log import get_logger
@@ -26,6 +25,8 @@ class TaskRunner:
     def run_batch(self, directory, client, prompt_content, model_id, skip_existing):
         """批量处理主循环"""
         try:
+            if not self._state.is_running():
+                self._state.start()
             logger.info(f"开始扫描目录: {directory}")
             txt_files = self._file_processor.scan_txt_files(directory, skip_existing)
             if not txt_files:
@@ -41,6 +42,8 @@ class TaskRunner:
     def run_retry_batch(self, file_paths, client, prompt_content, model_id):
         """重跑失败文件的主循环"""
         try:
+            if not self._state.is_running():
+                self._state.start()
             logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
             self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑")
         except Exception as e:
@@ -49,17 +52,14 @@ class TaskRunner:
 
     def _run_processing_loop(self, file_paths, client, prompt_content, model_id, log_prefix):
         """通用的文件处理循环"""
-        self._state.start()
         try:
             if self._state.is_cancelled():
-                self._state.cancel()
                 return
 
             self._state.start_processing(len(file_paths))
 
             for i, file_path in enumerate(file_paths):
                 if self._state.is_cancelled():
-                    self._state.cancel()
                     return
 
                 progress_before = int((i / len(file_paths)) * 100)
@@ -107,7 +107,10 @@ class TaskRunner:
                 f"({delay}秒后): {os.path.basename(file_path)} - {last_error}"
             )
             self._state.set_retrying(attempt)
-            time.sleep(delay)
+            if not interruptible_sleep(self._state, delay):
+                self._state.clear_retrying()
+                logger.info(f"文件重试已取消: {os.path.basename(file_path)}")
+                return {"source": file_path, "error": "用户取消了处理", "retryable": False}
 
             if self._state.is_cancelled():
                 self._state.clear_retrying()

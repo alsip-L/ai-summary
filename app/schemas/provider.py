@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 
 class ProviderCreate(BaseModel):
-    name: str = Field(max_length=100, description="提供商名称，如 openai、deepseek")
+    name: str = Field(min_length=1, max_length=100, description="提供商名称，如 openai、deepseek")
     base_url: str = Field(min_length=1, pattern=r"^https?://", description="API Base URL，须以 http:// 或 https:// 开头")
     api_key: str = Field(min_length=1, description="API Key")
     models: dict[str, str] = Field(default_factory=dict, description="模型映射 {显示名: 模型ID}")

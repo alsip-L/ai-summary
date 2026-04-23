@@ -148,10 +148,10 @@ class TestProcessFileWithRetry(unittest.TestCase):
     """测试文件级重试逻辑"""
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def _make_runner(self, file_processor):
         state = ProcessingState()
@@ -181,7 +181,7 @@ class TestProcessFileWithRetry(unittest.TestCase):
         self.assertEqual(mock_process.call_count, 1)
 
     @patch.object(FileProcessor, 'process_file')
-    @patch('app.services.task_runner.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     def test_retryable_error_then_success(self, mock_sleep, mock_process):
         """可重试错误 → 重试后成功"""
         mock_process.side_effect = [
@@ -193,10 +193,10 @@ class TestProcessFileWithRetry(unittest.TestCase):
         result = runner._process_file_with_retry("test.txt", None, None, None)
         self.assertEqual(result["output"], "test.md")
         self.assertEqual(mock_process.call_count, 2)
-        mock_sleep.assert_called_once()
+        self.assertTrue(mock_sleep.called)
 
     @patch.object(FileProcessor, 'process_file')
-    @patch('app.services.task_runner.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     def test_retryable_error_all_retries_fail(self, mock_sleep, mock_process):
         """可重试错误 → 重试全部失败"""
         mock_process.return_value = {"source": "test.txt", "error": "服务端错误", "retryable": True}
@@ -210,7 +210,7 @@ class TestProcessFileWithRetry(unittest.TestCase):
         self.assertEqual(mock_process.call_count, 1 + retry_count)
 
     @patch.object(FileProcessor, 'process_file')
-    @patch('app.services.task_runner.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     def test_retryable_then_non_retryable_stops(self, mock_sleep, mock_process):
         """可重试 → 变为不可重试 → 立即停止"""
         mock_process.side_effect = [
@@ -225,7 +225,7 @@ class TestProcessFileWithRetry(unittest.TestCase):
         self.assertEqual(mock_process.call_count, 2)
 
     @patch.object(FileProcessor, 'process_file')
-    @patch('app.services.task_runner.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     def test_retry_delay_exponential_backoff(self, mock_sleep, mock_process):
         """验证指数退避延迟：第2次重试 delay = RETRY_BASE_DELAY * 2^0 = 2s"""
         mock_process.side_effect = [
@@ -235,10 +235,11 @@ class TestProcessFileWithRetry(unittest.TestCase):
         runner = self._make_runner(MagicMock(spec=FileProcessor))
         runner._file_processor.process_file = mock_process
         runner._process_file_with_retry("test.txt", None, None, None)
-        mock_sleep.assert_called_once_with(RETRY_BASE_DELAY)
+        total_sleep = sum(call.args[0] for call in mock_sleep.call_args_list)
+        self.assertAlmostEqual(total_sleep, RETRY_BASE_DELAY, places=1)
 
     @patch.object(FileProcessor, 'process_file')
-    @patch('app.services.task_runner.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     def test_cancel_during_retry(self, mock_sleep, mock_process):
         """重试期间被取消 → 返回取消错误"""
         state = ProcessingState()
@@ -264,10 +265,10 @@ class TestCallAIRetry(unittest.TestCase):
     """测试 AI 调用级重试逻辑"""
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     @patch('app.services.ai_client.get_ws_handler')
     def test_success_on_first_call(self, mock_ws):
@@ -285,7 +286,7 @@ class TestCallAIRetry(unittest.TestCase):
         result = ai_client.call(mock_client, "content", "system", "model-1")
         self.assertEqual(result, "AI response")
 
-    @patch('app.services.ai_client.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     @patch('app.services.ai_client.get_ws_handler')
     def test_retryable_error_then_success(self, mock_ws, mock_sleep):
         """RetryableError → 重试后成功"""
@@ -306,7 +307,7 @@ class TestCallAIRetry(unittest.TestCase):
         self.assertEqual(result, "success")
         self.assertEqual(mock_client.chat.completions.create.call_count, 2)
 
-    @patch('app.services.ai_client.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     @patch('app.services.ai_client.get_ws_handler')
     def test_retryable_error_all_retries_exhausted(self, mock_ws, mock_sleep):
         """RetryableError → 重试 MAX_RETRIES 次后抛出"""
@@ -343,7 +344,7 @@ class TestCallAIRetry(unittest.TestCase):
             ai_client.call(mock_client, "content", "system", "model-1")
         self.assertEqual(mock_client.chat.completions.create.call_count, 1)
 
-    @patch('app.services.ai_client.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     @patch('app.services.ai_client.get_ws_handler')
     def test_unclassified_error_classified_as_retryable(self, mock_ws, mock_sleep):
         """未分类异常 → classify_openai_error 判定为可重试 → 重试"""
@@ -379,7 +380,7 @@ class TestCallAIRetry(unittest.TestCase):
             ai_client.call(mock_client, "content", "system", "model-1")
         self.assertEqual(mock_client.chat.completions.create.call_count, 1)
 
-    @patch('app.services.ai_client.time.sleep')
+    @patch('app.services.processing_state.time.sleep')
     @patch('app.services.ai_client.get_ws_handler')
     def test_exponential_backoff_delay(self, mock_ws, mock_sleep):
         """验证 AI 调用重试的指数退避：attempt=1 → 2s, attempt=2 → 4s"""
@@ -391,12 +392,9 @@ class TestCallAIRetry(unittest.TestCase):
         with self.assertRaises(RetryableError):
             ai_client.call(mock_client, "content", "system", "model-1")
 
-        expected_calls = []
-        for attempt in range(1, MAX_RETRIES):
-            delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
-            expected_calls.append(unittest.mock.call(delay))
-
-        mock_sleep.assert_has_calls(expected_calls)
+        expected_total = sum(RETRY_BASE_DELAY * (2 ** (a - 1)) for a in range(1, MAX_RETRIES))
+        total_sleep = sum(call.args[0] for call in mock_sleep.call_args_list)
+        self.assertAlmostEqual(total_sleep, expected_total, places=1)
 
     @patch('app.services.ai_client.get_ws_handler')
     def test_empty_response_raises_provider_error(self, mock_ws):
@@ -483,10 +481,10 @@ class TestProcessingStateRetry(unittest.TestCase):
     """测试 ProcessingState 的重试状态管理"""
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def test_set_and_clear_retrying(self):
         """设置和清除重试状态"""
@@ -528,10 +526,10 @@ class TestProcessFileErrorClassification(unittest.TestCase):
     """测试 FileProcessor.process_file 对不同异常的分类返回"""
 
     def setUp(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     def tearDown(self):
-        ProcessingState.reset()
+        ProcessingState.reset(force=True)
 
     @patch('app.services.file_processor.read_file_with_encoding')
     def test_retryable_error_returns_retryable(self, mock_read):

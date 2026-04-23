@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import hmac
 import json
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from core.log import get_ws_handler, get_logger, LOGGER_NAME, WebSocketLogHandler
+from core.config import ConfigManager
+from app.auth import generate_api_token
 
 router = APIRouter(tags=["logs"])
 
@@ -46,7 +49,18 @@ def clear_logs():
 
 
 @router.websocket("/api/logs/ws")
-async def logs_ws(ws: WebSocket):
+async def logs_ws(ws: WebSocket, token: str = None):
+    secret_key = ConfigManager().get("system_settings.secret_key", "")
+    expected = generate_api_token(secret_key) if secret_key else ""
+    if not token or not expected or not hmac.compare_digest(token, expected):
+        await ws.accept()
+        try:
+            await ws.send_text(json.dumps({"type": "error", "message": "Authentication required"}))
+        except Exception:
+            pass
+        await ws.close()
+        return
+
     await ws.accept()
     handler = get_ws_handler()
     if handler is None:
