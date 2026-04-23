@@ -31,6 +31,7 @@ def list_providers(svc: ProviderService = Depends(get_provider_service)):
 def create_provider(
     data: ProviderCreate,
     svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.create(data.model_dump()))
 
@@ -47,6 +48,7 @@ def create_provider(
 def delete_provider(
     name: str,
     svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.delete(name))
 
@@ -99,6 +101,7 @@ def add_model(
     name: str,
     data: ModelCreate,
     svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.add_model(name, data.display_name, data.model_id))
 
@@ -116,5 +119,6 @@ def delete_model(
     name: str,
     model_name: str,
     svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
 ):
     return check_result(svc.delete_model(name, model_name))

@@ -8,6 +8,7 @@ export const useProviderStore = defineStore('provider', () => {
   const selectedProvider = ref('')
   const selectedModel = ref('')
   const apiKey = ref('')
+  const apiKeyMasked = ref(false)
   const directoryPath = ref('')
 
   async function loadAll() {
@@ -26,6 +27,8 @@ export const useProviderStore = defineStore('provider', () => {
     selectedModel.value = preferences.selected_model || ''
     apiKey.value = preferences.api_key || ''
     directoryPath.value = preferences.directory_path || ''
+    // 标记 API Key 是否为脱敏状态
+    apiKeyMasked.value = !!preferences.api_key_masked
     let needSave = false
     if (selectedProvider.value && !providers.value[selectedProvider.value]) {
       selectedProvider.value = ''
@@ -62,7 +65,17 @@ export const useProviderStore = defineStore('provider', () => {
   }
 
   async function fetchFullApiKey(name) {
-    const result = await api.getApiKey(name)
+    // 优先从 provider 端点获取
+    if (name) {
+      const result = await api.getApiKey(name)
+      return result.api_key || ''
+    }
+    // 从 preferences 认证端点获取
+    const result = await api.getPreferencesApiKey()
+    if (result.api_key) {
+      apiKey.value = result.api_key
+      apiKeyMasked.value = false
+    }
     return result.api_key || ''
   }
 
@@ -105,7 +118,7 @@ export const useProviderStore = defineStore('provider', () => {
   }
 
   return {
-    providers, providerNames, selectedProvider, selectedModel, apiKey, directoryPath,
+    providers, providerNames, selectedProvider, selectedModel, apiKey, apiKeyMasked, directoryPath,
     loadAll, getCurrentModels, getCurrentApiKey, isCurrentApiKeyMasked, fetchFullApiKey,
     createProvider, deleteProvider, saveApiKey, addModel, deleteModel, savePreferences,
   }

@@ -10,7 +10,15 @@ class PromptRepository(BaseRepository):
 
     def get_all(self) -> list[dict]:
         prompts = self._db.query(Prompt).filter(Prompt.is_deleted == False).all()
-        return [{"name": p.name, "content": p.content} for p in prompts]
+        return [
+            {
+                "name": p.name,
+                "content": p.content,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            }
+            for p in prompts
+        ]
 
     def get(self, name: str) -> str | None:
         p = self._db.query(Prompt).filter(Prompt.name == name, Prompt.is_deleted == False).first()
@@ -82,4 +90,12 @@ class PromptRepository(BaseRepository):
     def get_all_deleted(self) -> list[dict]:
         """获取所有已软删除的 Prompt"""
         prompts = self._db.query(Prompt).filter(Prompt.is_deleted == True).all()
-        return [{"name": p.name, "content": p.content} for p in prompts]
+        return [
+            {
+                "name": p.name,
+                "content": p.content,
+                "created_at": p.created_at.isoformat() if p.created_at else None,
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            }
+            for p in prompts
+        ]

@@ -93,6 +93,28 @@ class ProcessingState:
             self._retrying = False
             self._retry_attempt = 0
 
+    def start_if_idle(self, total_files: int = 0) -> bool:
+        """原子地启动任务（如果当前空闲），避免 TOCTOU 竞态条件
+
+        Returns:
+            True 表示成功启动，False 表示已有任务在运行
+        """
+        with self._state_lock:
+            if self._status in ("processing", "scanning"):
+                return False
+            self._status = "scanning"
+            self._progress = 0
+            self._total_files = total_files
+            self._processed_files_count = 0
+            self._current_file = ""
+            self._results = deque()
+            self._error = None
+            self._start_time = time.time()
+            self._cancelled = False
+            self._retrying = False
+            self._retry_attempt = 0
+            return True
+
     def start_processing(self, total_files: int):
         with self._state_lock:
             self._status = "processing"

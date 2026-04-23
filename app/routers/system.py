@@ -81,8 +81,7 @@ def rebuild(_auth=Depends(require_auth)):
         for helper_name in ("_restart_helper.py", "_restart_helper.sh", "_restart_helper.bat"):
             helper_path = PROJECT_ROOT / helper_name
             try:
-                if helper_path.exists():
-                    helper_path.unlink()
+                helper_path.unlink(missing_ok=True)
             except Exception:
                 pass
 

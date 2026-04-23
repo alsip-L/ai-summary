@@ -145,6 +145,9 @@ class ConfigManager:
         """设置配置项（支持点号路径，线程安全，原子写入）"""
         with self._lock:
             if key is None:
+                if not isinstance(value, dict):
+                    logger.error("set(key=None) 要求 value 为 dict 类型")
+                    return False
                 self._cache = value
                 return self._save_unsafe()
             if key == "":

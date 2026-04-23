@@ -30,6 +30,8 @@ class ProviderRepository(BaseRepository):
             "api_key_masked": bool(raw_key),
             "models": safe_json_loads(p.models_json),
             "is_active": p.is_active,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
         }
 
     def _to_dict_raw(self, p: Provider) -> dict:
@@ -40,6 +42,8 @@ class ProviderRepository(BaseRepository):
             "api_key": decrypt_api_key(p.api_key),
             "models": safe_json_loads(p.models_json),
             "is_active": p.is_active,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
         }
 
     def get_all(self) -> list[dict]:

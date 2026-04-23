@@ -186,10 +186,10 @@ function connect() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const basePath = location.pathname.replace(/\/[^/]*$/, '')
   const token = getStoredApiToken()
-  const url = token
-    ? `${protocol}//${location.host}${basePath}/api/logs/ws?token=${encodeURIComponent(token)}`
-    : `${protocol}//${location.host}${basePath}/api/logs/ws`
-  ws = new WebSocket(url)
+  const url = `${protocol}//${location.host}${basePath}/api/logs/ws`
+  // 通过 WebSocket 子协议传递 token，避免 token 出现在 URL 中被日志记录
+  const protocols = token ? [`x-api-token.${token}`] : undefined
+  ws = new WebSocket(url, protocols)
 
   ws.onopen = () => {
     connected.value = true

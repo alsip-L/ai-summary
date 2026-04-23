@@ -26,7 +26,7 @@ class FileBrowserService:
             p for p in allowed_paths
             if p.rstrip("\\/") not in _DANGEROUS_ROOTS
             and not _ROOT_DRIVE_RE.match(p)
-            and len(p.rstrip("\\")) > 3
+            and len(p.rstrip("\\/")) > 3
         ]
 
         if not allowed_paths:
@@ -35,8 +35,13 @@ class FileBrowserService:
         real_path = os.path.realpath(path)
         for allowed in allowed_paths:
             real_allowed = os.path.realpath(allowed)
-            if real_path == real_allowed or real_path.startswith(real_allowed + os.sep):
-                return True
+            # Windows 路径比较大小写不敏感
+            if sys.platform == "win32":
+                if real_path.lower() == real_allowed.lower() or real_path.lower().startswith(real_allowed.lower() + os.sep):
+                    return True
+            else:
+                if real_path == real_allowed or real_path.startswith(real_allowed + os.sep):
+                    return True
         return False
 
     def get_drives(self) -> dict:
@@ -84,16 +89,16 @@ class FileBrowserService:
 
     def view_result(self, file_path: str) -> dict:
         if not file_path:
-            return {"success": False, "error": "未提供文件路径"}
+            return {"success": False, "error": "未提供文件路径", "error_code": "invalid_request"}
         if not self._validate_path(file_path):
             logger.warning(f"路径遍历防护: 拒绝访问文件 {file_path}")
-            return {"success": False, "error": "路径不在允许的访问范围内"}
+            return {"success": False, "error": "路径不在允许的访问范围内", "error_code": "forbidden"}
 
         real_path = os.path.realpath(file_path)
         if not os.path.exists(real_path) or not os.path.isfile(real_path):
-            return {"success": False, "error": "文件不存在"}
+            return {"success": False, "error": "文件不存在", "error_code": "not_found"}
         if not real_path.endswith((".md", ".txt")):
-            return {"success": False, "error": "不支持的文件类型"}
+            return {"success": False, "error": "不支持的文件类型", "error_code": "unsupported_type"}
 
         try:
             content = read_file_with_encoding(real_path)
@@ -104,4 +109,4 @@ class FileBrowserService:
                 "content": content,
             }
         except FileProcessingError:
-            return {"success": False, "error": "文件读取失败"}
+            return {"success": False, "error": "文件读取失败", "error_code": "read_error"}

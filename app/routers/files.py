@@ -55,11 +55,11 @@ def view_result(
 ):
     result = svc.view_result(path)
     if not result.get("success"):
+        from fastapi import HTTPException
+        error_code = result.get("error_code", "")
         error = result.get("error", "")
-        if "不存在" in error or "not found" in error.lower():
-            from fastapi import HTTPException
+        if error_code == "not_found":
             raise HTTPException(status_code=404, detail=error)
-        if "不支持" in error or "不在允许" in error:
-            from fastapi import HTTPException
+        if error_code in ("forbidden", "unsupported_type", "invalid_request"):
             raise HTTPException(status_code=400, detail=error)
     return check_result(result)

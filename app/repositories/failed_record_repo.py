@@ -68,6 +68,7 @@ class FailedRecordRepository(BaseRepository):
                 "error": r.error,
                 "retryable": r.retryable,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
+                "updated_at": r.updated_at.isoformat() if r.updated_at else None,
             }
             for r in records
         ]
@@ -94,8 +95,9 @@ class FailedRecordRepository(BaseRepository):
     def clear_all(self) -> int:
         """清除所有失败记录，返回删除数量"""
         try:
-            count = self._db.query(FailedRecord).count()
-            with self._write_session():
+            with self._write_session() as auto_commit:
+                # 在同一事务内计数并删除
+                count = self._db.query(FailedRecord).count()
                 self._db.query(FailedRecord).delete()
             return count
         except Exception as e:

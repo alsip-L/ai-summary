@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Index
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Index, func
 from app.database import Base
 
 
@@ -19,6 +19,8 @@ class Provider(Base):
     models_json = Column(Text, default="{}")
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
 
 
 class Prompt(Base):
@@ -32,6 +34,8 @@ class Prompt(Base):
     name = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
 
 
 class UserPreference(Base):
@@ -40,6 +44,8 @@ class UserPreference(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String, unique=True, nullable=False)
     value = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
 
 
 class FailedRecord(Base):
@@ -53,4 +59,5 @@ class FailedRecord(Base):
     source = Column(String, nullable=False)
     error = Column(Text, default="")
     retryable = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)

@@ -66,9 +66,6 @@ class TaskService:
         directory: str,
         skip_existing: bool = False,
     ) -> dict:
-        if self._state.is_running():
-            return {"success": False, "error": "已有任务正在运行"}
-
         if not api_key:
             return {"success": False, "error": "API Key 未配置"}
 
@@ -91,7 +88,8 @@ class TaskService:
 
         logger.info(f"启动处理任务: provider={provider_name}, model={model_id}, directory={directory}")
 
-        self._state.start()
+        if not self._state.start_if_idle():
+            return {"success": False, "error": "已有任务正在运行"}
 
         def _run_in_thread():
             client = OpenAI(api_key=client_api_key, base_url=client_base_url)
@@ -154,7 +152,8 @@ class TaskService:
 
         logger.info(f"启动失败重跑: {len(existing_sources)} 个文件")
 
-        self._state.start()
+        if not self._state.start_if_idle():
+            return {"success": False, "error": "已有任务正在运行"}
 
         def _run_in_thread():
             client = OpenAI(api_key=client_api_key, base_url=client_base_url)

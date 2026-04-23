@@ -32,9 +32,16 @@ export const useTaskStore = defineStore('task', () => {
     const providerStore = useProviderStore()
     const promptStore = usePromptStore()
 
-    const apiKey = providerStore.getCurrentApiKey()
+    // 获取完整 API Key（getCurrentApiKey 可能返回掩码值）
+    let apiKey = providerStore.getCurrentApiKey()
     if (!apiKey) {
       throw new Error('API Key 未配置')
+    }
+    if (providerStore.isCurrentApiKeyMasked()) {
+      apiKey = await providerStore.fetchFullApiKey(providerStore.selectedProvider)
+      if (!apiKey) {
+        throw new Error('获取完整 API Key 失败，请重新配置')
+      }
     }
 
     const data = {
@@ -57,35 +64,41 @@ export const useTaskStore = defineStore('task', () => {
 
   function startPolling() {
     stopPolling()
-    pollTimer = setInterval(async () => {
-      try {
-        const data = await api.getProcessingStatus()
-        status.value = data.status
-        progress.value = data.progress
-        totalFiles.value = data.total_files
-        processedFilesCount.value = data.processed_files_count
-        currentFile.value = data.current_file
-        results.value = data.results || []
-        error.value = data.error
-        startTime.value = data.start_time
-        cancelled.value = data.cancelled
-        retrying.value = data.retrying || false
-        retryAttempt.value = data.retry_attempt || 0
-        retryMax.value = data.retry_max || 2
+    function poll() {
+      pollTimer = setTimeout(async () => {
+        try {
+          const data = await api.getProcessingStatus()
+          status.value = data.status
+          progress.value = data.progress
+          totalFiles.value = data.total_files
+          processedFilesCount.value = data.processed_files_count
+          currentFile.value = data.current_file
+          results.value = data.results || []
+          error.value = data.error
+          startTime.value = data.start_time
+          cancelled.value = data.cancelled
+          retrying.value = data.retrying || false
+          retryAttempt.value = data.retry_attempt || 0
+          retryMax.value = data.retry_max || 2
 
-        if (!isProcessing.value) {
-          stopPolling()
-          loadFailedRecords()
+          if (!isProcessing.value) {
+            pollTimer = null
+            loadFailedRecords()
+            return
+          }
+        } catch (e) {
+          console.error('Polling error:', e)
         }
-      } catch (e) {
-        console.error('Polling error:', e)
-      }
-    }, 1000)
+        // 上次请求完成后才发起下次，避免乱序
+        poll()
+      }, 1000)
+    }
+    poll()
   }
 
   function stopPolling() {
     if (pollTimer) {
-      clearInterval(pollTimer)
+      clearTimeout(pollTimer)
       pollTimer = null
     }
   }
@@ -130,9 +143,16 @@ export const useTaskStore = defineStore('task', () => {
     const providerStore = useProviderStore()
     const promptStore = usePromptStore()
 
-    const apiKey = providerStore.getCurrentApiKey()
+    // 获取完整 API Key（getCurrentApiKey 可能返回掩码值）
+    let apiKey = providerStore.getCurrentApiKey()
     if (!apiKey) {
       throw new Error('API Key 未配置')
+    }
+    if (providerStore.isCurrentApiKeyMasked()) {
+      apiKey = await providerStore.fetchFullApiKey(providerStore.selectedProvider)
+      if (!apiKey) {
+        throw new Error('获取完整 API Key 失败，请重新配置')
+      }
     }
 
     const data = {

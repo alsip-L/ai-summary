@@ -19,5 +19,8 @@ class BaseRepository:
             if auto_commit:
                 self._db.commit()
         except Exception:
-            self._db.rollback()
+            try:
+                self._db.rollback()
+            except Exception:
+                pass  # rollback 失败不应掩盖原始异常
             raise

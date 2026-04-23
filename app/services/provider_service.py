@@ -28,7 +28,15 @@ class ProviderService:
         provider = self._repo.get_raw(name)
         if not provider:
             return fail("提供商不存在")
-        return ok(api_key=provider.get("api_key", ""))
+        api_key = provider.get("api_key", "")
+        # 脱敏：仅显示前4后4字符
+        if api_key and len(api_key) > 8:
+            masked = api_key[:4] + "****" + api_key[-4:]
+        elif api_key:
+            masked = "****"
+        else:
+            masked = ""
+        return ok(api_key=masked, api_key_masked=True)
 
     def update_api_key(self, name: str, api_key: str) -> dict:
         if self._repo.update_api_key(name, api_key):

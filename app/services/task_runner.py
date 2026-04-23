@@ -25,8 +25,6 @@ class TaskRunner:
     def run_batch(self, directory, client, prompt_content, model_id, skip_existing):
         """批量处理主循环"""
         try:
-            if not self._state.is_running():
-                self._state.start()
             logger.info(f"开始扫描目录: {directory}")
             txt_files = self._file_processor.scan_txt_files(directory, skip_existing)
             if not txt_files:
@@ -42,8 +40,6 @@ class TaskRunner:
     def run_retry_batch(self, file_paths, client, prompt_content, model_id):
         """重跑失败文件的主循环"""
         try:
-            if not self._state.is_running():
-                self._state.start()
             logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
             self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑")
         except Exception as e:
@@ -135,4 +131,4 @@ class TaskRunner:
             f"{os.path.basename(file_path)} - {last_error}"
         )
         self._state.clear_retrying()
-        return {"source": file_path, "error": f"重试{FILE_MAX_RETRIES}次仍失败: {last_error}", "retryable": True}
+        return {"source": file_path, "error": f"重试{FILE_MAX_RETRIES}次仍失败: {last_error}", "retryable": False}

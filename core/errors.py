@@ -8,6 +8,9 @@ class AISummaryException(Exception):
         super().__init__(message)
         self.message = message
         self.cause = cause
+        # 使用 Python 标准异常链机制，使 traceback 和调试工具能显示完整异常链
+        if cause is not None:
+            self.__cause__ = cause
 
     def __str__(self):
         if self.cause:

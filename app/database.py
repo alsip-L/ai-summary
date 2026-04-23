@@ -14,9 +14,10 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 @event.listens_for(engine, "connect")
 def _set_sqlite_pragma(dbapi_connection, connection_record):
-    """为 SQLite 连接设置 WAL 模式，提高并发读写安全性"""
+    """为 SQLite 连接设置 WAL 模式和外键支持，提高并发读写安全性"""
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
 
@@ -29,9 +30,12 @@ class Base(DeclarativeBase):
 
 @contextmanager
 def get_db_session():
-    """数据库会话上下文管理器，自动管理会话的获取和释放"""
+    """数据库会话上下文管理器，自动管理会话的获取、回滚和释放"""
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

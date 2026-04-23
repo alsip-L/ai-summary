@@ -11,17 +11,37 @@ logger = get_logger()
 
 class SettingsRepository(BaseRepository):
 
+    def _mask_api_key(self, api_key: str) -> str:
+        """脱敏 API Key，隐藏中间部分"""
+        if not api_key:
+            return ""
+        if len(api_key) <= 8:
+            return api_key[:2] + "***" + api_key[-2:] if len(api_key) >= 4 else "***"
+        return api_key[:4] + "******" + api_key[-4:]
+
     def get_all(self) -> dict:
-        """获取所有用户偏好"""
+        """获取所有用户偏好（api_key 已脱敏）"""
         prefs = self._db.query(UserPreference).all()
         result = {}
         for p in prefs:
             parsed = safe_json_loads(p.value, fallback=p.value) if p.value else ""
             if p.key == "api_key" and isinstance(parsed, str) and parsed:
-                result[p.key] = decrypt_api_key(parsed)
+                raw_key = decrypt_api_key(parsed)
+                result[p.key] = self._mask_api_key(raw_key)
+                result["api_key_masked"] = bool(raw_key)
             else:
                 result[p.key] = parsed
         return result
+
+    def get_api_key_raw(self) -> str | None:
+        """获取未脱敏的完整 API Key（仅限认证端点使用）"""
+        p = self._db.query(UserPreference).filter(UserPreference.key == "api_key").first()
+        if not p or not p.value:
+            return None
+        parsed = safe_json_loads(p.value, fallback=p.value)
+        if isinstance(parsed, str) and parsed:
+            return decrypt_api_key(parsed)
+        return None
 
     def save(self, data: dict) -> dict:
         """保存用户偏好"""

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import hmac
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from app.services.settings_service import SettingsService
@@ -23,7 +24,7 @@ class TokenRequest(BaseModel):
 )
 def get_token(data: TokenRequest):
     config_key = ConfigManager().get("system_settings.secret_key", "")
-    if not config_key or data.secret_key != config_key:
+    if not config_key or not hmac.compare_digest(data.secret_key, config_key):
         from fastapi import HTTPException
         raise HTTPException(status_code=401, detail="密钥不匹配")
     token = generate_api_token(data.secret_key)
@@ -33,17 +34,30 @@ def get_token(data: TokenRequest):
 @router.get(
     "/preferences",
     summary="获取用户偏好",
-    description="返回当前用户的偏好配置，包含选中的提供商、模型、提示词和目录路径。",
+    description="返回当前用户的偏好配置，敏感字段（api_key）已脱敏。",
     responses={200: {"description": "用户偏好配置"}},
 )
 def get_preferences(svc: SettingsService = Depends(get_settings_service)):
     return svc.get_preferences()
 
 
-@router.put(
+@router.get(
+    "/preferences/api-key",
+    summary="获取完整 API Key",
+    description="返回未脱敏的完整 API Key，需要认证。",
+    responses={200: {"description": "完整 API Key"}, 401: {"description": "未认证"}},
+)
+def get_api_key_raw(
+    svc: SettingsService = Depends(get_settings_service),
+    _auth=Depends(require_auth),
+):
+    return svc.get_api_key_raw()
+
+
+@router.patch(
     "/preferences",
     summary="更新用户偏好",
-    description="更新用户偏好配置，仅传入需要修改的字段。",
+    description="部分更新用户偏好配置，仅传入需要修改的字段，未传入的字段保持不变。",
     responses={
         200: {"description": "更新成功"},
         400: {"description": "参数不合法"},

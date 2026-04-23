@@ -25,11 +25,12 @@ def encrypt_api_key(plain_text: str) -> str:
         return ""
     try:
         from cryptography.fernet import Fernet
-        f = Fernet(_get_fernet_key())
-        return f.encrypt(plain_text.encode("utf-8")).decode("utf-8")
     except ImportError:
-        # cryptography 未安装时降级为明文存储（开发环境）
-        return plain_text
+        raise RuntimeError(
+            "cryptography 库未安装，无法加密 API Key。请执行: pip install cryptography"
+        )
+    f = Fernet(_get_fernet_key())
+    return f.encrypt(plain_text.encode("utf-8")).decode("utf-8")
 
 
 def decrypt_api_key(cipher_text: str) -> str:
@@ -38,11 +39,13 @@ def decrypt_api_key(cipher_text: str) -> str:
         return ""
     try:
         from cryptography.fernet import Fernet
+    except ImportError:
+        raise RuntimeError(
+            "cryptography 库未安装，无法解密 API Key。请执行: pip install cryptography"
+        )
+    try:
         f = Fernet(_get_fernet_key())
         return f.decrypt(cipher_text.encode("utf-8")).decode("utf-8")
-    except ImportError:
-        # cryptography 未安装时假设为明文
-        return cipher_text
     except Exception:
         # 解密失败（可能是旧数据为明文或 secret_key 已更改）
         # 如果看起来像 Fernet token（含 gAAAAA 前缀），说明密钥已更改

@@ -112,7 +112,7 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RetryableError)
     async def retryable_error_handler(request: Request, exc: RetryableError):
-        return JSONResponse(status_code=503, content={"success": False, "error": str(exc), "retryable": True})
+        return JSONResponse(status_code=503, content={"success": False, "error": exc.message, "retryable": True})
 
     @app.exception_handler(AISummaryException)
     async def base_error_handler(request: Request, exc: AISummaryException):
@@ -170,11 +170,18 @@ def create_app() -> FastAPI:
         async def serve_asset(file_path: str):
             from starlette.responses import Response
             full_path = assets_dir / file_path
-            if not full_path.is_file():
+            # 防止路径遍历：确保解析后的路径仍在 assets 目录内
+            try:
+                resolved = full_path.resolve()
+                if not resolved.is_relative_to(assets_dir.resolve()):
+                    return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+            except (ValueError, OSError):
+                return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+            if not resolved.is_file():
                 return JSONResponse(status_code=404, content={"detail": "Not found"})
-            content = full_path.read_bytes()
+            content = resolved.read_bytes()
             # 根据扩展名推断 MIME 类型
-            ext = full_path.suffix.lower()
+            ext = resolved.suffix.lower()
             mime_map = {".js": "application/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2"}
             media_type = mime_map.get(ext, "application/octet-stream")
             # Vite 构建的 assets 文件名含 hash（如 index-abc123.js），可长期缓存

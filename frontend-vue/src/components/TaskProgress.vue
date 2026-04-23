@@ -74,7 +74,7 @@ function updateElapsedTime() {
     elapsedTime.value = '0:00'
     return
   }
-  const elapsed = Math.floor((Date.now() / 1000) - taskStore.startTime)
+  const elapsed = Math.max(0, Math.floor((Date.now() / 1000) - taskStore.startTime))
   const min = Math.floor(elapsed / 60)
   const sec = elapsed % 60
   elapsedTime.value = `${min}:${sec.toString().padStart(2, '0')}`

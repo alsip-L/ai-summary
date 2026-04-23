@@ -101,7 +101,8 @@ export const api = {
   permanentDeletePrompt: (name) => request(`/api/settings/trash/prompt/${encodeURIComponent(name)}`, { method: 'DELETE' }),
 
   getPreferences: () => request('/api/settings/preferences'),
-  savePreferences: (data) => request('/api/settings/preferences', { method: 'PUT', body: JSON.stringify(data) }),
+  getPreferencesApiKey: () => request('/api/settings/preferences/api-key'),
+  savePreferences: (data) => request('/api/settings/preferences', { method: 'PATCH', body: JSON.stringify(data) }),
 
   getSystemSettings: () => request('/api/settings/system'),
   saveSystemSettings: (data) => request('/api/settings/system', { method: 'PUT', body: JSON.stringify(data) }),

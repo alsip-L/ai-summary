@@ -27,11 +27,21 @@ def safe_json_loads(json_str: str, fallback=None):
         return fallback
 
 
-def read_file_with_encoding(file_path: str, encodings: list[str] = None) -> str:
-    """尝试多种编码读取文件内容"""
+def read_file_with_encoding(file_path: str, encodings: list[str] = None, max_size: int = 10 * 1024 * 1024) -> str:
+    """尝试多种编码读取文件内容
+
+    Args:
+        file_path: 文件路径
+        encodings: 尝试的编码列表
+        max_size: 最大读取字节数，默认 10MB，防止 OOM
+    """
     if encodings is None:
         encodings = ["utf-8", "gbk"]
     try:
+        # 检查文件大小
+        file_size = os.path.getsize(file_path)
+        if file_size > max_size:
+            raise FileProcessingError(f"文件过大 ({file_size} 字节，上限 {max_size} 字节): {os.path.basename(file_path)}")
         for encoding in encodings:
             try:
                 with open(file_path, "r", encoding=encoding) as f:

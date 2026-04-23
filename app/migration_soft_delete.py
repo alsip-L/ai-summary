@@ -62,9 +62,21 @@ def sync_schema():
                         default_val = column.default.arg
                         if isinstance(default_val, bool):
                             default_val = 1 if default_val else 0
-                        default_clause = f" DEFAULT {default_val}"
+                        if isinstance(default_val, str):
+                            default_clause = f" DEFAULT '{default_val}'"
+                        else:
+                            default_clause = f" DEFAULT {default_val}"
                     elif column.server_default is not None:
-                        default_clause = f" DEFAULT {column.server_default.arg}"
+                        sd_arg = column.server_default.arg
+                        # 处理 func.now() 等 SQL 函数表达式
+                        if hasattr(sd_arg, 'compile'):
+                            from sqlalchemy.dialects import sqlite as sqlite_dialect
+                            compiled = sd_arg.compile(dialect=sqlite_dialect.dialect())
+                            default_clause = f" DEFAULT {compiled}"
+                        elif isinstance(sd_arg, str):
+                            default_clause = f" DEFAULT '{sd_arg}'"
+                        else:
+                            default_clause = f" DEFAULT {sd_arg}"
                     sql = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {sqlite_type}{default_clause}"
                     logger.info(f"Schema 同步: {sql}")
                     db.execute(text(sql))
@@ -172,10 +184,21 @@ def _migrate_unique_constraints(db):
                         default = f" DEFAULT '{default_val}'"
                     else:
                         default = f" DEFAULT {default_val}"
+                # 处理 func.now() 等 SQL 函数表达式
+                elif hasattr(default_val, 'compile'):
+                    from sqlalchemy.dialects import sqlite as sqlite_dialect
+                    compiled = default_val.compile(dialect=sqlite_dialect.dialect())
+                    default = f" DEFAULT {compiled}"
             elif col.get("server_default") is not None:
                 sd = col["server_default"]
                 if hasattr(sd, 'arg'):
-                    default = f" DEFAULT {sd.arg}"
+                    sd_arg = sd.arg
+                    if hasattr(sd_arg, 'compile'):
+                        from sqlalchemy.dialects import sqlite as sqlite_dialect
+                        compiled = sd_arg.compile(dialect=sqlite_dialect.dialect())
+                        default = f" DEFAULT {compiled}"
+                    else:
+                        default = f" DEFAULT {sd_arg}"
                 elif isinstance(sd, str):
                     default = f" DEFAULT {sd}"
             col_defs.append(f"{col_name} {col_type}{nullable}{default}")
@@ -188,12 +211,28 @@ def _migrate_unique_constraints(db):
                 unique = "UNIQUE" if idx.get("unique") else ""
                 other_indexes.append(f"CREATE {unique} INDEX IF NOT EXISTS {idx['name']} ON {table_name} ({cols})")
 
+        # 获取外键约束
+        foreign_keys = insp.get_foreign_keys(table_name)
+        fk_clauses = []
+        for fk in foreign_keys:
+            constrained_cols = ", ".join(fk["constrained_columns"])
+            referred_table = fk["referred_table"]
+            referred_cols = ", ".join(fk["referred_columns"])
+            fk_clauses.append(
+                f"FOREIGN KEY ({constrained_cols}) REFERENCES {referred_table} ({referred_cols})"
+            )
+
         # 重建表：去掉 name 的单列 unique，加上 (name, is_deleted) 复合 unique
         temp_table = f"{table_name}_temp"
         pk_col = columns[0]["name"]  # id
 
         col_defs_str = ", ".join(col_defs)
-        db.execute(text(f"CREATE TABLE {temp_table} ({col_defs_str}, PRIMARY KEY ({pk_col}))"))
+        # 包含外键约束
+        fk_str = ", ".join(fk_clauses)
+        create_parts = f"{col_defs_str}, PRIMARY KEY ({pk_col})"
+        if fk_str:
+            create_parts += f", {fk_str}"
+        db.execute(text(f"CREATE TABLE {temp_table} ({create_parts})"))
         db.execute(text(f"INSERT INTO {temp_table} SELECT * FROM {table_name}"))
         db.execute(text(f"DROP TABLE {table_name}"))
         db.execute(text(f"ALTER TABLE {temp_table} RENAME TO {table_name}"))

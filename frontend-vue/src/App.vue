@@ -69,6 +69,7 @@ const logPanel = ref(null)
 
 const message = reactive({ show: false, text: '', type: 'info', fading: false })
 const rebuilding = ref(false)
+let rebuildTimer = null
 
 function showMessage(text, type = 'info') {
   message.show = true
@@ -124,6 +125,11 @@ async function handleRebuild() {
 }
 
 function _waitForBackendAndReload(oldStartedAt) {
+  // 清理之前的轮询定时器
+  if (rebuildTimer) {
+    clearTimeout(rebuildTimer)
+    rebuildTimer = null
+  }
   // 轮询后端是否恢复，确认是新进程，最多等 60 秒
   let attempts = 0
   const maxAttempts = 60
@@ -133,35 +139,37 @@ function _waitForBackendAndReload(oldStartedAt) {
     attempts++
     if (attempts > maxAttempts) {
       rebuilding.value = false
+      rebuildTimer = null
       showMessage('重启超时，请手动刷新页面', 'error')
       return
     }
     fetch('/api/system/info?_t=' + Date.now(), { cache: 'no-store' })
       .then(res => {
         if (!res.ok) {
-          setTimeout(check, interval)
+          rebuildTimer = setTimeout(check, interval)
           return
         }
         return res.json().then(data => {
           // 确认是新进程：started_at 比旧的大，或者 PID 不同
           if (oldStartedAt && data.started_at && data.started_at <= oldStartedAt) {
             // 还是旧进程，继续等
-            setTimeout(check, interval)
+            rebuildTimer = setTimeout(check, interval)
             return
           }
           // 新进程已就绪，刷新页面加载新代码
+          rebuildTimer = null
           showMessage('重启成功，正在刷新页面...', 'info')
           setTimeout(() => { window.location.reload() }, 1500)
         })
       })
       .catch(() => {
         // 网络错误 = 后端还没启动，继续轮询
-        setTimeout(check, interval)
+        rebuildTimer = setTimeout(check, interval)
       })
   }
 
   // 先等 5 秒让旧后端退出 + 新后端启动，再开始轮询
-  setTimeout(check, 5000)
+  rebuildTimer = setTimeout(check, 5000)
 }
 
 async function handleStart() {

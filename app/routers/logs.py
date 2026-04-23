@@ -3,10 +3,10 @@ import asyncio
 import hmac
 import json
 import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from core.log import get_ws_handler, get_logger, LOGGER_NAME, WebSocketLogHandler
 from core.config import ConfigManager
-from app.auth import generate_api_token
+from app.auth import require_auth, generate_api_token
 
 router = APIRouter(tags=["logs"])
 
@@ -40,7 +40,7 @@ def logs_status():
     description="清除 WebSocket 日志处理器的缓冲区，释放内存。",
     responses={200: {"description": "清除成功"}},
 )
-def clear_logs():
+def clear_logs(_auth=Depends(require_auth)):
     handler = get_ws_handler()
     if handler is None:
         return {"success": False, "error": "日志处理器未找到"}
@@ -49,7 +49,16 @@ def clear_logs():
 
 
 @router.websocket("/api/logs/ws")
-async def logs_ws(ws: WebSocket, token: str = None):
+async def logs_ws(ws: WebSocket):
+    # 从 Sec-WebSocket-Protocol header 获取 token（前端通过子协议传递）
+    # 格式: x-api-token.<token_value>
+    # 也可从 X-API-Token header 获取（支持直接 header 传递）
+    token = ws.headers.get("x-api-token", "")
+    if not token:
+        # 尝试从 Sec-WebSocket-Protocol 子协议中提取
+        ws_protocol = ws.headers.get("sec-websocket-protocol", "")
+        if ws_protocol.startswith("x-api-token."):
+            token = ws_protocol[len("x-api-token."):]
     secret_key = ConfigManager().get("system_settings.secret_key", "")
     expected = generate_api_token(secret_key) if secret_key else ""
     if not token or not expected or not hmac.compare_digest(token, expected):

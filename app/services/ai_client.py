@@ -40,15 +40,21 @@ def classify_openai_error(e: Exception) -> Exception:
         status_code = getattr(e, "status_code", None)
         if status_code is not None and 500 <= status_code < 600:
             return RetryableError(f"服务端临时错误", cause=e)
+        # 4xx 客户端错误（非限流、非认证）不可重试
+        if status_code is not None and 400 <= status_code < 500:
+            return ProviderError(f"AI 调用失败: {error_str}", cause=e)
 
     # 明确不可重试的客户端错误：认证失败、模型不存在
     non_retryable_keywords = ["invalid_api_key", "authentication", "model_not_found", "invalid x-api-key"]
     if any(kw in error_str.lower() for kw in non_retryable_keywords):
         return ProviderError(f"AI 调用失败: {error_str}", cause=e)
 
-    # 其他 OpenAI/API 相关异常默认可重试（包括 400 invalid_parameter 等）
-    if "openai" in module.lower() or "APIStatusError" in error_name or "APIError" in error_name:
-        return RetryableError(f"API 临时错误", cause=e)
+    # 其他 OpenAI/API 相关异常：仅 openai 模块内的 5xx 或未知错误可重试
+    if "openai" in module.lower() and ("APIStatusError" in error_name or "APIError" in error_name):
+        status_code = getattr(e, "status_code", None)
+        if status_code is not None and 500 <= status_code < 600:
+            return RetryableError(f"API 临时错误", cause=e)
+        return ProviderError(f"AI 调用失败: {error_str}", cause=e)
 
     # 非 OpenAI 异常：Python 内置的网络/IO 临时异常视为可重试
     if isinstance(e, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError)):
@@ -84,13 +90,19 @@ class AIClient:
                     ],
                     stream=True,
                 )
-                full_response = []
-                for chunk in stream:
-                    if chunk.choices and chunk.choices[0].delta.content:
-                        token = chunk.choices[0].delta.content
-                        full_response.append(token)
-                        if ws_handler:
-                            ws_handler.put_stream(token)
+                try:
+                    full_response = []
+                    for chunk in stream:
+                        if chunk.choices and chunk.choices[0].delta.content:
+                            token = chunk.choices[0].delta.content
+                            full_response.append(token)
+                            if ws_handler:
+                                ws_handler.put_stream(token)
+                    response = "".join(full_response)
+                finally:
+                    # 确保流式响应被显式关闭，避免连接泄漏
+                    if hasattr(stream, 'close'):
+                        stream.close()
                 response = "".join(full_response)
                 if not response:
                     raise ProviderError("API 返回空响应")

@@ -17,7 +17,7 @@
       <div v-if="retryError" class="retry-error-msg">{{ retryError }}</div>
     </div>
     <div class="results-list">
-      <div v-for="(result, i) in taskStore.results" :key="i" class="result-item" :class="{ 'result-item-failed': result.error }">
+      <div v-for="result in taskStore.results" :key="result.source" class="result-item" :class="{ 'result-item-failed': result.error }">
         <span class="result-source" :title="result.source">{{ fileName(result.source) }}</span>
         <span class="result-arrow">&#8594;</span>
         <span class="result-output">
