@@ -34,7 +34,7 @@ def get_token(data: TokenRequest):
 @router.get(
     "/preferences",
     summary="获取用户偏好",
-    description="返回当前用户的偏好配置，敏感字段（api_key）已脱敏。",
+    description="返回当前用户的偏好配置。",
     responses={200: {"description": "用户偏好配置"}},
 )
 def get_preferences(svc: SettingsService = Depends(get_settings_service)):
@@ -44,7 +44,7 @@ def get_preferences(svc: SettingsService = Depends(get_settings_service)):
 @router.get(
     "/preferences/api-key",
     summary="获取完整 API Key",
-    description="返回未脱敏的完整 API Key，需要认证。",
+    description="返回完整 API Key，需要认证。",
     responses={200: {"description": "完整 API Key"}, 401: {"description": "未认证"}},
 )
 def get_api_key_raw(

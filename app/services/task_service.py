@@ -4,9 +4,8 @@ import threading
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
-from app.models import Provider, Prompt
+from app.models import Provider, Prompt, Model
 from app.repositories.provider_repo import ProviderRepository
-from core.utils import safe_json_loads
 from app.repositories.prompt_repo import PromptRepository
 from app.services.processing_state import ProcessingState
 from app.services.task_runner import TaskRunner
@@ -42,10 +41,10 @@ class TaskService:
         if not provider:
             return {"success": False, "error": f"提供商 '{provider_name}' 未找到"}
 
-        models = safe_json_loads(provider.models_json)
-        if model_key not in models:
+        model = db.query(Model).filter(Model.provider_id == provider.id, Model.display_name == model_key).first()
+        if not model:
             return {"success": False, "error": f"模型 '{model_key}' 未找到"}
-        model_id = models[model_key]
+        model_id = model.model_id
 
         prompt = db.query(Prompt).filter(Prompt.name == prompt_name, Prompt.is_deleted == False).first()
         if not prompt:

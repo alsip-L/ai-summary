@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from sqladmin import ModelView
-from app.models import Provider, Prompt, UserPreference, FailedRecord
+from app.models import Provider, Model, ApiKey, Prompt, UserPreference, Trash, FailedRecord
 
 
 class ProviderAdmin(ModelView, model=Provider):
@@ -10,6 +10,24 @@ class ProviderAdmin(ModelView, model=Provider):
     can_export = False
     name = "提供商"
     name_plural = "提供商"
+
+
+class ModelAdmin(ModelView, model=Model):
+    column_list = [Model.id, Model.provider_id, Model.display_name, Model.model_id, Model.created_at, Model.updated_at]
+    column_searchable_list = [Model.display_name, Model.model_id]
+    form_excluded_columns = [Model.id, Model.created_at, Model.updated_at]
+    can_export = True
+    name = "模型"
+    name_plural = "模型"
+
+
+class ApiKeyAdmin(ModelView, model=ApiKey):
+    column_list = [ApiKey.id, ApiKey.provider_id, ApiKey.key_value, ApiKey.source, ApiKey.created_at, ApiKey.updated_at]
+    column_searchable_list = [ApiKey.source]
+    form_excluded_columns = [ApiKey.id, ApiKey.key_value, ApiKey.created_at, ApiKey.updated_at]
+    can_export = False
+    name = "API Key"
+    name_plural = "API Key"
 
 
 class PromptAdmin(ModelView, model=Prompt):
@@ -28,6 +46,16 @@ class UserPreferenceAdmin(ModelView, model=UserPreference):
     can_export = True
     name = "用户偏好"
     name_plural = "用户偏好"
+
+
+class TrashAdmin(ModelView, model=Trash):
+    column_list = [Trash.id, Trash.item_type, Trash.item_name, Trash.created_at, Trash.updated_at]
+    column_searchable_list = [Trash.item_name, Trash.item_type]
+    form_excluded_columns = [Trash.id, Trash.created_at, Trash.updated_at]
+    can_export = True
+    can_create = False
+    name = "回收站"
+    name_plural = "回收站"
 
 
 class FailedRecordAdmin(ModelView, model=FailedRecord):

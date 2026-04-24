@@ -56,7 +56,7 @@ def delete_provider(
 @router.get(
     "/{name}/api-key",
     summary="获取完整 API Key",
-    description="获取指定提供商的完整 API Key（未脱敏），供复制使用。",
+    description="获取指定提供商的完整 API Key，供复制使用。",
     responses={
         200: {"description": "API Key"},
         400: {"description": "提供商不存在"},

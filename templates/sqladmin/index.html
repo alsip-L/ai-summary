@@ -1,0 +1,21 @@
+{% extends "sqladmin/layout.html" %}
+{% block content %}
+{% if tables_info %}
+<div class="col-12">
+  <h2 class="mb-4">数据库概览</h2>
+</div>
+{% for table in tables_info %}
+<div class="col-sm-6 col-lg-3">
+  <a href="/admin/{{ table.key }}/list" class="card card-link">
+    <div class="card-body">
+      <div class="d-flex align-items-center">
+        <div class="subheader me-2">{{ table.name }}</div>
+      </div>
+      <div class="h1 mb-0 mt-2">{{ table.count }}</div>
+      <div class="text-muted mt-2">条记录</div>
+    </div>
+  </a>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

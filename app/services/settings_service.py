@@ -19,11 +19,11 @@ class SettingsService:
         return self._repo.get_all()
 
     def get_api_key_raw(self) -> dict:
-        """获取未脱敏的完整 API Key（需认证）"""
+        """获取完整 API Key（需认证）"""
         raw_key = self._repo.get_api_key_raw()
         if raw_key is None:
-            return {"success": True, "api_key": "", "api_key_masked": False}
-        return {"success": True, "api_key": raw_key, "api_key_masked": True}
+            return {"success": True, "api_key": ""}
+        return {"success": True, "api_key": raw_key}
 
     def save_preferences(self, data: dict) -> dict:
         return self._repo.save(data)

@@ -183,9 +183,19 @@ function connect() {
     ws = null
   }
   if (ws && ws.readyState === WebSocket.OPEN) return
+  const token = getStoredApiToken()
+  // 如果 token 还没准备好（App.vue 的 onMounted 尚未完成），延迟重试
+  if (!token) {
+    if (shouldConnect && !reconnectTimer) {
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null
+        connect()
+      }, 500)
+    }
+    return
+  }
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const basePath = location.pathname.replace(/\/[^/]*$/, '')
-  const token = getStoredApiToken()
   const url = `${protocol}//${location.host}${basePath}/api/logs/ws`
   // 通过 WebSocket 子协议传递 token，避免 token 出现在 URL 中被日志记录
   const protocols = token ? [`x-api-token.${token}`] : undefined

@@ -16,7 +16,6 @@ import time
 import threading
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
-from functools import lru_cache
 from collections import deque
 
 LOGGER_NAME = "ai_summary"
@@ -181,7 +180,6 @@ def _get_log_level() -> int:
     return logging.ERROR
 
 
-@lru_cache()
 def get_logger(name: str = LOGGER_NAME) -> logging.Logger:
     """获取配置好的日志记录器"""
     logger = logging.getLogger(name)
@@ -215,8 +213,10 @@ def get_logger(name: str = LOGGER_NAME) -> logging.Logger:
         except Exception:
             pass  # 文件日志创建失败不影响其他handler
 
-        logger.setLevel(_get_log_level())
         logger.propagate = False
+
+    # 每次调用都同步日志级别，确保 config 修改后能生效
+    logger.setLevel(_get_log_level())
     return logger
 
 

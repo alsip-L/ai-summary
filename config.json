@@ -1,13 +1,15 @@
 {
   "system_settings": {
-    "debug_level": "ERROR",
+    "debug_level": "INFO",
     "secret_key": "default-dev-secret-key-please-change-in-prod",
     "host": "0.0.0.0",
     "port": 5000,
     "debug": false,
     "admin_username": "admin",
     "admin_password": "admin",
-    "allowed_paths": [],
+    "allowed_paths": [
+      "*"
+    ],
     "cors_origins": []
   }
 }

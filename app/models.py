@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Index, func
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Index, func, ForeignKey
 from app.database import Base
 
 
@@ -19,6 +19,37 @@ class Provider(Base):
     models_json = Column(Text, default="{}")
     is_active = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+
+
+class Model(Base):
+    """模型表：每个模型独立一行，关联到Provider"""
+    __tablename__ = "models"
+    __table_args__ = (
+        Index("ix_models_provider_id", "provider_id"),
+        Index("ix_models_display_name_provider", "display_name", "provider_id", unique=True),
+    )
+
+    id = Column(Integer, primary_key=True)
+    provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False)
+    display_name = Column(String, nullable=False)
+    model_id = Column(String, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+
+
+class ApiKey(Base):
+    """API Key表：每个Key独立一行，关联到Provider或作为全局偏好Key"""
+    __tablename__ = "api_keys"
+    __table_args__ = (
+        Index("ix_api_keys_provider_id", "provider_id"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    provider_id = Column(Integer, ForeignKey("providers.id"), nullable=True)
+    key_value = Column(String, nullable=False)
+    source = Column(String, nullable=False, default="provider")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
 
@@ -44,6 +75,22 @@ class UserPreference(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String, unique=True, nullable=False)
     value = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
+
+
+class Trash(Base):
+    """回收站表：记录被软删除的提供商和提示词"""
+    __tablename__ = "trash"
+    __table_args__ = (
+        Index("ix_trash_item_type", "item_type"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    item_type = Column(String, nullable=False)
+    item_id = Column(Integer, nullable=False)
+    item_name = Column(String, nullable=False)
+    item_data = Column(Text, default="")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
 

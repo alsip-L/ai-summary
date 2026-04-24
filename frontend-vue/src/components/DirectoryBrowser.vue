@@ -52,7 +52,16 @@ const directPathInput = ref('')
 
 async function open() {
   show.value = true
-  await loadDrives()
+  const existingPath = providerStore.directoryPath?.trim()
+  if (existingPath) {
+    try {
+      await navigateTo(existingPath)
+    } catch {
+      await loadDrives()
+    }
+  } else {
+    await loadDrives()
+  }
 }
 
 function close() {

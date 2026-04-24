@@ -50,7 +50,7 @@ import { useProviderStore } from './stores/provider'
 import { usePromptStore } from './stores/prompt'
 import { useTaskStore } from './stores/task'
 import { useTrashStore } from './stores/trash'
-import { api } from './composables/useApi'
+import { api, setApiToken, getStoredApiToken } from './composables/useApi'
 import ProviderPanel from './components/ProviderPanel.vue'
 import PromptPanel from './components/PromptPanel.vue'
 import TrashPanel from './components/TrashPanel.vue'
@@ -202,6 +202,17 @@ async function handleStart() {
 }
 
 onMounted(async () => {
+  // 自动获取 API Token：如果尚未存储 token，尝试用默认 secret_key 获取
+  if (!getStoredApiToken()) {
+    try {
+      const res = await api.getToken('default-dev-secret-key-please-change-in-prod')
+      if (res.success && res.token) {
+        setApiToken(res.token)
+      }
+    } catch {
+      // 默认 secret_key 不匹配（生产环境已修改），跳过
+    }
+  }
   const preferences = await providerStore.loadAll()
   await Promise.all([
     promptStore.loadAll(preferences),

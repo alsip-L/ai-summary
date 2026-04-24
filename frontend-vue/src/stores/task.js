@@ -32,16 +32,9 @@ export const useTaskStore = defineStore('task', () => {
     const providerStore = useProviderStore()
     const promptStore = usePromptStore()
 
-    // 获取完整 API Key（getCurrentApiKey 可能返回掩码值）
-    let apiKey = providerStore.getCurrentApiKey()
+    const apiKey = providerStore.getCurrentApiKey()
     if (!apiKey) {
       throw new Error('API Key 未配置')
-    }
-    if (providerStore.isCurrentApiKeyMasked()) {
-      apiKey = await providerStore.fetchFullApiKey(providerStore.selectedProvider)
-      if (!apiKey) {
-        throw new Error('获取完整 API Key 失败，请重新配置')
-      }
     }
 
     const data = {
@@ -143,16 +136,9 @@ export const useTaskStore = defineStore('task', () => {
     const providerStore = useProviderStore()
     const promptStore = usePromptStore()
 
-    // 获取完整 API Key（getCurrentApiKey 可能返回掩码值）
-    let apiKey = providerStore.getCurrentApiKey()
+    const apiKey = providerStore.getCurrentApiKey()
     if (!apiKey) {
       throw new Error('API Key 未配置')
-    }
-    if (providerStore.isCurrentApiKeyMasked()) {
-      apiKey = await providerStore.fetchFullApiKey(providerStore.selectedProvider)
-      if (!apiKey) {
-        throw new Error('获取完整 API Key 失败，请重新配置')
-      }
     }
 
     const data = {

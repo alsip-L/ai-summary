@@ -17,7 +17,7 @@ class FailedRecordRepository(BaseRepository):
                 if existing:
                     existing.error = error
                     existing.retryable = retryable
-                    existing.created_at = datetime.now(timezone.utc)
+                    existing.updated_at = datetime.now(timezone.utc)
                 else:
                     record = FailedRecord(source=source, error=error, retryable=retryable)
                     self._db.add(record)
@@ -44,7 +44,7 @@ class FailedRecordRepository(BaseRepository):
                     if existing:
                         existing.error = r.get("error", "")
                         existing.retryable = r.get("retryable", False)
-                        existing.created_at = datetime.now(timezone.utc)
+                        existing.updated_at = datetime.now(timezone.utc)
                     else:
                         record = FailedRecord(
                             source=source,
@@ -95,7 +95,7 @@ class FailedRecordRepository(BaseRepository):
     def clear_all(self) -> int:
         """清除所有失败记录，返回删除数量"""
         try:
-            with self._write_session() as auto_commit:
+            with self._write_session():
                 # 在同一事务内计数并删除
                 count = self._db.query(FailedRecord).count()
                 self._db.query(FailedRecord).delete()

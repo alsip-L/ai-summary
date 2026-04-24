@@ -40,7 +40,7 @@
     <div class="form-group">
       <label class="form-label">API Key</label>
       <div class="input-group">
-        <input type="password" class="form-control" :value="store.apiKey" :placeholder="store.apiKey ? '已配置' : '未配置'" readonly>
+        <input type="text" class="form-control" :value="store.apiKey" :placeholder="store.apiKey ? '已配置' : '未配置'" readonly>
         <button type="button" class="btn btn-sm btn-secondary" @click="copyApiKey" title="复制完整 API Key">复制</button>
         <button type="button" class="btn btn-sm btn-secondary" @click="editApiKey" title="修改 API Key">修改</button>
       </div>
@@ -165,10 +165,10 @@ async function deleteModel(modelDisplay) {
 
 async function copyApiKey() {
   if (!store.selectedProvider) { showMessage('请先选择服务商', 'warning'); return }
+  const key = store.apiKey
+  if (!key) { showMessage('未配置 API Key', 'warning'); return }
   try {
-    const fullKey = await store.fetchFullApiKey(store.selectedProvider)
-    if (!fullKey) { showMessage('未配置 API Key', 'warning'); return }
-    await navigator.clipboard.writeText(fullKey)
+    await navigator.clipboard.writeText(key)
     showMessage('API Key 已复制到剪贴板', 'success')
   } catch (e) {
     showMessage('复制失败: ' + e.message, 'error')
@@ -179,7 +179,7 @@ function editApiKey() {
   if (!store.selectedProvider) { showMessage('请先选择服务商', 'warning'); return }
   dialogTitle.value = `修改 API Key — ${store.selectedProvider}`
   dialogFields.value = [
-    { id: 'api_key', label: 'API Key', placeholder: '输入新的 API Key', value: '', type: 'password' },
+    { id: 'api_key', label: 'API Key', placeholder: '输入新的 API Key', value: '', type: 'text' },
   ]
   dialogSubmit = async () => {
     const key = dialogFields.value[0].value.trim()

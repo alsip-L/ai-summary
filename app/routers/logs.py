@@ -53,16 +53,19 @@ async def logs_ws(ws: WebSocket):
     # 从 Sec-WebSocket-Protocol header 获取 token（前端通过子协议传递）
     # 格式: x-api-token.<token_value>
     # 也可从 X-API-Token header 获取（支持直接 header 传递）
+    # 提取前端通过子协议传递的子协议名，accept 时必须回传，否则浏览器拒绝连接
+    ws_protocol = ws.headers.get("sec-websocket-protocol", "")
+    subprotocol = ws_protocol if ws_protocol else None
+
     token = ws.headers.get("x-api-token", "")
     if not token:
         # 尝试从 Sec-WebSocket-Protocol 子协议中提取
-        ws_protocol = ws.headers.get("sec-websocket-protocol", "")
         if ws_protocol.startswith("x-api-token."):
             token = ws_protocol[len("x-api-token."):]
     secret_key = ConfigManager().get("system_settings.secret_key", "")
     expected = generate_api_token(secret_key) if secret_key else ""
     if not token or not expected or not hmac.compare_digest(token, expected):
-        await ws.accept()
+        await ws.accept(subprotocol=subprotocol)
         try:
             await ws.send_text(json.dumps({"type": "error", "message": "Authentication required"}))
         except Exception:
@@ -70,7 +73,7 @@ async def logs_ws(ws: WebSocket):
         await ws.close()
         return
 
-    await ws.accept()
+    await ws.accept(subprotocol=subprotocol)
     handler = get_ws_handler()
     if handler is None:
         logger = logging.getLogger(LOGGER_NAME)

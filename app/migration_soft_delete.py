@@ -27,11 +27,12 @@ def migrate_soft_delete():
     """执行软删除重构的数据迁移（幂等）"""
     db = SessionLocal()
     try:
-        _migrate_providers(db)
-        _migrate_prompts(db)
-        _migrate_unique_constraints(db)
+        changed = _migrate_providers(db)
+        changed = _migrate_prompts(db) or changed
+        changed = _migrate_unique_constraints(db) or changed
         db.commit()
-        logger.info("软删除迁移完成")
+        if changed:
+            logger.info("软删除迁移完成")
     except Exception as e:
         db.rollback()
         logger.error(f"软删除迁移失败: {e}")
@@ -60,19 +61,25 @@ def sync_schema():
                     default_clause = ""
                     if column.default is not None:
                         default_val = column.default.arg
-                        if isinstance(default_val, bool):
-                            default_val = 1 if default_val else 0
-                        if isinstance(default_val, str):
+                        # callable (如 lambda) 是 Python 层默认值，不能写入 SQL，跳过由 server_default 处理
+                        if callable(default_val):
+                            pass
+                        elif isinstance(default_val, bool):
+                            default_clause = f" DEFAULT {1 if default_val else 0}"
+                        elif isinstance(default_val, str):
                             default_clause = f" DEFAULT '{default_val}'"
-                        else:
+                        elif isinstance(default_val, (int, float)):
                             default_clause = f" DEFAULT {default_val}"
-                    elif column.server_default is not None:
+                    non_constant_default = False
+                    if not default_clause and column.server_default is not None:
                         sd_arg = column.server_default.arg
                         # 处理 func.now() 等 SQL 函数表达式
                         if hasattr(sd_arg, 'compile'):
                             from sqlalchemy.dialects import sqlite as sqlite_dialect
-                            compiled = sd_arg.compile(dialect=sqlite_dialect.dialect())
-                            default_clause = f" DEFAULT {compiled}"
+                            compiled = str(sd_arg.compile(dialect=sqlite_dialect.dialect()))
+                            # SQLite ALTER TABLE 不支持非常量默认值（如 CURRENT_TIMESTAMP）
+                            # 需要先添加列不带默认值，再 UPDATE 现有行
+                            non_constant_default = True
                         elif isinstance(sd_arg, str):
                             default_clause = f" DEFAULT '{sd_arg}'"
                         else:
@@ -80,6 +87,12 @@ def sync_schema():
                     sql = f"ALTER TABLE {table_name} ADD COLUMN {column.name} {sqlite_type}{default_clause}"
                     logger.info(f"Schema 同步: {sql}")
                     db.execute(text(sql))
+                    # 对非常量默认值的列，UPDATE 现有行
+                    if non_constant_default:
+                        from sqlalchemy.dialects import sqlite as sqlite_dialect
+                        db.execute(text(
+                            f"UPDATE {table_name} SET {column.name} = {compiled}"
+                        ))
                     added = True
         if added:
             db.commit()
@@ -95,11 +108,13 @@ def sync_schema():
 def _migrate_providers(db):
     """迁移 providers 表：添加 is_deleted 列，迁移 trash_providers 数据，删除旧表"""
     insp = inspect(engine)
+    changed = False
 
     # 步骤1: 添加 is_deleted 列（幂等）
     if not _has_column(insp, "providers", "is_deleted"):
         db.execute(text("ALTER TABLE providers ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
         db.execute(text("UPDATE providers SET is_deleted = 0 WHERE is_deleted IS NULL"))
+        changed = True
 
     # 步骤2: 迁移 trash_providers 数据（幂等）
     if "trash_providers" in insp.get_table_names():
@@ -112,16 +127,21 @@ def _migrate_providers(db):
         """))
         # 步骤3: 删除旧表
         db.execute(text("DROP TABLE trash_providers"))
+        changed = True
+
+    return changed
 
 
 def _migrate_prompts(db):
     """迁移 prompts 表：添加 is_deleted 列，迁移 trash_prompts 数据，删除旧表"""
     insp = inspect(engine)
+    changed = False
 
     # 步骤1: 添加 is_deleted 列（幂等）
     if not _has_column(insp, "prompts", "is_deleted"):
         db.execute(text("ALTER TABLE prompts ADD COLUMN is_deleted BOOLEAN DEFAULT 0"))
         db.execute(text("UPDATE prompts SET is_deleted = 0 WHERE is_deleted IS NULL"))
+        changed = True
 
     # 步骤2: 迁移 trash_prompts 数据（幂等）
     if "trash_prompts" in insp.get_table_names():
@@ -133,6 +153,9 @@ def _migrate_prompts(db):
         """))
         # 步骤3: 删除旧表
         db.execute(text("DROP TABLE trash_prompts"))
+        changed = True
+
+    return changed
 
 
 def _has_column(insp, table_name: str, column_name: str) -> bool:
@@ -150,6 +173,7 @@ def _migrate_unique_constraints(db):
     SQLite 不支持 ALTER INDEX，需要重建表。幂等：如果旧索引不存在则跳过。
     """
     insp = inspect(engine)
+    changed = False
 
     for table_name in ("providers", "prompts"):
         # 检查是否存在旧的 name 单列 unique 索引
@@ -162,6 +186,7 @@ def _migrate_unique_constraints(db):
         if not old_index_name:
             continue
 
+        changed = True
         logger.info(f"迁移 {table_name} 的 name unique 约束为 (name, is_deleted) 复合约束")
 
         # 获取当前表结构
@@ -247,3 +272,5 @@ def _migrate_unique_constraints(db):
         ))
 
         logger.info(f"{table_name} unique 约束迁移完成")
+
+    return changed

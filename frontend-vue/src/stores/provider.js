@@ -8,7 +8,6 @@ export const useProviderStore = defineStore('provider', () => {
   const selectedProvider = ref('')
   const selectedModel = ref('')
   const apiKey = ref('')
-  const apiKeyMasked = ref(false)
   const directoryPath = ref('')
 
   async function loadAll() {
@@ -27,8 +26,6 @@ export const useProviderStore = defineStore('provider', () => {
     selectedModel.value = preferences.selected_model || ''
     apiKey.value = preferences.api_key || ''
     directoryPath.value = preferences.directory_path || ''
-    // 标记 API Key 是否为脱敏状态
-    apiKeyMasked.value = !!preferences.api_key_masked
     let needSave = false
     if (selectedProvider.value && !providers.value[selectedProvider.value]) {
       selectedProvider.value = ''
@@ -57,26 +54,6 @@ export const useProviderStore = defineStore('provider', () => {
   function getCurrentApiKey() {
     const provider = providers.value[selectedProvider.value]
     return provider ? provider.api_key || '' : ''
-  }
-
-  function isCurrentApiKeyMasked() {
-    const provider = providers.value[selectedProvider.value]
-    return provider ? !!provider.api_key_masked : false
-  }
-
-  async function fetchFullApiKey(name) {
-    // 优先从 provider 端点获取
-    if (name) {
-      const result = await api.getApiKey(name)
-      return result.api_key || ''
-    }
-    // 从 preferences 认证端点获取
-    const result = await api.getPreferencesApiKey()
-    if (result.api_key) {
-      apiKey.value = result.api_key
-      apiKeyMasked.value = false
-    }
-    return result.api_key || ''
   }
 
   async function createProvider(data) {
@@ -118,8 +95,8 @@ export const useProviderStore = defineStore('provider', () => {
   }
 
   return {
-    providers, providerNames, selectedProvider, selectedModel, apiKey, apiKeyMasked, directoryPath,
-    loadAll, getCurrentModels, getCurrentApiKey, isCurrentApiKeyMasked, fetchFullApiKey,
+    providers, providerNames, selectedProvider, selectedModel, apiKey, directoryPath,
+    loadAll, getCurrentModels, getCurrentApiKey,
     createProvider, deleteProvider, saveApiKey, addModel, deleteModel, savePreferences,
   }
 })

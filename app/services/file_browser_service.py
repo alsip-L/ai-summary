@@ -19,6 +19,9 @@ _ROOT_DRIVE_RE = re.compile(r'^[A-Za-z]:[\\/]?$', re.IGNORECASE)
 class FileBrowserService:
     def _validate_path(self, path: str) -> bool:
         allowed_paths = ConfigManager().get("system_settings.allowed_paths", [])
+        # "*" 表示允许所有路径
+        if allowed_paths and "*" in allowed_paths:
+            return True
         if not allowed_paths:
             allowed_paths = [_DEFAULT_ALLOWED_PATH]
 

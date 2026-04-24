@@ -127,30 +127,65 @@ def create_app() -> FastAPI:
     app.include_router(logs.router)
     app.include_router(system.router)
 
-    from sqladmin import Admin, AdminAuth
+    from sqladmin import Admin
     from app.admin import (
-        ProviderAdmin, PromptAdmin,
-        UserPreferenceAdmin, FailedRecordAdmin,
+        ProviderAdmin, ModelAdmin, ApiKeyAdmin,
+        PromptAdmin, UserPreferenceAdmin, TrashAdmin, FailedRecordAdmin,
     )
 
-    class SimpleAdminAuth(AdminAuth):
-        """SQLAdmin 认证：使用与 API 相同的 secret_key 派生 token"""
-        async def authenticate(self, request):
-            token = request.cookies.get("admin_token") or request.headers.get("X-API-Token")
-            if not token:
-                return False
-            from app.auth import generate_api_token
-            expected = generate_api_token(secret_key)
-            import hmac
-            return hmac.compare_digest(token, expected)
-
     templates_dir = Path(__file__).parent.parent / "templates"
-    admin_auth = SimpleAdminAuth(secret_key=secret_key)
-    admin = Admin(app, engine, templates_dir=str(templates_dir), authentication_backend=admin_auth)
+    admin = Admin(app, engine, templates_dir=str(templates_dir))
+
+    # 按指定顺序注册：提供商、模型、API Key、提示词、用户偏好、回收站、失败记录
     admin.add_view(ProviderAdmin)
+    admin.add_view(ModelAdmin)
+    admin.add_view(ApiKeyAdmin)
     admin.add_view(PromptAdmin)
     admin.add_view(UserPreferenceAdmin)
+    admin.add_view(TrashAdmin)
     admin.add_view(FailedRecordAdmin)
+
+    # 重写 Admin 首页路由，传递各表记录数给模板
+    async def custom_index(request):
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            tables_info = [
+                {"name": "提供商", "count": 0, "key": "provider"},
+                {"name": "模型", "count": 0, "key": "model"},
+                {"name": "API Key", "count": 0, "key": "api-key"},
+                {"name": "提示词", "count": 0, "key": "prompt"},
+                {"name": "用户偏好", "count": 0, "key": "user-preference"},
+                {"name": "回收站", "count": 0, "key": "trash"},
+                {"name": "失败记录", "count": 0, "key": "failed-record"},
+            ]
+            counts = [
+                ("SELECT COUNT(*) FROM providers WHERE is_deleted = 0", 0),
+                ("SELECT COUNT(*) FROM models", 1),
+                ("SELECT COUNT(*) FROM api_keys", 2),
+                ("SELECT COUNT(*) FROM prompts WHERE is_deleted = 0", 3),
+                ("SELECT COUNT(*) FROM user_preferences", 4),
+                ("SELECT COUNT(*) FROM trash", 5),
+                ("SELECT COUNT(*) FROM failed_records", 6),
+            ]
+            for sql, idx in counts:
+                try:
+                    tables_info[idx]["count"] = conn.execute(text(sql)).scalar()
+                except Exception:
+                    pass
+        return await admin.templates.TemplateResponse(
+            request, "sqladmin/index.html", {"tables_info": tables_info}
+        )
+
+    # 替换已注册的index路由
+    from starlette.routing import Route
+    for mount_route in app.routes:
+        if type(mount_route).__name__ == "Mount" and mount_route.path == "/admin":
+            admin_starlette = mount_route.app
+            for i, sub_route in enumerate(admin_starlette.router.routes):
+                if getattr(sub_route, "name", "") == "index":
+                    admin_starlette.router.routes[i] = Route("/", custom_index, name="index")
+                    break
+            break
 
     frontend_dist = Path(__file__).parent.parent / "frontend-vue" / "dist"
     if frontend_dist.is_dir():
