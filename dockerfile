@@ -9,17 +9,20 @@ COPY frontend-vue/ .
 RUN npm run build && rm -rf node_modules
 
 # ===== 阶段2: 安装 Python 依赖 =====
-FROM python:3.11-alpine AS deps-build
+FROM python:3.11-slim AS deps-build
 WORKDIR /app
 COPY requirements.txt .
 # 安装编译工具链（pydantic-core 等含 C/Rust 扩展的包可能需要从源码编译）
-RUN apk add --no-cache gcc g++ musl-dev rust cargo && \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc g++ && \
     pip install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/ && \
     pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ && \
-    apk del gcc g++ musl-dev rust cargo
+    apt-get purge -y gcc g++ && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 # ===== 阶段3: 运行时镜像 =====
-FROM python:3.11-alpine
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1

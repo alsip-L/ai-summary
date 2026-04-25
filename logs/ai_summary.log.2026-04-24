@@ -1,0 +1,311 @@
+[2026-04-24 07:53:09] ERROR: Schema 同步失败: (sqlite3.OperationalError) near "<": syntax error
+[SQL: ALTER TABLE providers ADD COLUMN created_at DATETIME DEFAULT <function Provider.<lambda> at 0x0000019D73AA1120>]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[2026-04-24 08:45:27] ERROR: Schema 同步失败: (sqlite3.OperationalError) near "<": syntax error
+[SQL: ALTER TABLE providers ADD COLUMN created_at DATETIME DEFAULT <function Provider.<lambda> at 0x0000022C9F83D120>]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[2026-04-24 08:47:29] ERROR: Schema 同步失败: (sqlite3.OperationalError) Cannot add a column with non-constant default
+[SQL: ALTER TABLE providers ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[2026-04-24 08:48:33] ERROR: Schema 同步失败: (sqlite3.OperationalError) Cannot add a column with non-constant default
+[SQL: ALTER TABLE providers ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+[2026-04-24 10:26:11] WARNING: 检测到默认管理员凭据 (admin/admin)，请在生产环境中修改
+[2026-04-24 10:58:48] INFO: 软删除迁移完成
+[2026-04-24 11:03:57] INFO: 软删除迁移完成
+[2026-04-24 11:04:47] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:48] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:48] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:49] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:49] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:49] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:49] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:50] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:50] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:50] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:50] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:50] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:04:50] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:08:23] INFO: 软删除迁移完成
+[2026-04-24 11:09:24] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Chat, directory=C:\Users\15832\Downloads\ai_summary\ai_summary\data\txt\1
+[2026-04-24 11:09:25] INFO: 开始扫描目录: C:\Users\15832\Downloads\ai_summary\ai_summary\data\txt\1
+[2026-04-24 11:09:25] INFO: 扫描完成: 找到 3 个 txt 文件
+[2026-04-24 11:09:25] INFO: 处理文件 [1/3]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 11:09:25] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 11:09:25] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:09:26] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:09:26] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:09:26] INFO: 处理文件 [2/3]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 11:09:26] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 11:09:26] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:09:26] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:09:26] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:09:26] INFO: 处理文件 [3/3]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 11:09:26] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 11:09:26] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:09:26] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:09:26] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:09:26] INFO: 处理完成: 共处理 3 个文件, 成功 0 个, 失败 3 个
+[2026-04-24 11:09:26] INFO: 失败记录已写入数据库: 3 条
+[2026-04-24 11:11:25] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:11:26] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:11:26] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:11:26] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:11:26] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:11:26] WARNING: 路径遍历防护: 拒绝访问路径 C:\
+[2026-04-24 11:15:40] INFO: 软删除迁移完成
+[2026-04-24 11:16:54] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Chat, directory=C:\Users\15832\Downloads\ai_summary\ai_summary\data\txt\1
+[2026-04-24 11:16:55] INFO: 开始扫描目录: C:\Users\15832\Downloads\ai_summary\ai_summary\data\txt\1
+[2026-04-24 11:16:55] INFO: 扫描完成: 找到 3 个 txt 文件
+[2026-04-24 11:16:55] INFO: 处理文件 [1/3]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 11:16:55] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 11:16:55] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:16:55] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:16:55] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:16:55] INFO: 处理文件 [2/3]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 11:16:55] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 11:16:55] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:16:55] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:16:55] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:16:55] INFO: 处理文件 [3/3]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 11:16:55] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 11:16:55] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:16:55] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:16:55] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:16:55] INFO: 处理完成: 共处理 3 个文件, 成功 0 个, 失败 3 个
+[2026-04-24 11:16:55] INFO: 失败记录已写入数据库: 0 条
+[2026-04-24 11:39:28] INFO: 软删除迁移完成
+[2026-04-24 11:40:55] INFO: 更新API Key: test-provider
+[2026-04-24 11:41:45] INFO: 更新服务商: test-provider
+[2026-04-24 11:42:11] INFO: 更新API Key: test-provider
+[2026-04-24 11:42:12] INFO: 软删除服务商: test-provider
+[2026-04-24 11:43:02] INFO: 更新提示词: test-prompt
+[2026-04-24 11:43:12] INFO: 更新提示词: test-prompt
+[2026-04-24 11:43:12] INFO: 软删除提示词: test-prompt
+[2026-04-24 11:43:58] INFO: 失败记录已清除: 3 条
+[2026-04-24 11:44:13] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Chat, directory=C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 11:44:14] INFO: 开始扫描目录: C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 11:44:14] INFO: 扫描完成: 找到 6 个 txt 文件
+[2026-04-24 11:44:14] INFO: 处理文件 [1/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 11:44:14] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 11:44:14] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:14] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] INFO: 处理文件 [2/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 11:44:14] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 11:44:14] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:14] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] INFO: 处理文件 [3/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 11:44:14] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 11:44:14] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:14] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] INFO: 处理文件 [4/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 11:44:14] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 11:44:14] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:14] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] INFO: 处理文件 [5/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 11:44:14] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 11:44:14] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:14] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:14] INFO: 处理文件 [6/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 11:44:14] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 11:44:14] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:15] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:15] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:15] INFO: 处理完成: 共处理 6 个文件, 成功 0 个, 失败 6 个
+[2026-04-24 11:44:15] INFO: 失败记录已写入数据库: 6 条
+[2026-04-24 11:44:44] INFO: 启动失败重跑: 6 个文件
+[2026-04-24 11:44:45] INFO: 开始重跑 6 个失败文件
+[2026-04-24 11:44:45] INFO: 重跑文件 [1/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 11:44:45] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 11:44:45] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:45] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:45] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:45] INFO: 重跑文件 [2/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 11:44:45] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 11:44:45] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:45] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:45] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:45] INFO: 重跑文件 [3/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 11:44:45] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 11:44:45] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:46] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] INFO: 重跑文件 [4/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 11:44:46] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 11:44:46] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:46] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] INFO: 重跑文件 [5/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 11:44:46] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 11:44:46] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:46] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] INFO: 重跑文件 [6/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 11:44:46] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 11:44:46] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 11:44:46] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}} (原因: AuthenticationError: Error code: 401 - {'error': {'code': 'invalid_api_key', 'message': 'incorrect api key', 'type': 'authentication_error'}})
+[2026-04-24 11:44:46] INFO: 重跑完成: 共处理 6 个文件, 成功 0 个, 失败 6 个
+[2026-04-24 11:44:46] INFO: 失败记录已写入数据库: 0 条
+[2026-04-24 11:47:45] INFO: 新增服务商: trash-test-provider
+[2026-04-24 11:47:45] INFO: 软删除服务商: trash-test-provider
+[2026-04-24 11:48:02] INFO: 恢复服务商: trash-test-provider
+[2026-04-24 11:48:03] INFO: 永久删除服务商: test-provider
+[2026-04-24 11:48:03] INFO: 永久删除提示词: test-prompt
+[2026-04-24 13:20:21] INFO: 软删除迁移完成
+[2026-04-24 13:21:42] INFO: 软删除迁移完成
+[2026-04-24 13:30:55] INFO: 软删除迁移完成
+[2026-04-24 13:32:31] INFO: 新增服务商: plain-test
+[2026-04-24 13:32:32] INFO: 软删除服务商: plain-test
+[2026-04-24 13:32:32] INFO: 永久删除服务商: plain-test
+[2026-04-24 13:41:24] INFO: 软删除迁移完成
+[2026-04-24 13:55:04] INFO: 软删除迁移完成
+[2026-04-24 14:07:51] INFO: 软删除迁移完成
+[2026-04-24 14:12:38] INFO: 软删除迁移完成
+[2026-04-24 14:37:57] INFO: 软删除迁移完成
+[2026-04-24 14:43:17] INFO: 软删除迁移完成
+[2026-04-24 14:47:30] INFO: 软删除迁移完成
+[2026-04-24 16:34:03] INFO: 软删除迁移完成
+[2026-04-24 16:37:22] INFO: 软删除迁移完成
+[2026-04-24 17:02:50] INFO: 软删除迁移完成
+[2026-04-24 17:54:46] INFO: 软删除迁移完成
+[2026-04-24 19:12:48] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Chat, directory=C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 19:12:50] INFO: 开始扫描目录: C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 19:12:50] INFO: 扫描完成: 找到 6 个 txt 文件
+[2026-04-24 19:12:50] INFO: 处理文件 [1/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 19:12:50] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 19:12:50] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 19:12:52] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:52] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:52] INFO: 处理文件 [2/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 19:12:52] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 19:12:52] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 19:12:52] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:52] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:52] INFO: 处理文件 [3/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 19:12:52] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 19:12:52] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 19:12:53] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:53] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:53] INFO: 处理文件 [4/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 19:12:53] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 19:12:53] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 19:12:53] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:53] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:53] INFO: 处理文件 [5/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 19:12:53] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 19:12:53] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 19:12:54] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:54] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:54] INFO: 处理文件 [6/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 19:12:54] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 19:12:54] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 19:12:54] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:54] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 19:12:54] INFO: 处理完成: 共处理 6 个文件, 成功 0 个, 失败 6 个
+[2026-04-24 19:12:54] INFO: 失败记录已写入数据库: 0 条
+[2026-04-24 19:59:41] INFO: 软删除迁移完成
+[2026-04-24 20:08:38] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Chat, directory=C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 20:08:40] INFO: 开始扫描目录: C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 20:08:40] INFO: 扫描完成: 找到 6 个 txt 文件
+[2026-04-24 20:08:40] INFO: 处理文件 [1/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 20:08:40] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 20:08:40] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:08:41] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:41] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:41] INFO: 处理文件 [2/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 20:08:41] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 20:08:41] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:08:42] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:42] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:42] INFO: 处理文件 [3/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 20:08:42] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 20:08:42] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:08:42] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:42] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:42] INFO: 处理文件 [4/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 20:08:42] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 20:08:42] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:08:43] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:43] ERROR: 文件处理失败: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:43] INFO: 处理文件 [5/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 20:08:43] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 20:08:43] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:08:43] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:43] ERROR: 文件处理失败: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:43] INFO: 处理文件 [6/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 20:08:43] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 20:08:43] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:08:43] ERROR: AI 调用失败（不可重试）: AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:43] ERROR: 文件处理失败: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt - AI 调用失败: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}} (原因: AuthenticationError: Error code: 401 - {'error': {'message': '无效的AppId: ak_***29n2FG3M04Hx4xr5NG7hS8h02C', 'type': 'authentication_error', 'code': 'invalid_api_key'}})
+[2026-04-24 20:08:43] INFO: 处理完成: 共处理 6 个文件, 成功 0 个, 失败 6 个
+[2026-04-24 20:08:43] INFO: 失败记录已写入数据库: 0 条
+[2026-04-24 20:11:06] INFO: 软删除迁移完成
+[2026-04-24 20:12:18] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Chat, directory=C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 20:12:19] INFO: 开始扫描目录: C:/Users/15832/github/ai_summary/data/txt
+[2026-04-24 20:12:19] INFO: 扫描完成: 找到 6 个 txt 文件
+[2026-04-24 20:12:19] INFO: 处理文件 [1/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 20:12:19] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 20:12:19] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:12:36] INFO: AI 响应完成, 字符数: 1485
+[2026-04-24 20:12:36] WARNING: 覆盖已有结果文件: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.md
+[2026-04-24 20:12:36] INFO: 文件处理成功: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt -> ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.md
+[2026-04-24 20:12:36] INFO: 处理文件 [2/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 20:12:36] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 20:12:36] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:12:51] INFO: AI 响应完成, 字符数: 1321
+[2026-04-24 20:12:51] WARNING: 覆盖已有结果文件: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.md
+[2026-04-24 20:12:51] INFO: 文件处理成功: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt -> ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.md
+[2026-04-24 20:12:51] INFO: 处理文件 [3/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 20:12:51] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 20:12:51] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:13:06] INFO: AI 响应完成, 字符数: 1619
+[2026-04-24 20:13:06] WARNING: 覆盖已有结果文件: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.md
+[2026-04-24 20:13:06] INFO: 文件处理成功: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt -> ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.md
+[2026-04-24 20:13:06] INFO: 处理文件 [4/6]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 20:13:06] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 20:13:06] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:13:24] INFO: AI 响应完成, 字符数: 1688
+[2026-04-24 20:13:24] WARNING: 覆盖已有结果文件: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.md
+[2026-04-24 20:13:24] INFO: 文件处理成功: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt -> ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.md
+[2026-04-24 20:13:24] INFO: 处理文件 [5/6]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 20:13:24] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 20:13:24] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:13:36] INFO: AI 响应完成, 字符数: 1288
+[2026-04-24 20:13:36] WARNING: 覆盖已有结果文件: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.md
+[2026-04-24 20:13:36] INFO: 文件处理成功: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt -> ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.md
+[2026-04-24 20:13:36] INFO: 处理文件 [6/6]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 20:13:36] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 20:13:36] INFO: 调用 AI 模型: LongCat-Flash-Chat...
+[2026-04-24 20:13:44] INFO: AI 响应完成, 字符数: 1607
+[2026-04-24 20:13:44] WARNING: 覆盖已有结果文件: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.md
+[2026-04-24 20:13:44] INFO: 文件处理成功: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt -> ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.md
+[2026-04-24 20:13:44] INFO: 处理完成: 共处理 6 个文件, 成功 6 个, 失败 0 个
+[2026-04-24 20:27:27] INFO: 软删除迁移完成
+[2026-04-24 20:39:17] INFO: 启动处理任务: provider=longcat, model=LongCat-Flash-Lite, directory=C:/Users/15832/github/ai_summary/data/txt\1
+[2026-04-24 20:39:19] INFO: 开始扫描目录: C:/Users/15832/github/ai_summary/data/txt\1
+[2026-04-24 20:39:19] INFO: 扫描完成: 找到 3 个 txt 文件
+[2026-04-24 20:39:19] INFO: 处理文件 [1/3]: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt
+[2026-04-24 20:39:19] INFO: 读取文件完成: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt, 字符数: 7651
+[2026-04-24 20:39:19] INFO: 调用 AI 模型: LongCat-Flash-Lite...
+[2026-04-24 20:39:30] INFO: AI 响应完成, 字符数: 1668
+[2026-04-24 20:39:30] WARNING: 覆盖已有结果文件: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.md
+[2026-04-24 20:39:30] INFO: 文件处理成功: ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.txt -> ~第176期~G7领导人峰会结束，联合声明有何玄机？德法G7会议后去向微妙，如何解读？20230522.md
+[2026-04-24 20:39:30] INFO: 处理文件 [2/3]: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt
+[2026-04-24 20:39:30] INFO: 读取文件完成: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt, 字符数: 5354
+[2026-04-24 20:39:30] INFO: 调用 AI 模型: LongCat-Flash-Lite...
+[2026-04-24 20:39:33] INFO: AI 响应完成, 字符数: 1221
+[2026-04-24 20:39:33] WARNING: 覆盖已有结果文件: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.md
+[2026-04-24 20:39:33] INFO: 文件处理成功: ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.txt -> ~第177期~美光未通过网络安全审查，关键中企将停止采购有关产品，会对美光产生多大影响？中国首次制裁美国芯片企业，能否规训美国？20230522.md
+[2026-04-24 20:39:33] INFO: 处理文件 [3/3]: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt
+[2026-04-24 20:39:33] INFO: 读取文件完成: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt, 字符数: 6042
+[2026-04-24 20:39:33] INFO: 调用 AI 模型: LongCat-Flash-Lite...
+[2026-04-24 20:39:35] INFO: AI 响应完成, 字符数: 681
+[2026-04-24 20:39:35] WARNING: 覆盖已有结果文件: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.md
+[2026-04-24 20:39:35] INFO: 文件处理成功: ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.txt -> ~第178期~日经平均指数上到31000点，破33年以来高位，日企何以支撑31000点市值？日本股市是否在玩一种很新的东西？20230523.md
+[2026-04-24 20:39:35] INFO: 处理完成: 共处理 3 个文件, 成功 3 个, 失败 0 个

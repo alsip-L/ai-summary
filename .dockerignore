@@ -86,14 +86,9 @@ data/
 .env.production
 secrets/
 
-# 前端源码（构建产物由 dockerfile 多阶段构建生成，不需要源码进入最终镜像）
+# 前端 node_modules（多阶段构建时会重新 npm install）
 frontend-vue/node_modules/
-frontend-vue/src/
-frontend-vue/css/
-frontend-vue/package.json
-frontend-vue/package-lock.json
-frontend-vue/vite.config.js
-frontend-vue/index.html
+frontend-vue/dist/
 
 # SDK 测试
 sdk/tests/
