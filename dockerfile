@@ -8,21 +8,14 @@ RUN npm config set registry https://registry.npmmirror.com && \
 COPY frontend-vue/ .
 RUN npm run build && rm -rf node_modules
 
-# ===== 阶段2: 安装 Python 依赖 (Alpine) =====
+# ===== 阶段2: 安装 Python 依赖 (Alpine, 预编译 wheel) =====
 FROM python:3.11-alpine AS deps-build
 WORKDIR /app
 COPY requirements.txt .
-
-# 分步安装编译工具和依赖，避免单层磁盘 I/O 压力过大
-# 步骤1: 安装编译工具链
-RUN apk add --no-cache gcc g++ musl-dev
-
-# 步骤2: 安装 Python 依赖
+# 使用 --only-binary=:all: 强制只安装预编译 wheel，跳过编译工具链
+# pydantic-core / uvloop 等在 PyPI 上有 musllinux (Alpine) 预编译 wheel
 RUN pip install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/ && \
-    pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
-
-# 步骤3: 清理编译工具链（仅保留编译产物在 site-packages 中）
-RUN apk del gcc g++ musl-dev
+    pip install --no-cache-dir --only-binary=:all: -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 # ===== 阶段3: 运行时镜像 (Alpine) =====
 FROM python:3.11-alpine
