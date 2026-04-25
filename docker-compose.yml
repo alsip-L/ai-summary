@@ -9,4 +9,13 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./output:/app/output
+    environment:
+      # 限制 Python 运行时内存分配，减少空闲占用
+      - MALLOC_ARENA_MAX=2
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 32M
     restart: unless-stopped

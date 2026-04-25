@@ -8,24 +8,23 @@ RUN npm config set registry https://registry.npmmirror.com && \
 COPY frontend-vue/ .
 RUN npm run build && rm -rf node_modules
 
-# ===== 阶段2: 安装 Python 依赖 =====
-FROM python:3.11-slim AS deps-build
+# ===== 阶段2: 安装 Python 依赖 (Alpine) =====
+FROM python:3.11-alpine AS deps-build
 WORKDIR /app
 COPY requirements.txt .
-# 安装编译工具链（pydantic-core 等含 C/Rust 扩展的包可能需要从源码编译）
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc g++ && \
+# 安装编译工具链（pydantic-core 等含 C/Rust 扩展的包需要从源码编译）
+RUN apk add --no-cache gcc g++ musl-dev && \
     pip install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/ && \
     pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ && \
-    apt-get purge -y gcc g++ && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
+    apk del gcc g++ musl-dev
 
-# ===== 阶段3: 运行时镜像 =====
-FROM python:3.11-slim
+# ===== 阶段3: 运行时镜像 (Alpine) =====
+FROM python:3.11-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    # 限制 Python GC 内存阈值，减少空闲内存占用
+    PYTHONHASHSEED=0
 
 WORKDIR /app
 
@@ -33,10 +32,9 @@ WORKDIR /app
 COPY --from=deps-build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=deps-build /usr/local/bin /usr/local/bin
 
-# 复制应用代码
+# 复制应用代码（排除 SDK，运行时不使用）
 COPY app/ ./app/
 COPY core/ ./core/
-COPY sdk/ ./sdk/
 COPY templates/ ./templates/
 COPY config.json ./
 COPY run.py ./
