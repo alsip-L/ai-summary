@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import threading
+import httpx
 from openai import OpenAI
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,40 @@ from app.services.file_browser_service import FileBrowserService
 from core.log import get_logger
 
 logger = get_logger()
+
+
+class _OpenAIClientPool:
+    """OpenAI 客户端池：按 (api_key, base_url) 复用客户端，避免重复创建 httpx 连接池"""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._clients: dict[tuple[str, str], OpenAI] = {}
+
+    def get(self, api_key: str, base_url: str) -> OpenAI:
+        key = (api_key, base_url)
+        with self._lock:
+            client = self._clients.get(key)
+            if client is None:
+                # 限制 httpx 连接池：单线程顺序处理，最多 2 个连接足够
+                http_client = httpx.Client(
+                    limits=httpx.Limits(max_connections=2, max_keepalive_connections=1),
+                    timeout=httpx.Timeout(connect=10.0, read=600.0, write=60.0, pool=10.0),
+                )
+                client = OpenAI(api_key=api_key, base_url=base_url, http_client=http_client)
+                self._clients[key] = client
+            return client
+
+    def close_all(self):
+        with self._lock:
+            for client in self._clients.values():
+                try:
+                    client.close()
+                except Exception:
+                    pass
+            self._clients.clear()
+
+
+_client_pool = _OpenAIClientPool()
 
 
 class TaskService:
@@ -91,22 +126,20 @@ class TaskService:
             return {"success": False, "error": "已有任务正在运行"}
 
         def _run_in_thread():
-            client = OpenAI(api_key=client_api_key, base_url=client_base_url)
+            client = _client_pool.get(client_api_key, client_base_url)
             try:
                 self._runner.run_batch(directory, client, prompt_content, model_id, skip_existing)
             except Exception as e:
                 logger.error(f"后台任务异常: {e}")
                 self._state.set_error(f"后台任务异常: {str(e)}")
                 self._failed_record_svc.persist_from_state()
-            finally:
-                client.close()
 
         thread = threading.Thread(target=_run_in_thread, daemon=True)
         thread.start()
         return {"success": True, "message": "处理已启动"}
 
-    def get_status(self) -> dict:
-        return self._state.get_dict()
+    def get_status(self, include_results: bool = True) -> dict:
+        return self._state.get_dict(include_results=include_results)
 
     def cancel(self) -> dict:
         if self._state.request_cancel():
@@ -155,15 +188,13 @@ class TaskService:
             return {"success": False, "error": "已有任务正在运行"}
 
         def _run_in_thread():
-            client = OpenAI(api_key=client_api_key, base_url=client_base_url)
+            client = _client_pool.get(client_api_key, client_base_url)
             try:
                 self._runner.run_retry_batch(existing_sources, client, prompt_content, model_id)
             except Exception as e:
                 logger.error(f"后台重跑任务异常: {e}")
                 self._state.set_error(f"后台重跑任务异常: {str(e)}")
                 self._failed_record_svc.persist_from_state()
-            finally:
-                client.close()
 
         thread = threading.Thread(target=_run_in_thread, daemon=True)
         thread.start()

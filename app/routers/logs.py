@@ -12,7 +12,8 @@ router = APIRouter(tags=["logs"])
 
 PING_INTERVAL = 15
 REPLAY_BATCH_SIZE = 100  # 回放时每批发送的记录数
-POLL_INTERVAL = 0.1  # 实时推送轮询间隔（秒）
+POLL_INTERVAL_IDLE = 0.3  # 无新数据时的轮询间隔（秒），减少 CPU 空转
+POLL_INTERVAL_ACTIVE = 0.1  # 有新数据时的轮询间隔（秒），保持实时性
 
 
 @router.get(
@@ -120,11 +121,12 @@ async def logs_ws(ws: WebSocket):
 
         # 4. 实时推送循环（统一从缓冲区增量读取）
         last_ping_time = asyncio.get_running_loop().time()
+        poll_interval = POLL_INTERVAL_IDLE  # 初始使用空闲间隔
         while True:
             # 接收并丢弃客户端消息（保持连接健康，避免缓冲区堆积）
             # 使用 asyncio.wait 竞争替代 timeout=0，避免高频 TimeoutError 异常
             receive_task = asyncio.create_task(ws.receive_text())
-            sleep_task = asyncio.create_task(asyncio.sleep(POLL_INTERVAL))
+            sleep_task = asyncio.create_task(asyncio.sleep(poll_interval))
             done, pending = await asyncio.wait(
                 {receive_task, sleep_task},
                 return_when=asyncio.FIRST_COMPLETED,
@@ -148,12 +150,15 @@ async def logs_ws(ws: WebSocket):
             new_entries = handler.get_buffer_since(last_seq)
             if new_entries:
                 last_ping_time = asyncio.get_running_loop().time()
+                poll_interval = POLL_INTERVAL_ACTIVE  # 有数据时缩短间隔
                 for seq, msg in new_entries:
                     try:
                         await ws.send_text(msg)
                     except Exception:
                         return
                 last_seq = new_entries[-1][0]
+            else:
+                poll_interval = POLL_INTERVAL_IDLE  # 无数据时使用空闲间隔
 
             # 基于时间戳判断是否需要发送心跳，避免浮点除法精度问题
             now = asyncio.get_running_loop().time()

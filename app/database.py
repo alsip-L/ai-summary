@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from contextlib import contextmanager
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, pool
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pathlib import Path
 
@@ -9,7 +9,20 @@ DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# SQLite 连接池配置：
+# - pool_size=5: 保持 5 个连接复用，减少频繁创建/销毁开销
+# - max_overflow=3: 最多额外创建 3 个连接应对突发并发
+# - pool_recycle=1800: 30 分钟回收连接，防止长时间空闲连接异常
+# - pool_pre_ping=True: 使用前检测连接可用性，避免 SQLite 文件锁等问题
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=pool.QueuePool,
+    pool_size=5,
+    max_overflow=3,
+    pool_recycle=1800,
+    pool_pre_ping=True,
+)
 
 
 @event.listens_for(engine, "connect")

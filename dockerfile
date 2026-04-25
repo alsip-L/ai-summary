@@ -1,45 +1,49 @@
-FROM node:20-slim AS frontend-build
+# ===== 阶段1: 构建前端 =====
+FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend-vue
 COPY frontend-vue/package.json frontend-vue/package-lock.json* ./
-RUN npm install
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm install --ignore-scripts && \
+    npm cache clean --force
 COPY frontend-vue/ .
-RUN npm run build
+RUN npm run build && rm -rf node_modules
 
-FROM python:3.11-slim AS deps-build
+# ===== 阶段2: 安装 Python 依赖 =====
+FROM python:3.11-alpine AS deps-build
 WORKDIR /app
 COPY requirements.txt .
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    && pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt \
-    && apt-get purge -y gcc g++ && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+# 安装编译工具链（pydantic-core 等含 C/Rust 扩展的包可能需要从源码编译）
+RUN apk add --no-cache gcc g++ musl-dev rust cargo && \
+    pip install --no-cache-dir --upgrade pip -i https://mirrors.aliyun.com/pypi/simple/ && \
+    pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ && \
+    apk del gcc g++ musl-dev rust cargo
 
-FROM python:3.11-slim
+# ===== 阶段3: 运行时镜像 =====
+FROM python:3.11-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
+# 从依赖阶段复制已安装的 Python 包
 COPY --from=deps-build /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=deps-build /usr/local/bin /usr/local/bin
 
-COPY . .
+# 复制应用代码
+COPY app/ ./app/
+COPY core/ ./core/
+COPY sdk/ ./sdk/
+COPY templates/ ./templates/
+COPY config.json ./
+COPY run.py ./
+
+# 从前端构建阶段复制产物
 COPY --from=frontend-build /app/frontend-vue/dist ./frontend-vue/dist
 
-RUN mkdir -p /app/data
+# 创建数据和日志目录
+RUN mkdir -p /app/data /app/logs
 
 EXPOSE 5000
-
-# 健康检查端口通过 PORT 环境变量配置，默认 5000
-ENV PORT=5000
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/ || exit 1
 
 CMD ["python", "run.py"]

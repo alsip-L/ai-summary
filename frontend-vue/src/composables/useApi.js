@@ -83,7 +83,7 @@ export const api = {
 
   startProcessing: (data) => request('/api/tasks/start', { method: 'POST', body: JSON.stringify(data) }),
   cancelProcessing: () => request('/api/tasks/cancel', { method: 'POST' }),
-  getProcessingStatus: () => request('/api/tasks/status'),
+  getProcessingStatus: (includeResults = false) => request(`/api/tasks/status${includeResults ? '?include_results=true' : ''}`),
   getFailedRecords: () => request('/api/tasks/failed'),
   clearFailedRecords: () => request('/api/tasks/failed', { method: 'DELETE' }),
   retryFailed: (data) => request('/api/tasks/retry-failed', { method: 'POST', body: JSON.stringify(data) }),

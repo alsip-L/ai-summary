@@ -40,11 +40,11 @@ def start_task(
 @router.get(
     "/status",
     summary="获取处理状态",
-    description="返回当前任务的处理状态、进度、已处理文件数和结果列表。",
+    description="返回当前任务的处理状态、进度、已处理文件数。默认不含结果列表以节省内存，需结果时传 include_results=true。",
     responses={200: {"description": "任务状态信息"}},
 )
-def get_status(svc: TaskService = Depends(get_task_service)):
-    return svc.get_status()
+def get_status(include_results: bool = False, svc: TaskService = Depends(get_task_service)):
+    return svc.get_status(include_results=include_results)
 
 
 @router.post(

@@ -103,7 +103,6 @@ class AIClient:
                     # 确保流式响应被显式关闭，避免连接泄漏
                     if hasattr(stream, 'close'):
                         stream.close()
-                response = "".join(full_response)
                 if not response:
                     raise ProviderError("API 返回空响应")
                 logger.info(f"AI 响应完成, 字符数: {len(response)}")

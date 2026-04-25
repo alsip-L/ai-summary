@@ -60,13 +60,13 @@ export const useTaskStore = defineStore('task', () => {
     function poll() {
       pollTimer = setTimeout(async () => {
         try {
-          const data = await api.getProcessingStatus()
+          // 轮询时不请求 results 列表，节省内存和带宽
+          const data = await api.getProcessingStatus(false)
           status.value = data.status
           progress.value = data.progress
           totalFiles.value = data.total_files
           processedFilesCount.value = data.processed_files_count
           currentFile.value = data.current_file
-          results.value = data.results || []
           error.value = data.error
           startTime.value = data.start_time
           cancelled.value = data.cancelled
@@ -75,6 +75,9 @@ export const useTaskStore = defineStore('task', () => {
           retryMax.value = data.retry_max || 2
 
           if (!isProcessing.value) {
+            // 任务完成，请求完整 results 用于展示
+            const fullData = await api.getProcessingStatus(true)
+            results.value = fullData.results || []
             pollTimer = null
             loadFailedRecords()
             return
@@ -97,7 +100,7 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   async function loadStatus() {
-    const data = await api.getProcessingStatus()
+    const data = await api.getProcessingStatus(true)
     status.value = data.status
     progress.value = data.progress
     totalFiles.value = data.total_files

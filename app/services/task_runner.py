@@ -72,9 +72,10 @@ class TaskRunner:
                 )
 
             self._state.complete()
-            results = self._state.get_dict()["results"]
-            success_count = sum(1 for r in results if not r.get("error"))
-            fail_count = sum(1 for r in results if r.get("error"))
+            # 统计成功/失败数，不需要拷贝完整 results 列表
+            failed, succeeded = self._state.get_results_summary()
+            success_count = len(succeeded)
+            fail_count = len(failed)
             logger.info(f"{log_prefix}完成: 共处理 {len(file_paths)} 个文件, 成功 {success_count} 个, 失败 {fail_count} 个")
             self._failed_record_svc.persist_from_state()
         except Exception as e:

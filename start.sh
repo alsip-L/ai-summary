@@ -22,7 +22,7 @@ echo
 
 # 创建必要的目录
 echo "创建必要的目录..."
-mkdir -p data
+mkdir -p data logs output
 echo "目录创建完成"
 echo
 
@@ -44,6 +44,26 @@ fi
 
 echo "服务启动成功"
 echo
+
+# 等待健康检查通过
+echo "等待服务就绪..."
+MAX_WAIT=60
+WAITED=0
+while [ $WAITED -lt $MAX_WAIT ]; do
+    STATUS=$(docker inspect --format='{{.State.Health.Status}}' ai-summary-container 2>/dev/null)
+    if [ "$STATUS" = "healthy" ]; then
+        echo "服务已就绪 (耗时 ${WAITED}s)"
+        break
+    fi
+    sleep 2
+    WAITED=$((WAITED + 2))
+done
+
+if [ $WAITED -ge $MAX_WAIT ]; then
+    echo "警告：服务未在 ${MAX_WAIT}s 内就绪，请检查日志：$COMPOSE_CMD logs -f"
+fi
+
+echo
 echo "================================"
 echo "应用已成功启动！"
 echo "================================"
@@ -54,4 +74,5 @@ echo "常用命令："
 echo "  查看日志：$COMPOSE_CMD logs -f"
 echo "  停止服务：$COMPOSE_CMD down"
 echo "  重启服务：$COMPOSE_CMD restart"
+echo "  查看状态：docker inspect --format='{{.State.Health.Status}}' ai-summary-container"
 echo

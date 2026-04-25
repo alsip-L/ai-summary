@@ -1,8 +1,8 @@
-# Git相关文件
+# Git
 .git
 .gitignore
 
-# Python缓存和编译文件
+# Python 缓存和编译文件
 __pycache__/
 *.py[cod]
 *$py.class
@@ -34,60 +34,72 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE文件
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# 操作系统文件
+# 操作系统
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
 Thumbs.db
 
-# 测试和覆盖率报告
+# 测试和覆盖率
 .tox/
 .coverage
 .coverage.*
 .cache
 .pytest_cache/
 htmlcov/
+tests/
 
 # 文档
 docs/
 .readthedocs.yml
+*.md
+README*
+LICENSE*
+NOTICE*
 
-# Docker相关
+# Docker 自身
 Dockerfile*
 docker-compose*.yml
 .dockerignore
 
-# 日志文件
+# 日志
 *.log
 logs/
 
-# 临时文件
-tmp/
-temp/
-
-# 数据文件（避免在构建时复制敏感数据）
+# 数据（运行时通过 volume 挂载）
 data/
 *.db
 *.sqlite
 *.sqlite3
 
-# 配置文件（可能包含敏感信息）
+# 敏感配置
 .env.local
 .env.production
 secrets/
 
-# 其他
-*.md
-README*
-LICENSE*
-NOTICE*
+# 前端源码（构建产物由 dockerfile 多阶段构建生成，不需要源码进入最终镜像）
+frontend-vue/node_modules/
+frontend-vue/src/
+frontend-vue/css/
+frontend-vue/package.json
+frontend-vue/package-lock.json
+frontend-vue/vite.config.js
+frontend-vue/index.html
+
+# SDK 测试
+sdk/tests/
+
+# 临时文件
+tmp/
+temp/
+_restart_helper.bat
+_restart_helper.py

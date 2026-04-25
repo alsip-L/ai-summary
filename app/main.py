@@ -32,6 +32,9 @@ async def lifespan(app: FastAPI):
     migrate_soft_delete()
     sync_schema()
     yield
+    # shutdown: 清理 OpenAI 客户端池，释放 httpx 连接
+    from app.services.task_service import _client_pool
+    _client_pool.close_all()
 
 
 def create_app() -> FastAPI:
@@ -191,41 +194,46 @@ def create_app() -> FastAPI:
     if frontend_dist.is_dir():
         assets_dir = frontend_dist / "assets"
 
+        # 启动时预加载前端静态资源到内存，避免每次请求读磁盘
+        # Vite 构建的 assets 文件名含 hash，内容不会变，可安全缓存
+        _asset_cache: dict[str, tuple[bytes, str, str]] = {}  # {path: (content, media_type, cache_control)}
+        _mime_map = {".js": "application/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2"}
+        _cache_control_immutable = "public, max-age=31536000, immutable"
+        for asset_file in assets_dir.rglob("*"):
+            if asset_file.is_file():
+                try:
+                    rel_path = asset_file.relative_to(assets_dir).as_posix()
+                    content = asset_file.read_bytes()
+                    ext = asset_file.suffix.lower()
+                    media_type = _mime_map.get(ext, "application/octet-stream")
+                    _asset_cache[rel_path] = (content, media_type, _cache_control_immutable)
+                except Exception:
+                    pass
+
+        # index.html 也缓存到内存（仅 ~1KB，避免每次请求读磁盘）
+        _index_html_content = (frontend_dist / "index.html").read_bytes()
+
         @app.get("/")
         async def index():
             from starlette.responses import Response
-            content = (frontend_dist / "index.html").read_bytes()
             return Response(
-                content=content,
+                content=_index_html_content,
                 media_type="text/html; charset=utf-8",
                 headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
             )
 
         @app.get("/assets/{file_path:path}")
         async def serve_asset(file_path: str):
-            from starlette.responses import Response
-            full_path = assets_dir / file_path
-            # 防止路径遍历：确保解析后的路径仍在 assets 目录内
-            try:
-                resolved = full_path.resolve()
-                if not resolved.is_relative_to(assets_dir.resolve()):
-                    return JSONResponse(status_code=403, content={"detail": "Forbidden"})
-            except (ValueError, OSError):
-                return JSONResponse(status_code=403, content={"detail": "Forbidden"})
-            if not resolved.is_file():
-                return JSONResponse(status_code=404, content={"detail": "Not found"})
-            content = resolved.read_bytes()
-            # 根据扩展名推断 MIME 类型
-            ext = resolved.suffix.lower()
-            mime_map = {".js": "application/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff": "font/woff", ".woff2": "font/woff2"}
-            media_type = mime_map.get(ext, "application/octet-stream")
-            # Vite 构建的 assets 文件名含 hash（如 index-abc123.js），可长期缓存
-            cache_control = "public, max-age=31536000, immutable"
-            return Response(
-                content=content,
-                media_type=media_type,
-                headers={"Cache-Control": cache_control},
-            )
+            cached = _asset_cache.get(file_path)
+            if cached:
+                from starlette.responses import Response
+                content, media_type, cache_control = cached
+                return Response(
+                    content=content,
+                    media_type=media_type,
+                    headers={"Cache-Control": cache_control},
+                )
+            return JSONResponse(status_code=404, content={"detail": "Not found"})
 
         @app.middleware("http")
         async def spa_fallback(request: Request, call_next):

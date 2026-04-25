@@ -53,7 +53,7 @@ class ProcessingState:
             self._total_files = 0
             self._processed_files_count = 0
             self._current_file = ""
-            self._results = deque()
+            self._results = deque(maxlen=MAX_RESULTS)
             self._error = None
             self._start_time = None
             self._cancelled = False
@@ -62,15 +62,14 @@ class ProcessingState:
             self._retry_max = FILE_MAX_RETRIES
             self._initialized = True
 
-    def get_dict(self) -> dict:
+    def get_dict(self, include_results: bool = True) -> dict:
         with self._state_lock:
-            return {
+            result = {
                 "status": self._status,
                 "progress": self._progress,
                 "total_files": self._total_files,
                 "processed_files_count": self._processed_files_count,
                 "current_file": self._current_file,
-                "results": list(self._results),
                 "error": self._error,
                 "start_time": self._start_time,
                 "cancelled": self._cancelled,
@@ -78,6 +77,9 @@ class ProcessingState:
                 "retry_attempt": self._retry_attempt,
                 "retry_max": self._retry_max,
             }
+            if include_results:
+                result["results"] = list(self._results)
+            return result
 
     def start(self, total_files: int = 0):
         with self._state_lock:
@@ -86,7 +88,7 @@ class ProcessingState:
             self._total_files = total_files
             self._processed_files_count = 0
             self._current_file = ""
-            self._results = deque()
+            self._results = deque(maxlen=MAX_RESULTS)
             self._error = None
             self._start_time = time.time()
             self._cancelled = False
@@ -107,7 +109,7 @@ class ProcessingState:
             self._total_files = total_files
             self._processed_files_count = 0
             self._current_file = ""
-            self._results = deque()
+            self._results = deque(maxlen=MAX_RESULTS)
             self._error = None
             self._start_time = time.time()
             self._cancelled = False
@@ -133,9 +135,6 @@ class ProcessingState:
 
     def add_result(self, source: str, output: str = None, error: str = None, retryable: bool = False):
         with self._state_lock:
-            # 超过最大容量时，移除最早的结果（O(1) popleft）
-            if len(self._results) >= MAX_RESULTS:
-                self._results.popleft()
             self._results.append({
                 "source": source,
                 "output": output,

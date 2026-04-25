@@ -81,9 +81,14 @@ class AsyncTasksResource(BaseResourceGroup):
         resp = await self._client.post(self._url("/api/tasks/start"), json=body, headers=self._headers())
         return _handle_response(resp)
 
-    async def status(self) -> dict:
-        """获取当前任务状态"""
-        resp = await self._client.get(self._url("/api/tasks/status"), headers=self._headers())
+    async def status(self, include_results: bool = True) -> dict:
+        """获取当前任务状态
+
+        Args:
+            include_results: 是否包含结果列表，默认 True。轮询进度时可传 False 节省带宽。
+        """
+        params = {"include_results": str(include_results).lower()}
+        resp = await self._client.get(self._url("/api/tasks/status"), params=params, headers=self._headers())
         return _handle_response(resp)
 
     async def cancel(self) -> dict:
