@@ -68,9 +68,16 @@ class ProviderRepository(BaseRepository):
                         else:
                             self._db.add(ApiKey(provider_id=p.id, key_value=data["api_key"], source="provider"))
                     p.models_json = json.dumps(models_dict, ensure_ascii=False)
-                    self._db.query(Model).filter(Model.provider_id == p.id).delete()
+                    existing_models = {m.display_name: m for m in self._db.query(Model).filter(Model.provider_id == p.id).all()}
+                    new_display_names = set(models_dict.keys())
+                    for display_name in set(existing_models.keys()) - new_display_names:
+                        self._db.delete(existing_models[display_name])
                     for display_name, model_id in models_dict.items():
-                        self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2))
+                        existing = existing_models.get(display_name)
+                        if existing:
+                            existing.model_id = model_id
+                        else:
+                            self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2))
                     if "is_active" in data:
                         p.is_active = data["is_active"]
                     if p.is_deleted:

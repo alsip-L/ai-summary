@@ -69,7 +69,7 @@ class TaskService:
         """验证 Provider/Prompt 并返回连接参数
 
         Returns:
-            成功: {"api_key": str, "base_url": str, "model_id": str, "prompt_content": str}
+            成功: {"api_key": str, "base_url": str, "model_id": str, "prompt_content": str, "temperature": float, "frequency_penalty": float, "presence_penalty": float}
             失败: {"success": False, "error": str}
         """
         provider = db.query(Provider).filter(Provider.name == provider_name, Provider.is_active == True, Provider.is_deleted == False).first()

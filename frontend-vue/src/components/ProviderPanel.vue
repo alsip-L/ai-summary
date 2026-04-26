@@ -252,10 +252,15 @@ function addModel() {
     const display = dialogFields.value[0].value.trim()
     const id = dialogFields.value[1].value.trim()
     if (!display || !id) { showMessage('显示名称和模型ID为必填', 'warning'); return false }
-    const temperature = parseFloat(dialogFields.value[2].value) || 0.7
-    const frequency_penalty = parseFloat(dialogFields.value[3].value) || 0.4
-    const presence_penalty = parseFloat(dialogFields.value[4].value) || 0.2
-    await store.addModel(store.selectedProvider, display, id, { temperature, frequency_penalty, presence_penalty })
+    const temperature = parseFloat(dialogFields.value[2].value)
+    const frequency_penalty = parseFloat(dialogFields.value[3].value)
+    const presence_penalty = parseFloat(dialogFields.value[4].value)
+    const params = {
+      temperature: isNaN(temperature) ? 0.7 : temperature,
+      frequency_penalty: isNaN(frequency_penalty) ? 0.4 : frequency_penalty,
+      presence_penalty: isNaN(presence_penalty) ? 0.2 : presence_penalty,
+    }
+    await store.addModel(store.selectedProvider, display, id, params)
     return true
   }
   showDialog.value = true
