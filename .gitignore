@@ -5,7 +5,6 @@ __pycache__/
 *.pyd
 .Python
 *.egg-info/
-dist/
 build/
 
 # Virtual Environment
@@ -27,7 +26,7 @@ Desktop.ini
 
 # Node.js
 node_modules/
-frontend-vue/dist/
+# frontend-vue/dist/ 已纳入版本控制（Docker 本地预构建需要）
 
 # Windows
 nul
