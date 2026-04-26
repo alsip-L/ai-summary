@@ -88,7 +88,7 @@ secrets/
 
 # 前端 node_modules（多阶段构建时会重新 npm install）
 frontend-vue/node_modules/
-frontend-vue/dist/
+# frontend-vue/dist/ 已在本地预构建，需要 COPY 进镜像
 
 # SDK 测试
 sdk/tests/
