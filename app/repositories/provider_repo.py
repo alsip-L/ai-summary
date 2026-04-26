@@ -141,6 +141,24 @@ class ProviderRepository(BaseRepository):
             logger.error(f"添加模型变体失败: {e}", exc_info=True)
             return False
 
+    def update_model_params(self, provider_name: str, model_name: str, temperature: float, frequency_penalty: float, presence_penalty: float) -> bool:
+        try:
+            with self._write_session():
+                p = self._db.query(Provider).filter(Provider.name == provider_name).first()
+                if not p:
+                    return False
+                m = self._db.query(Model).filter(Model.provider_id == p.id, Model.display_name == model_name).first()
+                if not m:
+                    return False
+                m.temperature = temperature
+                m.frequency_penalty = frequency_penalty
+                m.presence_penalty = presence_penalty
+                logger.info(f"更新模型参数: {provider_name}/{model_name} T={temperature} FP={frequency_penalty} PP={presence_penalty}")
+            return True
+        except Exception as e:
+            logger.error(f"更新模型参数失败: {e}", exc_info=True)
+            return False
+
     def delete_model(self, provider_name: str, model_name: str) -> bool:
         try:
             with self._write_session():

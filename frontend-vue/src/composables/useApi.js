@@ -76,6 +76,7 @@ export const api = {
   saveApiKey: (name, apiKey) => request(`/api/providers/${encodeURIComponent(name)}/api-key`, { method: 'PUT', body: JSON.stringify({ api_key: apiKey }) }),
   addModel: (name, data) => request(`/api/providers/${encodeURIComponent(name)}/models`, { method: 'POST', body: JSON.stringify(data) }),
   deleteModel: (name, modelDisplay) => request(`/api/providers/${encodeURIComponent(name)}/models/${encodeURIComponent(modelDisplay)}`, { method: 'DELETE' }),
+  updateModelParams: (name, modelDisplay, data) => request(`/api/providers/${encodeURIComponent(name)}/models/${encodeURIComponent(modelDisplay)}/params`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   getPrompts: () => request('/api/prompts/'),
   createPrompt: (data) => request('/api/prompts/', { method: 'POST', body: JSON.stringify(data) }),

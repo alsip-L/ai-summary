@@ -44,3 +44,15 @@ class ModelCreate(BaseModel):
             "examples": [{"display_name": "GPT-4", "model_id": "gpt-4", "temperature": 0.7, "frequency_penalty": 0.4, "presence_penalty": 0.2}]
         }
     }
+
+
+class ModelParamsUpdate(BaseModel):
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="温度，0-2")
+    frequency_penalty: float = Field(default=0.4, ge=-2.0, le=2.0, description="频率惩罚，-2到2")
+    presence_penalty: float = Field(default=0.2, ge=-2.0, le=2.0, description="存在惩罚，-2到2")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [{"temperature": 0.7, "frequency_penalty": 0.4, "presence_penalty": 0.2}]
+        }
+    }

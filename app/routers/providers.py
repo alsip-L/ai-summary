@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from app.services.provider_service import ProviderService
 from app.dependencies import get_provider_service
-from app.schemas.provider import ProviderCreate, ApiKeyUpdate, ModelCreate
+from app.schemas.provider import ProviderCreate, ApiKeyUpdate, ModelCreate, ModelParamsUpdate
 from app.auth import require_auth
 from core.result import check_result
 
@@ -104,6 +104,25 @@ def add_model(
     _auth=Depends(require_auth),
 ):
     return check_result(svc.add_model(name, data.display_name, data.model_id, data.temperature, data.frequency_penalty, data.presence_penalty))
+
+
+@router.patch(
+    "/{name}/models/{model_name}/params",
+    summary="更新模型采样参数",
+    description="更新指定模型的 temperature、frequency_penalty、presence_penalty。",
+    responses={
+        200: {"description": "更新成功"},
+        400: {"description": "提供商或模型不存在"},
+    },
+)
+def update_model_params(
+    name: str,
+    model_name: str,
+    data: ModelParamsUpdate,
+    svc: ProviderService = Depends(get_provider_service),
+    _auth=Depends(require_auth),
+):
+    return check_result(svc.update_model_params(name, model_name, data.temperature, data.frequency_penalty, data.presence_penalty))
 
 
 @router.delete(

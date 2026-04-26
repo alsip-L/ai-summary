@@ -83,6 +83,11 @@ export const useProviderStore = defineStore('provider', () => {
     await loadAll()
   }
 
+  async function updateModelParams(name, modelName, params) {
+    await api.updateModelParams(name, modelName, params)
+    await loadAll()
+  }
+
   async function deleteModel(name, modelName) {
     await api.deleteModel(name, modelName)
     await loadAll()
@@ -102,6 +107,6 @@ export const useProviderStore = defineStore('provider', () => {
   return {
     providers, providerNames, selectedProvider, selectedModel, apiKey, directoryPath,
     loadAll, getCurrentModels, getCurrentModelsDetail, getCurrentApiKey,
-    createProvider, deleteProvider, saveApiKey, addModel, deleteModel, savePreferences,
+    createProvider, deleteProvider, saveApiKey, addModel, updateModelParams, deleteModel, savePreferences,
   }
 })

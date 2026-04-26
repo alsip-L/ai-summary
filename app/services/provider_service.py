@@ -41,6 +41,11 @@ class ProviderService:
             return ok()
         return fail("添加失败")
 
+    def update_model_params(self, name: str, model_name: str, temperature: float, frequency_penalty: float, presence_penalty: float) -> dict:
+        if self._repo.update_model_params(name, model_name, temperature, frequency_penalty, presence_penalty):
+            return ok()
+        return fail("更新失败")
+
     def delete_model(self, name: str, model_name: str) -> dict:
         if self._repo.delete_model(name, model_name):
             return ok()

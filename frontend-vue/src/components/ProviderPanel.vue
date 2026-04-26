@@ -29,6 +29,7 @@
         <div class="dropdown-content" :class="{ show: showModelDropdown }">
           <div v-for="display in modelKeys" :key="display" class="dropdown-option" @click.stop="selectModel(display)">
             <span>{{ display }}</span>
+            <button type="button" class="edit-option-btn" @click.stop="editModelParams(display)" title="编辑参数">&#9881;</button>
             <button type="button" class="delete-option-btn" @click.stop="deleteModel(display)">&times;</button>
           </div>
           <div class="dropdown-option" @click.stop="addModel">
@@ -37,9 +38,10 @@
         </div>
       </div>
       <div v-if="currentModelParams" class="model-params-hint">
-        <span>T={{ currentModelParams.temperature }}</span>
-        <span>FP={{ currentModelParams.frequency_penalty }}</span>
-        <span>PP={{ currentModelParams.presence_penalty }}</span>
+        <span title="温度 (temperature)：控制输出随机性。0=确定性，2=高度随机，推荐 0.3~0.9">T={{ currentModelParams.temperature }}</span>
+        <span title="频率惩罚 (frequency_penalty)：惩罚已出现过的词，值越大越不容易重复，推荐 0.2~0.6">FP={{ currentModelParams.frequency_penalty }}</span>
+        <span title="存在惩罚 (presence_penalty)：鼓励生成新话题，值越大越倾向讨论新内容，推荐 0.1~0.4">PP={{ currentModelParams.presence_penalty }}</span>
+        <button type="button" class="params-edit-btn" @click="editCurrentModelParams" title="编辑参数">&#9881;</button>
       </div>
     </div>
     <div class="form-group">
@@ -65,7 +67,7 @@
           <div v-for="field in dialogFields" :key="field.id" class="form-group">
             <label class="form-label">{{ field.label }}</label>
             <textarea v-if="field.type === 'textarea'" :id="field.id" class="form-control" :placeholder="field.placeholder || ''" v-model="field.value"></textarea>
-            <input v-else :type="field.type || 'text'" :id="field.id" class="form-control" :placeholder="field.placeholder || ''" v-model="field.value">
+            <input v-else :type="field.type || 'text'" :id="field.id" class="form-control" :placeholder="field.placeholder || ''" v-model="field.value" :step="field.step">
           </div>
         </div>
         <div class="modal-footer">
@@ -244,9 +246,9 @@ function addModel() {
   dialogFields.value = [
     { id: 'display_name', label: '显示名称', placeholder: '如: GPT-4', value: '' },
     { id: 'model_id', label: '模型 ID', placeholder: '如: gpt-4', value: '' },
-    { id: 'temperature', label: '温度 (0-2)', placeholder: '默认 0.7', value: '0.7', type: 'number' },
-    { id: 'frequency_penalty', label: '频率惩罚 (-2~2)', placeholder: '默认 0.4', value: '0.4', type: 'number' },
-    { id: 'presence_penalty', label: '存在惩罚 (-2~2)', placeholder: '默认 0.2', value: '0.2', type: 'number' },
+    { id: 'temperature', label: '温度 (0-2)：控制随机性，0=确定，2=最随机', placeholder: '默认 0.7', value: '0.7', type: 'number', step: '0.1' },
+    { id: 'frequency_penalty', label: '频率惩罚 (-2~2)：惩罚重复词，越大越不重复', placeholder: '默认 0.4', value: '0.4', type: 'number', step: '0.1' },
+    { id: 'presence_penalty', label: '存在惩罚 (-2~2)：鼓励新话题，越大越发散', placeholder: '默认 0.2', value: '0.2', type: 'number', step: '0.1' },
   ]
   dialogSubmit = async () => {
     const display = dialogFields.value[0].value.trim()
@@ -266,6 +268,38 @@ function addModel() {
   showDialog.value = true
 }
 
+function editModelParams(modelDisplay) {
+  showModelDropdown.value = false
+  if (!store.selectedProvider) return
+  const detail = store.getCurrentModelsDetail()
+  const current = detail[modelDisplay] || {}
+  dialogTitle.value = `编辑参数 — ${modelDisplay}`
+  dialogFields.value = [
+    { id: 'temperature', label: '温度 (0-2)：控制随机性，0=确定，2=最随机', placeholder: '0.7', value: String(current.temperature ?? 0.7), type: 'number', step: '0.1' },
+    { id: 'frequency_penalty', label: '频率惩罚 (-2~2)：惩罚重复词，越大越不重复', placeholder: '0.4', value: String(current.frequency_penalty ?? 0.4), type: 'number', step: '0.1' },
+    { id: 'presence_penalty', label: '存在惩罚 (-2~2)：鼓励新话题，越大越发散', placeholder: '0.2', value: String(current.presence_penalty ?? 0.2), type: 'number', step: '0.1' },
+  ]
+  dialogSubmit = async () => {
+    const temperature = parseFloat(dialogFields.value[0].value)
+    const frequency_penalty = parseFloat(dialogFields.value[1].value)
+    const presence_penalty = parseFloat(dialogFields.value[2].value)
+    const params = {
+      temperature: isNaN(temperature) ? 0.7 : temperature,
+      frequency_penalty: isNaN(frequency_penalty) ? 0.4 : frequency_penalty,
+      presence_penalty: isNaN(presence_penalty) ? 0.2 : presence_penalty,
+    }
+    await store.updateModelParams(store.selectedProvider, modelDisplay, params)
+    showMessage('参数已更新', 'success')
+    return true
+  }
+  showDialog.value = true
+}
+
+function editCurrentModelParams() {
+  if (!store.selectedModel) return
+  editModelParams(store.selectedModel)
+}
+
 async function submitDialog() {
   if (dialogSubmit) {
     const ok = await dialogSubmit()
@@ -281,5 +315,29 @@ async function submitDialog() {
   margin-top: 4px;
   font-size: 11px;
   color: var(--text-muted, #888);
+  align-items: center;
+}
+.params-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  padding: 0 2px;
+}
+.params-edit-btn:hover {
+  color: var(--accent-indigo, #6366f1);
+}
+.edit-option-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  padding: 0 4px;
+  margin-right: 2px;
+}
+.edit-option-btn:hover {
+  color: var(--accent-indigo, #6366f1);
 }
 </style>
