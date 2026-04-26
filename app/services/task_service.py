@@ -79,7 +79,6 @@ class TaskService:
         model = db.query(Model).filter(Model.provider_id == provider.id, Model.display_name == model_key).first()
         if not model:
             return {"success": False, "error": f"模型 '{model_key}' 未找到"}
-        model_id = model.model_id
 
         prompt = db.query(Prompt).filter(Prompt.name == prompt_name, Prompt.is_deleted == False).first()
         if not prompt:
@@ -88,7 +87,15 @@ class TaskService:
         if not api_key:
             return {"success": False, "error": "API Key 未配置"}
 
-        return {"api_key": api_key, "base_url": provider.base_url, "model_id": model_id, "prompt_content": prompt.content}
+        return {
+            "api_key": api_key,
+            "base_url": provider.base_url,
+            "model_id": model.model_id,
+            "prompt_content": prompt.content,
+            "temperature": model.temperature,
+            "frequency_penalty": model.frequency_penalty,
+            "presence_penalty": model.presence_penalty,
+        }
 
     def start(
         self,
@@ -116,9 +123,11 @@ class TaskService:
 
         model_id = validation["model_id"]
         prompt_content = validation["prompt_content"]
-        # 在后台线程中创建独立的 OpenAI 客户端，避免跨线程共享
         client_api_key = validation["api_key"]
         client_base_url = validation["base_url"]
+        temperature = validation["temperature"]
+        frequency_penalty = validation["frequency_penalty"]
+        presence_penalty = validation["presence_penalty"]
 
         logger.info(f"启动处理任务: provider={provider_name}, model={model_id}, directory={directory}")
 
@@ -128,7 +137,7 @@ class TaskService:
         def _run_in_thread():
             client = _client_pool.get(client_api_key, client_base_url)
             try:
-                self._runner.run_batch(directory, client, prompt_content, model_id, skip_existing)
+                self._runner.run_batch(directory, client, prompt_content, model_id, skip_existing, temperature, frequency_penalty, presence_penalty)
             except Exception as e:
                 logger.error(f"后台任务异常: {e}")
                 self._state.set_error(f"后台任务异常: {str(e)}")
@@ -181,6 +190,9 @@ class TaskService:
         prompt_content = validation["prompt_content"]
         client_api_key = validation["api_key"]
         client_base_url = validation["base_url"]
+        temperature = validation["temperature"]
+        frequency_penalty = validation["frequency_penalty"]
+        presence_penalty = validation["presence_penalty"]
 
         logger.info(f"启动失败重跑: {len(existing_sources)} 个文件")
 
@@ -190,7 +202,7 @@ class TaskService:
         def _run_in_thread():
             client = _client_pool.get(client_api_key, client_base_url)
             try:
-                self._runner.run_retry_batch(existing_sources, client, prompt_content, model_id)
+                self._runner.run_retry_batch(existing_sources, client, prompt_content, model_id, temperature, frequency_penalty, presence_penalty)
             except Exception as e:
                 logger.error(f"后台重跑任务异常: {e}")
                 self._state.set_error(f"后台重跑任务异常: {str(e)}")

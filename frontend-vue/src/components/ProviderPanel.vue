@@ -36,6 +36,11 @@
           </div>
         </div>
       </div>
+      <div v-if="currentModelParams" class="model-params-hint">
+        <span>T={{ currentModelParams.temperature }}</span>
+        <span>FP={{ currentModelParams.frequency_penalty }}</span>
+        <span>PP={{ currentModelParams.presence_penalty }}</span>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">API Key</label>
@@ -101,6 +106,12 @@ onMounted(() => document.addEventListener('click', onDocumentClick))
 onUnmounted(() => document.removeEventListener('click', onDocumentClick))
 
 const modelKeys = computed(() => Object.keys(store.getCurrentModels()))
+
+const currentModelParams = computed(() => {
+  const detail = store.getCurrentModelsDetail()
+  const model = store.selectedModel
+  return detail[model] || null
+})
 
 const showDialog = ref(false)
 const dialogTitle = ref('')
@@ -233,12 +244,18 @@ function addModel() {
   dialogFields.value = [
     { id: 'display_name', label: '显示名称', placeholder: '如: GPT-4', value: '' },
     { id: 'model_id', label: '模型 ID', placeholder: '如: gpt-4', value: '' },
+    { id: 'temperature', label: '温度 (0-2)', placeholder: '默认 0.7', value: '0.7', type: 'number' },
+    { id: 'frequency_penalty', label: '频率惩罚 (-2~2)', placeholder: '默认 0.4', value: '0.4', type: 'number' },
+    { id: 'presence_penalty', label: '存在惩罚 (-2~2)', placeholder: '默认 0.2', value: '0.2', type: 'number' },
   ]
   dialogSubmit = async () => {
     const display = dialogFields.value[0].value.trim()
     const id = dialogFields.value[1].value.trim()
-    if (!display || !id) { showMessage('两项均为必填', 'warning'); return false }
-    await store.addModel(store.selectedProvider, display, id)
+    if (!display || !id) { showMessage('显示名称和模型ID为必填', 'warning'); return false }
+    const temperature = parseFloat(dialogFields.value[2].value) || 0.7
+    const frequency_penalty = parseFloat(dialogFields.value[3].value) || 0.4
+    const presence_penalty = parseFloat(dialogFields.value[4].value) || 0.2
+    await store.addModel(store.selectedProvider, display, id, { temperature, frequency_penalty, presence_penalty })
     return true
   }
   showDialog.value = true
@@ -251,3 +268,13 @@ async function submitDialog() {
   }
 }
 </script>
+
+<style scoped>
+.model-params-hint {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #888);
+}
+</style>

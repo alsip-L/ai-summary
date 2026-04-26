@@ -32,12 +32,12 @@ class FileProcessor:
                     txt_files.append(file_path)
         return txt_files
 
-    def process_file(self, file_path: str, client: OpenAI, prompt_content: str, model_id: str) -> dict:
+    def process_file(self, file_path: str, client: OpenAI, prompt_content: str, model_id: str, temperature: float = 0.7, frequency_penalty: float = 0.4, presence_penalty: float = 0.2) -> dict:
         """处理单个文件：读取 → AI调用 → 保存"""
         try:
             content = read_file_with_encoding(file_path)
             logger.info(f"读取文件完成: {os.path.basename(file_path)}, 字符数: {len(content)}")
-            response = self._ai_client.call(client, content, prompt_content, model_id)
+            response = self._ai_client.call(client, content, prompt_content, model_id, temperature, frequency_penalty, presence_penalty)
             output_path = self.save_response(file_path, response)
             logger.info(f"文件处理成功: {os.path.basename(file_path)} -> {os.path.basename(output_path)}")
             return {"source": file_path, "output": output_path}

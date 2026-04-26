@@ -12,11 +12,21 @@ class ProviderRepository(BaseRepository):
 
     def _to_dict(self, p: Provider) -> dict:
         """Provider ORM → 字典"""
+        models_simple = safe_json_loads(p.models_json)
+        models_detail = {}
+        for m in self._db.query(Model).filter(Model.provider_id == p.id).all():
+            models_detail[m.display_name] = {
+                "model_id": m.model_id,
+                "temperature": m.temperature,
+                "frequency_penalty": m.frequency_penalty,
+                "presence_penalty": m.presence_penalty,
+            }
         return {
             "name": p.name,
             "base_url": p.base_url,
             "api_key": p.api_key,
-            "models": safe_json_loads(p.models_json),
+            "models": models_simple,
+            "models_detail": models_detail,
             "is_active": p.is_active,
             "created_at": p.created_at.isoformat() if p.created_at else None,
             "updated_at": p.updated_at.isoformat() if p.updated_at else None,
@@ -58,10 +68,9 @@ class ProviderRepository(BaseRepository):
                         else:
                             self._db.add(ApiKey(provider_id=p.id, key_value=data["api_key"], source="provider"))
                     p.models_json = json.dumps(models_dict, ensure_ascii=False)
-                    # 同步 models 表：先删后增
                     self._db.query(Model).filter(Model.provider_id == p.id).delete()
                     for display_name, model_id in models_dict.items():
-                        self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id))
+                        self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2))
                     if "is_active" in data:
                         p.is_active = data["is_active"]
                     if p.is_deleted:
@@ -82,7 +91,7 @@ class ProviderRepository(BaseRepository):
                         self._db.add(ApiKey(provider_id=p.id, key_value=data["api_key"], source="provider"))
                     # 同步 models 表
                     for display_name, model_id in models_dict.items():
-                        self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id))
+                        self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2))
                     logger.info(f"新增服务商: {name}")
             return True
         except Exception as e:
@@ -110,7 +119,7 @@ class ProviderRepository(BaseRepository):
             logger.error(f"更新API Key失败: {e}", exc_info=True)
             return False
 
-    def add_model_variant(self, provider_name: str, display_name: str, model_id: str) -> bool:
+    def add_model_variant(self, provider_name: str, display_name: str, model_id: str, temperature: float = 0.7, frequency_penalty: float = 0.4, presence_penalty: float = 0.2) -> bool:
         try:
             with self._write_session():
                 p = self._db.query(Provider).filter(Provider.name == provider_name).first()
@@ -119,8 +128,7 @@ class ProviderRepository(BaseRepository):
                 models = safe_json_loads(p.models_json)
                 models[display_name] = model_id
                 p.models_json = json.dumps(models, ensure_ascii=False)
-                # 同步 models 表
-                self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id))
+                self._db.add(Model(provider_id=p.id, display_name=display_name, model_id=model_id, temperature=temperature, frequency_penalty=frequency_penalty, presence_penalty=presence_penalty))
             return True
         except Exception as e:
             logger.error(f"添加模型变体失败: {e}", exc_info=True)

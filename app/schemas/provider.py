@@ -35,9 +35,12 @@ class ApiKeyUpdate(BaseModel):
 class ModelCreate(BaseModel):
     display_name: str = Field(description="模型显示名称，如 GPT-4")
     model_id: str = Field(description="模型标识，如 gpt-4")
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="温度，0-2")
+    frequency_penalty: float = Field(default=0.4, ge=-2.0, le=2.0, description="频率惩罚，-2到2")
+    presence_penalty: float = Field(default=0.2, ge=-2.0, le=2.0, description="存在惩罚，-2到2")
 
     model_config = {
         "json_schema_extra": {
-            "examples": [{"display_name": "GPT-4", "model_id": "gpt-4"}]
+            "examples": [{"display_name": "GPT-4", "model_id": "gpt-4", "temperature": 0.7, "frequency_penalty": 0.4, "presence_penalty": 0.2}]
         }
     }

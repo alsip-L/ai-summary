@@ -36,8 +36,8 @@ class ProviderService:
             return ok()
         return fail("更新失败")
 
-    def add_model(self, name: str, display_name: str, model_id: str) -> dict:
-        if self._repo.add_model_variant(name, display_name, model_id):
+    def add_model(self, name: str, display_name: str, model_id: str, temperature: float = 0.7, frequency_penalty: float = 0.4, presence_penalty: float = 0.2) -> dict:
+        if self._repo.add_model_variant(name, display_name, model_id, temperature, frequency_penalty, presence_penalty):
             return ok()
         return fail("添加失败")
 

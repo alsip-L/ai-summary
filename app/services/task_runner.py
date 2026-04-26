@@ -22,7 +22,7 @@ class TaskRunner:
         self._file_processor = file_processor
         self._failed_record_svc = failed_record_service
 
-    def run_batch(self, directory, client, prompt_content, model_id, skip_existing):
+    def run_batch(self, directory, client, prompt_content, model_id, skip_existing, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2):
         """批量处理主循环"""
         try:
             logger.info(f"开始扫描目录: {directory}")
@@ -32,21 +32,21 @@ class TaskRunner:
                 logger.error("未找到需要处理的 txt 文件")
                 return
             logger.info(f"扫描完成: 找到 {len(txt_files)} 个 txt 文件")
-            self._run_processing_loop(txt_files, client, prompt_content, model_id, "处理")
+            self._run_processing_loop(txt_files, client, prompt_content, model_id, "处理", temperature, frequency_penalty, presence_penalty)
         except Exception as e:
             logger.error(f"批量处理启动失败: {e}")
             self._state.set_error(f"批量处理启动失败: {str(e)}")
 
-    def run_retry_batch(self, file_paths, client, prompt_content, model_id):
+    def run_retry_batch(self, file_paths, client, prompt_content, model_id, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2):
         """重跑失败文件的主循环"""
         try:
             logger.info(f"开始重跑 {len(file_paths)} 个失败文件")
-            self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑")
+            self._run_processing_loop(file_paths, client, prompt_content, model_id, "重跑", temperature, frequency_penalty, presence_penalty)
         except Exception as e:
             logger.error(f"重跑启动失败: {e}")
             self._state.set_error(f"重跑启动失败: {str(e)}")
 
-    def _run_processing_loop(self, file_paths, client, prompt_content, model_id, log_prefix):
+    def _run_processing_loop(self, file_paths, client, prompt_content, model_id, log_prefix, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2):
         """通用的文件处理循环"""
         try:
             if self._state.is_cancelled():
@@ -61,7 +61,7 @@ class TaskRunner:
                 progress_before = int((i / len(file_paths)) * 100)
                 self._state.update_progress(i, os.path.basename(file_path), progress_before)
                 logger.info(f"{log_prefix}文件 [{i+1}/{len(file_paths)}]: {os.path.basename(file_path)}")
-                result = self._process_file_with_retry(file_path, client, prompt_content, model_id)
+                result = self._process_file_with_retry(file_path, client, prompt_content, model_id, temperature, frequency_penalty, presence_penalty)
                 progress_after = int(((i + 1) / len(file_paths)) * 100)
                 self._state.update_progress(i + 1, None, progress_after)
                 self._state.add_result(
@@ -83,9 +83,9 @@ class TaskRunner:
             self._state.set_error(f"{log_prefix}失败: {str(e)}")
             self._failed_record_svc.persist_from_state()
 
-    def _process_file_with_retry(self, file_path, client, prompt_content, model_id):
+    def _process_file_with_retry(self, file_path, client, prompt_content, model_id, temperature=0.7, frequency_penalty=0.4, presence_penalty=0.2):
         """处理单个文件，失败时自动重试（仅对可重试错误，最多FILE_MAX_RETRIES次）"""
-        result = self._file_processor.process_file(file_path, client, prompt_content, model_id)
+        result = self._file_processor.process_file(file_path, client, prompt_content, model_id, temperature, frequency_penalty, presence_penalty)
 
         # 如果成功或不可重试，直接返回
         if not result.get("error") or not result.get("retryable"):
@@ -114,7 +114,7 @@ class TaskRunner:
                 logger.info(f"文件重试已取消: {os.path.basename(file_path)}")
                 return {"source": file_path, "error": "用户取消了处理", "retryable": False}
 
-            result = self._file_processor.process_file(file_path, client, prompt_content, model_id)
+            result = self._file_processor.process_file(file_path, client, prompt_content, model_id, temperature, frequency_penalty, presence_penalty)
             if not result.get("error"):
                 logger.info(f"文件重试成功（第{attempt}次）: {os.path.basename(file_path)}")
                 self._state.clear_retrying()

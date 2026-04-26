@@ -51,6 +51,11 @@ export const useProviderStore = defineStore('provider', () => {
     return provider ? provider.models || {} : {}
   }
 
+  function getCurrentModelsDetail() {
+    const provider = providers.value[selectedProvider.value]
+    return provider ? provider.models_detail || {} : {}
+  }
+
   function getCurrentApiKey() {
     const provider = providers.value[selectedProvider.value]
     return provider ? provider.api_key || '' : ''
@@ -73,8 +78,8 @@ export const useProviderStore = defineStore('provider', () => {
     await loadAll()
   }
 
-  async function addModel(name, displayName, modelId) {
-    await api.addModel(name, { display_name: displayName, model_id: modelId })
+  async function addModel(name, displayName, modelId, params = {}) {
+    await api.addModel(name, { display_name: displayName, model_id: modelId, ...params })
     await loadAll()
   }
 
@@ -96,7 +101,7 @@ export const useProviderStore = defineStore('provider', () => {
 
   return {
     providers, providerNames, selectedProvider, selectedModel, apiKey, directoryPath,
-    loadAll, getCurrentModels, getCurrentApiKey,
+    loadAll, getCurrentModels, getCurrentModelsDetail, getCurrentApiKey,
     createProvider, deleteProvider, saveApiKey, addModel, deleteModel, savePreferences,
   }
 })

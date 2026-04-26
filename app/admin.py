@@ -13,7 +13,7 @@ class ProviderAdmin(ModelView, model=Provider):
 
 
 class ModelAdmin(ModelView, model=Model):
-    column_list = [Model.id, Model.provider_id, Model.display_name, Model.model_id, Model.created_at, Model.updated_at]
+    column_list = [Model.id, Model.provider_id, Model.display_name, Model.model_id, Model.temperature, Model.frequency_penalty, Model.presence_penalty, Model.created_at, Model.updated_at]
     column_searchable_list = [Model.display_name, Model.model_id]
     form_excluded_columns = [Model.id, Model.created_at, Model.updated_at]
     can_export = True

@@ -70,7 +70,7 @@ class AIClient:
     def __init__(self, state: ProcessingState = None):
         self._state = state or ProcessingState()
 
-    def call(self, client: OpenAI, content: str, system_prompt: str, model_id: str) -> str:
+    def call(self, client: OpenAI, content: str, system_prompt: str, model_id: str, temperature: float = 0.7, frequency_penalty: float = 0.4, presence_penalty: float = 0.2) -> str:
         """调用 AI API，带指数退避重试（仅对可重试异常）"""
         last_error = None
         for attempt in range(1, MAX_RETRIES + 1):
@@ -88,6 +88,9 @@ class AIClient:
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": content},
                     ],
+                    temperature=temperature,
+                    frequency_penalty=frequency_penalty,
+                    presence_penalty=presence_penalty,
                     stream=True,
                 )
                 try:

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Index, func, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, Float, Index, func, ForeignKey
 from app.database import Base
 
 
@@ -35,6 +35,9 @@ class Model(Base):
     provider_id = Column(Integer, ForeignKey("providers.id"), nullable=False)
     display_name = Column(String, nullable=False)
     model_id = Column(String, nullable=False)
+    temperature = Column(Float, default=0.7, server_default="0.7")
+    frequency_penalty = Column(Float, default=0.4, server_default="0.4")
+    presence_penalty = Column(Float, default=0.2, server_default="0.2")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), server_default=func.now(), nullable=False)
 

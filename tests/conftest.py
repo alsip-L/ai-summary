@@ -18,15 +18,21 @@ def _backup_production_db():
 
 
 def _ensure_soft_delete_columns(engine):
-    """确保测试数据库包含 is_deleted 列（处理从旧版生产库备份的情况）"""
+    """确保测试数据库包含 is_deleted 列和模型采样参数列"""
     insp = inspect(engine)
-    for table, col in [("providers", "is_deleted"), ("prompts", "is_deleted")]:
+    for table, col, col_type, default in [
+        ("providers", "is_deleted", "BOOLEAN", "0"),
+        ("prompts", "is_deleted", "BOOLEAN", "0"),
+        ("models", "temperature", "FLOAT", "0.7"),
+        ("models", "frequency_penalty", "FLOAT", "0.4"),
+        ("models", "presence_penalty", "FLOAT", "0.2"),
+    ]:
         try:
             columns = [c["name"] for c in insp.get_columns(table)]
         except Exception:
             columns = []
         if col not in columns:
             with engine.connect() as conn:
-                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} BOOLEAN DEFAULT 0"))
-                conn.execute(text(f"UPDATE {table} SET {col} = 0 WHERE {col} IS NULL"))
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type} DEFAULT {default}"))
+                conn.execute(text(f"UPDATE {table} SET {col} = {default} WHERE {col} IS NULL"))
                 conn.commit()

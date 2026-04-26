@@ -103,7 +103,7 @@ def add_model(
     svc: ProviderService = Depends(get_provider_service),
     _auth=Depends(require_auth),
 ):
-    return check_result(svc.add_model(name, data.display_name, data.model_id))
+    return check_result(svc.add_model(name, data.display_name, data.model_id, data.temperature, data.frequency_penalty, data.presence_penalty))
 
 
 @router.delete(
