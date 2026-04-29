@@ -1,12 +1,12 @@
 {
   "system_settings": {
     "debug_level": "INFO",
-    "secret_key": "CHANGE_ME_TO_A_SECURE_RANDOM_STRING",
+    "secret_key": "default-dev-secret-key-please-change-in-prod",
     "host": "0.0.0.0",
     "port": 5000,
     "debug": false,
-    "admin_username": "CHANGE_ME",
-    "admin_password": "CHANGE_ME",
+    "admin_username": "admin",
+    "admin_password": "admin",
     "allowed_paths": [
       "*"
     ],

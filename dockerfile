@@ -30,7 +30,7 @@ COPY --from=deps-build /usr/local/bin /usr/local/bin
 COPY app/ ./app/
 COPY core/ ./core/
 COPY templates/ ./templates/
-COPY config.example.json ./config.json
+COPY config.json ./
 COPY run.py ./
 
 # 从前端构建阶段复制产物

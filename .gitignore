@@ -48,9 +48,6 @@ frontend-vue/dist/
 # Data files (user data, not for distribution)
 data/
 
-# Config with secrets
-config.json
-
 # IDE / Editor
 .trae/
 .arts/
