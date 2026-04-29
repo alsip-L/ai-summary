@@ -5,7 +5,13 @@ __pycache__/
 *.pyd
 .Python
 *.egg-info/
-build/
+*.egg
+.pytest_cache/
+*.pytest_cache
+.tox/
+.coverage
+.coverage.*
+htmlcov/
 
 # Virtual Environment
 venv/
@@ -15,6 +21,7 @@ env/
 # Vim temp files
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
@@ -23,10 +30,40 @@ Desktop.ini
 
 # Logs
 *.log
+logs/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 
 # Node.js
 node_modules/
-# frontend-vue/dist/ 已纳入版本控制（Docker 本地预构建需要）
+
+# Frontend build output
+frontend-vue/dist/
+
+# Data files (user data, not for distribution)
+data/
+
+# Config with secrets
+config.json
+
+# IDE / Editor
+.trae/
+.arts/
+.idea/
+.vscode/
+*.code-workspace
+CLAUDE.md
+.codeartsdoer/
 
 # Windows
 nul
+
+# Environment
+.env
+.env.*
+!.env.example

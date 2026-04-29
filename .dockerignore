@@ -86,9 +86,9 @@ data/
 .env.production
 secrets/
 
-# 前端 node_modules（多阶段构建时会重新 npm install）
+# 前端（多阶段构建时在 Docker 内 npm install + npm run build）
 frontend-vue/node_modules/
-# frontend-vue/dist/ 已在本地预构建，需要 COPY 进镜像
+frontend-vue/dist/
 
 # SDK 测试
 sdk/tests/

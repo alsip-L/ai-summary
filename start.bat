@@ -95,9 +95,15 @@ REM Check config file
 echo.
 echo Checking config file...
 if not exist "config.json" (
-    echo Config file not found, creating default config...
-    echo {"system_settings":{"debug_level":"ERROR","secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}} > config.json
-    echo Default config created
+    if exist "config.example.json" (
+        echo Config file not found, copying from config.example.json...
+        copy config.example.json config.json >nul
+        echo Config created from example - please edit config.json with your settings
+    ) else (
+        echo Config file not found, creating default config...
+        echo {"system_settings":{"debug_level":"ERROR","secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}} > config.json
+        echo Default config created
+    )
 ) else (
     echo Config file exists
 )

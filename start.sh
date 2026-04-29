@@ -28,9 +28,15 @@ echo
 
 # 检查配置文件
 if [ ! -f "config.json" ]; then
-    echo "配置文件不存在，创建默认配置..."
-    echo '{"system_settings":{"debug_level":"ERROR","secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}}' > config.json
-    echo "默认配置已创建"
+    if [ -f "config.example.json" ]; then
+        echo "配置文件不存在，从 config.example.json 复制..."
+        cp config.example.json config.json
+        echo "已从示例创建配置 - 请编辑 config.json 填入实际设置"
+    else
+        echo "配置文件不存在，创建默认配置..."
+        echo '{"system_settings":{"debug_level":"ERROR","secret_key":"default-dev-secret-key-please-change-in-prod","host":"0.0.0.0","port":5000,"debug":false}}' > config.json
+        echo "默认配置已创建"
+    fi
     echo
 fi
 
